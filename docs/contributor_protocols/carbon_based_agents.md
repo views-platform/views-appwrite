@@ -1,0 +1,134 @@
+
+# Carbon-Based Agent Protocol  
+*(For contributors composed primarily of carbon, caffeine, and responsibility)*
+
+**Status:** Active  
+**Applies to:** All human contributors to `views-appwrite` (VIEWS platform maintainers and consumer-repo authors)  
+**Authority:** ADR-001 through ADR-009  
+
+---
+
+## Purpose
+
+This protocol defines the responsibilities, expectations, and obligations of
+**carbon-based agents** contributing to this repository.
+
+Carbon-based agents are entrusted with:
+- intent,
+- judgment,
+- and architectural authority.
+
+With that trust comes responsibility. This protocol exists to ensure that speed,
+convenience, or tooling never outruns understanding, intent, or accountability — and, for
+this package specifically, that the generic-client boundary (ADR-001) is never quietly
+eroded.
+
+---
+
+## Core Principle: Stewardship of Intent
+
+Carbon-based agents are **stewards of intent**, not merely authors of code.
+
+Stewardship means preserving meaning over time, enforcing architectural boundaries, and
+preventing silent failure under pressure.
+
+Code may change. **Intent must not drift silently.** The whole reason this package exists
+is that the two source copies' intent drifted; do not repeat that here.
+
+---
+
+## Ownership of Intent and Semantics
+
+Carbon-based agents own system intent and meaning, declare semantics explicitly, and are
+accountable for their correctness.
+
+If a change alters the *meaning* of a component:
+- its intent contract must be updated (ADR-006), or
+- a new ADR must be written, or
+- the change must not be merged.
+
+“No one told me” and “it was implied” are not valid defenses. The canonical violation to
+guard against: re-introducing a domain field (`loa`, `targets`, …) into the generic
+metadata path because a consumer found it convenient.
+
+---
+
+## Fail-Loud Is a Moral Obligation
+
+Silent failure is unacceptable. Introducing implicit behavior, fallback logic that hides
+errors, or ambiguity in decision-relevant semantics is a defect, even if tests pass.
+
+Carbon-based agents enforce the **fail-loud invariant** of ADR-003 (Authority of
+Declarations Over Inference) and ADR-008 (Observability and Explicit Failure). Note the
+deliberate exception: a *consumer* may choose graceful degradation (e.g. `AppwriteSaver`),
+but this package must raise.
+
+Professional discomfort is preferable to silent risk.
+
+---
+
+## Testing Is Part of the Change
+
+Tests are not optional and not a follow-up. A change is incomplete if it cannot be tested
+meaningfully, weakens existing tests without justification, or relies on “manual
+verification.”
+
+Ensure coverage across:
+- 🟥 **Red team tests** — adversarial and worst-case (malformed SDK responses, missing config)
+- 🟫 **Beige team tests** — realistic, neutral, “boring but dangerous” usage (cache staleness, metadata-filter mismatch, SDK 13 vs 14)
+- 🟩 **Green team tests** — correctness, robustness, resilience (compat normalisation, get_latest ordering)
+
+as defined in ADR-005. Tests are the executable proof of intent.
+
+---
+
+## Interaction with Silicon-Based Agents
+
+Using silicon-based agents (automated coding assistants) does **not** reduce
+responsibility. When you use one, you must understand what it changed, verify changes
+against ADRs and intent contracts, ensure no forbidden operations occurred, and take full
+responsibility for the result.
+
+For this package, apply heightened care to the Phase 1 decomposition: verify that a module
+split out of the large source files did not silently lose a branch (e.g. the `_as_dict`
+SDK-14 guard or an error path).
+
+“The silicon-based agent did it” is not justification.
+
+---
+
+## Review Is an Architectural Act
+
+Reviewers assess intent alignment, boundary integrity (ADR-002), semantic clarity
+(ADR-003), and test adequacy (ADR-005). If a reviewer cannot explain what a change
+*means*, it should not be approved. The package's review litmus test: *“Would a non-VIEWS
+project using Appwrite still find this useful?”* If no, the change probably violates ADR-001.
+
+---
+
+## Non-Negotiable Expectations
+
+Carbon-based agents must not:
+- merge changes they do not understand,
+- normalize warnings or TODOs that hide failure,
+- bypass tests under time pressure,
+- defer intent clarification “until later”,
+- or shift responsibility to tools or future contributors.
+
+Speed does not justify ambiguity.
+
+---
+
+## Enforcement
+
+Enforced socially through collaboration and review. Violations may result in blocked
+merges, requests for clarification/documentation, or escalation to architectural
+discussion.
+
+---
+
+## Final Note
+
+Carbon-based agents are the **last line of defense**. Tools can accelerate work;
+automation can multiply mistakes. This protocol exists to ensure that, even under
+pressure, **the system continues to mean what we think it means**.
