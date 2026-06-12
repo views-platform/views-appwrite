@@ -6,8 +6,8 @@
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-06-12                           |
 | Total Concerns    | 11                                   |
-| Open Concerns     | 11                                   |
-| Resolved Concerns | 0                                    |
+| Open Concerns     | 10                                   |
+| Resolved Concerns | 1                                    |
 
 ---
 
@@ -122,22 +122,6 @@ Migrating `views-pipeline-core` to depend on `views-appwrite` requires buy-in fr
 
 ---
 
-### C-08: Entire governance corpus exists only as untracked files in a zero-commit repository
-
-| Field | Value |
-|-------|-------|
-| ID | C-08 |
-| Tier | 3 |
-| Source | repo-assimilation (2026-06-12) |
-| Trigger | Before any further documentation or Phase 1 code work, make the initial commit (and push to a remote) so the ADRs, protocols, and risk register are version-controlled. |
-| Location | repo root (`git log`: "does not have any commits yet"; `git status`: `?? README.md`, `?? docs/`, `?? reports/`) |
-
-The constitutional ADRs (000–010), contributor protocols, logging standard, roadmap, and this register itself exist only in the working tree of a repository with zero commits. ADR-000 declares ADRs "first-class project artifacts" that are "never deleted," and the ADR lifecycle (supersession, not erasure) presumes version history — but a single `git clean -fd`, disk failure, or accidental overwrite would erase the entire governance corpus with no recovery path. This affects every current and future contributor, not a single developer, hence Tier 3. No mitigation exists; resolution is a one-time `git add` + commit + push.
-
-See also C-01 (same repository state observed from a different angle: C-01 concerns the roadmap being mistaken for a shippable package; this entry concerns artifact loss).
-
----
-
 ### C-09: `validate_docs.sh` cannot see ADR-010+ references and skips Deferred-status files
 
 | Field | Value |
@@ -190,7 +174,13 @@ The roadmap's most recent dated entry (Datafactory Notes, 2026-06-02) explicitly
 
 ## Resolved Concerns
 
-(No resolved concerns yet.)
+### C-08: Entire governance corpus exists only as untracked files in a zero-commit repository — RESOLVED
+
+| Field | Value |
+|-------|-------|
+| ID | C-08 |
+| Resolved | 2026-06-12 |
+| Resolution | Initial commit `7d63643` created with the full corpus (README, docs/, reports/) and pushed to `git@github.com:views-platform/views-appwrite.git` (private repo, branch `main`). |
 
 ---
 
