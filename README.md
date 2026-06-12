@@ -323,7 +323,7 @@ This means:
 
 4. **Write tests** against the decomposed modules. Unit tests mock the Appwrite SDK. One integration test file connects to a real Appwrite instance (skipped unless `APPWRITE_TEST_ENDPOINT` is set).
 
-5. **Publish to GitHub** as `prio-data/views-appwrite` (or `views-platform/views-appwrite` depending on org preference). Tag `v0.1.0`. Consumers can install via `pip install git+https://github.com/prio-data/views-appwrite.git@v0.1.0`.
+5. **Publish to GitHub** as `views-platform/views-appwrite` (org decided 2026-06-12; repository created). Tag `v0.1.0`. Consumers can install via `pip install git+https://github.com/views-platform/views-appwrite.git@v0.1.0`.
 
 **Deliverable:** `pip install views-appwrite` works. The package passes its own test suite. No other repos are modified yet.
 
@@ -338,7 +338,7 @@ This means:
 1. **Add dependency** to `views-faoapi`'s `pyproject.toml`:
    ```toml
    dependencies = [
-       "views-appwrite @ git+https://github.com/prio-data/views-appwrite.git@v0.1.0",
+       "views-appwrite @ git+https://github.com/views-platform/views-appwrite.git@v0.1.0",
        # ... existing deps
    ]
    ```
@@ -392,7 +392,7 @@ This means:
 
 1. **Add dependency** to `views-pipeline-core`'s build config (poetry or hatchling, depending on what they use):
    ```
-   views-appwrite @ git+https://github.com/prio-data/views-appwrite.git@v0.1.0
+   views-appwrite @ git+https://github.com/views-platform/views-appwrite.git@v0.1.0
    ```
 
 2. **Update `modules/datastore/datastore.py`:**
@@ -462,6 +462,8 @@ This means:
 
 ## SDK Compatibility
 
+> **⚠ Known stale (2026-06-12):** this section predates reality — the Appwrite Python SDK is at major **20** on PyPI, `views-faoapi` pins `appwrite==19.2.0` exactly per its ADR-019 (2026-05-29), and SDK 19.2 deprecates `databases.list_documents()` (5 call sites slated for extraction into `MetadataManager`). Do **not** copy the `>=5.0.0` pin below. See risk register C-17; full reconciliation deferred until the in-flight work on adjacent repos settles.
+
 The Appwrite Python SDK had a breaking change between versions 13 and 14:
 
 | Aspect | SDK 13 (and earlier) | SDK 14+ |
@@ -523,6 +525,8 @@ A single `test_integration.py` that connects to a real Appwrite instance and exe
 8. Verify bucket is clean
 
 Skipped in CI via `@pytest.mark.skipif(not os.getenv("APPWRITE_TEST_ENDPOINT"))`. Run manually before releases.
+
+**Isolation rule:** `APPWRITE_TEST_ENDPOINT` must reference a dedicated test project — never the production project (the endpoint/project shown in the config example above is production). The Phase-1 integration-test fixture must refuse to run against the production project ID (risk register C-21).
 
 ### End-to-end test (run manually after full migration)
 
@@ -601,7 +605,8 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 4 | 2026-06-01 | Replace `path_manager` with `cache_dir: Optional[Path]` | Removes coupling to `ModelPathManager` (a pipeline-core concept). Consumers derive `cache_dir` from whatever path manager they use. |
 | 5 | 2026-06-01 | Migrate `views-faoapi` first, then `views-pipeline-core` | faoapi is under our direct control, is in shadow deployment (low risk), and was the extraction source. Pipeline-core requires coordination with another maintainer. |
 | 6 | 2026-06-01 | Keep `PredictionSaver` protocol and saver implementations in pipeline-core | These are pipeline orchestration concepts (format selection, graceful degradation policy). They happen to use Appwrite but are not about Appwrite. |
-| 7 | 2026-06-01 | Broad SDK pin (`appwrite>=5.0.0`) instead of exact pin | The compat layer handles SDK differences at runtime. Consumers who need a specific version can override. |
+| 7 | 2026-06-01 | Broad SDK pin (`appwrite>=5.0.0`) instead of exact pin | The compat layer handles SDK differences at runtime. Consumers who need a specific version can override. **Stale — see the SDK Compatibility banner and risk register C-17 before reusing this decision.** |
+| 8 | 2026-06-12 | Repository created at `views-platform/views-appwrite`; governance scaffolded (ADRs 000–010, contributor protocols, risk register) ahead of any extraction trigger. Phase 1 start is **deferred** pending in-flight work on adjacent repositories. | Records the honest current state: none of the §Datafactory triggers has clearly fired; the hold recommendation stands until upstream work settles. Resolves register C-11. |
 
 ---
 
