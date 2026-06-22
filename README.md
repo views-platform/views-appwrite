@@ -607,6 +607,7 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 6 | 2026-06-01 | Keep `PredictionSaver` protocol and saver implementations in pipeline-core | These are pipeline orchestration concepts (format selection, graceful degradation policy). They happen to use Appwrite but are not about Appwrite. |
 | 7 | 2026-06-01 | Broad SDK pin (`appwrite>=5.0.0`) instead of exact pin | The compat layer handles SDK differences at runtime. Consumers who need a specific version can override. **Stale — see the SDK Compatibility banner and risk register C-17 before reusing this decision.** |
 | 8 | 2026-06-12 | Repository created at `views-platform/views-appwrite`; governance scaffolded (ADRs 000–010, contributor protocols, risk register) ahead of any extraction trigger. Phase 1 start is **deferred** pending in-flight work on adjacent repositories. | Records the honest current state: none of the §Datafactory triggers has clearly fired; the hold recommendation stands until upstream work settles. Resolves register C-11. |
+| 9 | 2026-06-22 | Stay **parked** despite the sibling leaf `views-frames` shipping `v1.0.0` to PyPI. Adopt `views-frames` as the **scaffold template / proof-of-pattern** for this repo's eventual Phase 1, but do **not** start extraction and do **not** add `views-frames` as a dependency. | `views-frames` (numpy-only data-contract leaf, `views-platform` org) executed exactly this repo's extract→publish→shim playbook end-to-end — de-risking it and providing a copyable scaffold (hatchling+uv, `requires-python>=3.10`, MIT, single-dep + optional extras behind submodules, `type-floor` CI job, `py.typed`, in-package conformance suite, `GOVERNANCE.md` with a versioned conformance floor). But its publication is **not** one of the §Datafactory triggers, so the hold stands. The two are **sibling leaves**: neither imports the other; frame↔store integration is a *consumer* saver concern (pipeline-core/faoapi), never code in this repo. See `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`. |
 
 ---
 
@@ -642,3 +643,39 @@ Start this work when any of these happen:
 - **Keep this README as-is.** It's a good plan document. When the trigger fires, open it and start Phase 1.
 - **Track the trigger conditions.** If someone proposes cloning faoapi for a new stakeholder, point them here first. If an SDK upgrade is discussed, check this document.
 - **Don't let the copies drift further.** If you fix a bug in one Appwrite client, note whether the other copy has the same bug. If it does, fix both -- but don't use that as justification to extract the package immediately. Two coordinated fixes are cheaper than a premature extraction.
+
+### Update 2026-06-22: `views-frames` 1.0.0 shipped — the sibling-leaf precedent
+
+The platform's other root-of-the-DAG leaf, **`views-frames`** (the immutable
+array+identifier data contract), is now **live on PyPI at `v1.0.0`**
+(`pip install views-frames`; numpy-only, MIT, `views-platform` org). It went design →
+implemented → published using *this repo's own playbook* (extract a duplicated leaf
+from `views-pipeline-core`/`views-faoapi` → publish → migrate consumers behind
+re-export shims). What that means here:
+
+- **It does not change this repo's integration surface.** `views-appwrite` and
+  `views-frames` are **sibling leaves**: neither imports the other. A serialized frame
+  is just opaque bytes + an opaque metadata dict to the Appwrite client, so there is
+  **no frame-aware code to write here**. The bridge (serialize a frame → upload bytes,
+  and the inverse) lives in *consumer* savers (pipeline-core's `AppwriteSaver`, faoapi),
+  not in either leaf. (Full analysis:
+  `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`.)
+- **It is a scaffold template, not a trigger.** Publication is *not* one of the
+  §Triggers above, so the hold stands (Decision Log #9). But `views-frames` 1.0.0 now
+  answers every open scaffold question this repo had — copy its `pyproject.toml`,
+  CI matrix + `type-floor` job, `py.typed`, in-package conformance suite, and
+  `GOVERNANCE.md` (versioned conformance floor + semver-for-a-contract), swapping
+  numpy→Appwrite SDK and frames→storage client. This materially lowers Phase 1 cost
+  whenever a real trigger fires.
+- **Watch the consumer-migration window.** As pipeline-core/faoapi open up to adopt
+  `views-frames` (shims, pandas→frame), the same files that hold their duplicated
+  Appwrite code are being touched. If a real trigger (a World Bank/UNHCR API clone, or
+  an SDK bump) lands in that window, co-sequencing the Appwrite extraction with the
+  frames adoption avoids opening those files twice — *that* is the moment to revisit
+  the hold, not the frames release on its own.
+- **Integration caveats to carry forward** (consumer-side, when both leaves are wired):
+  the flat-columnar `io/arrow` single-blob form is the one that crosses to the store
+  (`upload()` takes one file; the native npz form is multi-file); arrow writes must be
+  byte-stable for content-hash dedup; and `views-frames` 1.0.0 keeps a `numpy>=1.26`
+  floor whose test suite was red at `1.26.4` in review — verify before a consumer
+  co-pins frames and (eventually) this client to a shared numpy.
