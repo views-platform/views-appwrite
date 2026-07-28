@@ -1,0 +1,125 @@
+# ============================================================================
+# VIEWS Appwrite-seam coordinate registry — THE canonical source (PLATFORM-001 §4)
+# ============================================================================
+# Governed by PLATFORM-001 (this directory). Rules:
+#   - Consumers READ/VALIDATE against this file and pass values in explicitly.
+#     Never copy it into a repo; never bake a value into code, an example, or a
+#     dataclass default. Reference by pinned URL/commit.
+#   - Coordinates are NON-SECRET identifiers. Secrets appear only as SLOTS
+#     (name + required scopes) — NEVER as values. No exceptions, ever.
+#   - class is DECLARED here, never inferred from a name's prefix or carrier.
+#   - Deliberately minimal (dómr_endurmat E3): no tooling, no generators,
+#     no CI attachment. Just the file, owned and versioned.
+# Owner: the views-appwrite repo (seam home). Operator (keys, console,
+# rotation): Simon Polichinel von der Maase.
+# Changes: by PR to this file + PLATFORM-001 version bump. Rotation of a
+# coordinate is a platform event — announce before merging.
+
+[meta]
+contract = "PLATFORM-001"
+version = "1.0.0"
+ratified = "2026-07-28"                    # þing-01, ratified as amended
+
+# ---------------------------------------------------------------- connection
+[connection.APPWRITE_ENDPOINT]
+class = "connection"
+value = "https://fra.cloud.appwrite.io/v1"
+
+[connection.APPWRITE_DATASTORE_PROJECT_ID]
+class = "connection"
+value = "691b14fc0024f568fb42"
+
+# ------------------------------------------------------------------- targets
+[target.APPWRITE_PROD_FORECASTS_BUCKET_ID]
+class = "target"
+value = "production_forecasts"
+
+[target.APPWRITE_PROD_FORECASTS_BUCKET_NAME]
+class = "target"
+value = "Production Forecasts"
+
+[target.APPWRITE_PROD_FORECASTS_COLLECTION_ID]
+class = "target"
+value = "production_forecasts"
+
+[target.APPWRITE_PROD_FORECASTS_COLLECTION_NAME]
+class = "target"
+value = "Production Forecasts"
+
+[target.APPWRITE_METADATA_DATABASE_ID]
+class = "target"
+value = "file_metadata"
+
+[target.APPWRITE_METADATA_DATABASE_NAME]
+class = "target"
+value = "File Metadata"
+
+[target.APPWRITE_UNFAO_BUCKET_ID]
+class = "target"
+value = "unfao_bucket"
+
+[target.APPWRITE_UNFAO_BUCKET_NAME]
+class = "target"
+value = "UNFAO Bucket"
+
+[target.APPWRITE_UNFAO_COLLECTION_ID]
+class = "target"
+value = "unfao"
+
+[target.APPWRITE_UNFAO_COLLECTION_NAME]
+class = "target"
+value = "UNFAO File Metadata"
+
+# ------------------------------------------------------- secret SLOTS (no values!)
+[secret.APPWRITE_DATASTORE_API_KEY]
+class = "secret"
+carrier = "env var (also travels as the X-API-Key request header into views-faoapi)"
+issued_by = "operator"
+note = """Legacy single key (scopes unknowable from evidence — þing-01 S22).
+To be RETIRED by reissuance under the three-tier model (PLATFORM-001 §5):
+read / write-object / provision, each its own named slot below."""
+
+[secret.APPWRITE_READ_API_KEY]
+class = "secret"
+status = "planned — operator issues (D4)"
+scopes = "files.read, documents.read, databases.read"
+
+[secret.APPWRITE_WRITE_API_KEY]
+class = "secret"
+status = "planned — operator issues (D4)"
+scopes = "files.read, files.write, documents.read, documents.write"
+
+[secret.APPWRITE_PROVISION_API_KEY]
+class = "secret"
+status = "planned — operator issues (D4). NEVER given to a long-running process."
+scopes = "buckets.write, databases.write, collections.write, attributes.write"
+
+# ------------------------------------- explicit exclusions (listed, not governed)
+[excluded.APPWRITE_UNFAO_APPROVED_FILE_IDS]
+class = "policy"
+owning_contract = "views-models ADR-017 (eligibility)"
+note = "Eligibility DATA, not configuration — despite the prefix (D3)."
+
+[excluded.APPWRITE_UNFAO_QUARANTINED_FILE_IDS]
+class = "policy"
+owning_contract = "views-models ADR-017 (eligibility)"
+
+[excluded.netrc_entry]
+class = "secret (carrier: ~/.netrc)"
+owning_contract = "views-datafactory ADR-026 + credential_setup.md"
+note = "The sole co-resident secret a full delivery runtime needs besides the Appwrite key."
+
+[excluded.harvest_tokens]
+names = ["ACLED_PASSWORD", "GDL_API_TOKEN", "UCDP_API_TOKEN"]
+owning_contract = "views-datafactory ADR-026"
+note = "Needed only where harvests run. NO consumer runtime needs them (þing-01 S26)."
+
+[excluded.legacy_store_and_wandb]
+note = "views-forecasts store credentials (retire with the store) and W&B keys — out of scope, named."
+
+# ------------------------------------------------------------------ test column
+[test_environment]
+status = "none"
+fact = """No non-production Appwrite project exists (þing-01 S23, five-seat testimony).
+Until the operator creates one: integration tests against the production project are
+FORBIDDEN by PLATFORM-001; read-only preflight validation is the only permitted live check."""
