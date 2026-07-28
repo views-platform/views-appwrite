@@ -264,15 +264,22 @@ The package exposes a small, stable API. Everything else is internal.
 # What consumers import:
 from views_appwrite import AppwriteConfig, DatastoreManager, OperationResult
 
-# Construct config (consumer provides all values -- no hidden env vars)
+# Construct config (consumer provides all values -- no hidden env vars).
+#
+# The values below are PLACEHOLDERS. Real coordinates come from the canonical
+# registry -- docs/ADRs/platform/coordinate_registry.toml, governed by
+# PLATFORM-001 -- read at a pinned commit and passed in explicitly. Never copy
+# a coordinate out of this example, out of a .env, or out of a dataclass
+# default. Credentials come from the operator-issued key for your tier
+# (read / write-object / provision), never from this file.
 config = AppwriteConfig(
-    endpoint="https://fra.cloud.appwrite.io/v1",
-    project_id="691b14fc0024f568fb42",
-    credentials=api_key,
-    bucket_id="unfao_bucket",
-    collection_id="unfao",
-    database_id="file_metadata",
-    cache_dir=Path("/tmp/appwrite_cache"),
+    endpoint=registry["connection"]["APPWRITE_ENDPOINT"],        # e.g. https://<region>.cloud.appwrite.io/v1
+    project_id=registry["connection"]["APPWRITE_DATASTORE_PROJECT_ID"],
+    credentials=api_key,                                         # from the environment slot; never hardcoded
+    bucket_id="<bucket-id-from-registry>",
+    collection_id="<collection-id-from-registry>",
+    database_id="<database-id-from-registry>",
+    cache_dir=Path("/tmp/appwrite_cache"),                       # behavioral: local, never a cross-repo agreement
 )
 
 # Use the facade
@@ -526,7 +533,14 @@ A single `test_integration.py` that connects to a real Appwrite instance and exe
 
 Skipped in CI via `@pytest.mark.skipif(not os.getenv("APPWRITE_TEST_ENDPOINT"))`. Run manually before releases.
 
-**Isolation rule:** `APPWRITE_TEST_ENDPOINT` must reference a dedicated test project — never the production project (the endpoint/project shown in the config example above is production). The Phase-1 integration-test fixture must refuse to run against the production project ID (risk register C-21).
+> **⚠ BLOCKED (2026-07-28, þing-01):** the integration lifecycle described above **must not be run
+> today.** `PLATFORM-001` §7 **forbids integration tests against the production project**, and
+> þing-01 established as settled fact (sáttmál S23, five seats testifying) that **no non-production
+> Appwrite project exists**. Until the operator creates one (issue #9), the only permitted live
+> check is **read-only** preflight validation. This section describes the intended Phase-1 strategy,
+> not a runnable procedure.
+
+**Isolation rule:** `APPWRITE_TEST_ENDPOINT` must reference a dedicated test project — never the production project. The Phase-1 integration-test fixture must refuse to run against the production project ID (risk register C-21) — a prohibition in prose is not a fixture that refuses, so the guard is still owed; it is deferred with the scaffold (issue #8).
 
 ### End-to-end test (run manually after full migration)
 
@@ -608,6 +622,7 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 7 | 2026-06-01 | Broad SDK pin (`appwrite>=5.0.0`) instead of exact pin | The compat layer handles SDK differences at runtime. Consumers who need a specific version can override. **Stale — see the SDK Compatibility banner and risk register C-17 before reusing this decision.** |
 | 8 | 2026-06-12 | Repository created at `views-platform/views-appwrite`; governance scaffolded (ADRs 000–010, contributor protocols, risk register) ahead of any extraction trigger. Phase 1 start is **deferred** pending in-flight work on adjacent repositories. | Records the honest current state: none of the §Datafactory triggers has clearly fired; the hold recommendation stands until upstream work settles. Resolves register C-11. |
 | 9 | 2026-06-22 | Stay **parked** despite the sibling leaf `views-frames` shipping `v1.0.0` to PyPI. Adopt `views-frames` as the **scaffold template / proof-of-pattern** for this repo's eventual Phase 1, but do **not** start extraction and do **not** add `views-frames` as a dependency. | `views-frames` (numpy-only data-contract leaf, `views-platform` org) executed exactly this repo's extract→publish→shim playbook end-to-end — de-risking it and providing a copyable scaffold (hatchling+uv, `requires-python>=3.10`, MIT, single-dep + optional extras behind submodules, `type-floor` CI job, `py.typed`, in-package conformance suite, `GOVERNANCE.md` with a versioned conformance floor). But its publication is **not** one of the §Datafactory triggers, so the hold stands. The two are **sibling leaves**: neither imports the other; frame↔store integration is a *consumer* saver concern (pipeline-core/faoapi), never code in this repo. See `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`. |
+| 10 | 2026-07-28 | Activation of the shared client remains **deferred**, now under a **platform-ratified two-component trigger**. **Demand:** a second incident whose root cause is auth/provision handling in a duplicated client path — *whether by divergence between copies or by a defect common to them*. **Supply:** `views-pipeline-core`'s **C-221** decomposition freeing the auth/config seam. **Either component alone triggers a revisit; both together activate Phase 1.** The three repo-local triggers in §Datafactory below are **retained and remain independently sufficient**; composition is: activate on `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)`, revisit on `demand ∨ supply`. | Ratified by **þing-01** (the cross-repo assembly on identity, secrets and configuration: `orð_dómr.md` D8 as amended by `dómr_endurmat.md`; six seats, human sign-off Simon Polichinel von der Maase). This **supersedes the unilateral character** of the hold recorded in #8/#9 — the deferral now belongs to the platform, not to this repo alone, and cannot be reversed here without returning to the þing. The demand component was deliberately widened from its original "divergence between copies" wording: þing-01 sáttmál S8 (amended) settled that the two lineages **do not diverge** on their write paths — they share the same defect — so a divergence-only trigger could not fire where the evidence actually lives. Recording it here also keeps **C-11** closed: no posture change of this repo goes unrecorded. |
 
 ---
 

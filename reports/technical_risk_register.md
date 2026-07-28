@@ -4,10 +4,12 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-06-12                           |
-| Total Concerns    | 25                                   |
-| Open Concerns     | 20                                   |
+| Last Updated      | 2026-07-28                           |
+| Total Concerns    | 28                                   |
+| Open Concerns     | 23                                   |
 | Resolved Concerns | 5                                    |
+| Disagreements     | 4 (3 open, 1 resolved — D-02)        |
+| Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
 ---
 
@@ -30,11 +32,19 @@ Added by `review-rr` strategic review (2026-06-12). Clusters group open concerns
 |---------|-----------|---------|--------------|--------------|
 | A. Corpus freshness | External facts snapshotted in prose, never re-verified | C-09, C-17 (evidence also in C-03, C-05) | 2 | Reconcile roadmap with reality once upstream work settles; extend `validate_docs.sh` past `ADR-00[0-9]` |
 | B. Unratified public contracts | Interfaces named but contracts never written (ADR-012/014 and CICs missing) | C-04, C-12, C-15, C-19, C-20, C-24, C-25 (+D-01, D-03) | 2 | One contract-writing session: ADR-012 (config schema), ADR-014 (exception taxonomy, envelope rules), `DatastoreManager` CIC |
-| C. Inherited behavior vs fail-loud constitution | Source-repo behaviors conflict with ADR-003/008; identified but unadjudicated | C-06, C-13, C-14 (+D-02) | 2 | Fold into ADR-014; amend ADR-008:38 per D-02 |
+| C. Inherited behavior vs fail-loud constitution | Source-repo behaviors conflict with ADR-003/008 | C-06, C-13, C-14 | 2 | **Doctrine settled 2026-07-28** (þing-01: ADR-008:38 amended, D-02 resolved, `PLATFORM-001` §6 ratified). Remaining work is *code-side and external* — the two client lineages ship raise-by-default; C-14's retry policy still needs ADR-014 |
+| F. Platform seam contract — open items (new 2026-07-28) | The seam contract this repo now hosts names two hard problems it did not solve | C-27 (O1: secret-value rotation has no propagation mechanism), C-28 (O2: the FAO external-caller credential is unmodelled) | 2 | Not this repo's to fix: C-27 is an operator design task (issue #9), C-28 is views-faoapi + operator (faoapi #279). This repo tracks them because it hosts `PLATFORM-001` |
 | D. Extraction inputs unsecured | Phase 1 inputs (source SHAs, divergence audit, source governance) uncaptured | C-03, C-05, C-07, C-16 | 2 | Divergence-audit artifact as the first act of Phase 1, when upstream settles |
-| E. Scaffold mechanics unowned | No document owns sub-architectural setup decisions | C-02, C-10, C-18 | 3 | One scaffold session: `pyproject.toml`, CI workflow, `.gitignore`, ADR-numbering alignment |
+| E. Scaffold mechanics unowned | No document owns sub-architectural setup decisions | C-02, C-18 (C-10 resolved 2026-07-28) | 3 | One scaffold session: `pyproject.toml`, CI workflow, ADR-numbering alignment. **Deferred by ratified decision** (`dómr_endurmat` E6, issue #8, trigger: operator ∧ test project) — the scaffold was priced against hosting the reference validator; the validator deferred, so the scaffold defers with it |
 
-Standalone: C-01 (dissolves when the scaffold exists), C-21 (documentation half resolved 2026-06-12; fixture guard pending Phase 1).
+Standalone: C-01 (dissolves when the scaffold exists), C-21 (README instance closed 2026-07-28; pipeline-core's dataclass-defaults instance and the fixture guard remain), C-04's re-derived remainder, C-26 (external, operational).
+
+**Note on Cluster E and D-04 (2026-07-28):** the þing briefly approved this repo's scaffold, then
+**deferred it again** on adversarial review — the scaffold's justification was hosting the reference
+validator, and when the validator deferred behind *operator ∧ test project*, its justification went
+with it. So **C-02 and C-18's open half stay open, and D-04 stays unresolved**: they were priced
+against hosting code, and no code is hosted. This repo reverts to its constitutional default —
+parked, with one more recorded trigger.
 
 ---
 
@@ -186,7 +196,28 @@ ADR-000 and ADR-010 both describe 010+ as the project-specific range, while `doc
 
 `upload()` performs two separate Appwrite writes — file to storage, then a metadata document — and `delete()` the inverse. A failure between them leaves either an orphaned file invisible to `search()`/`get_latest()` (consumers silently read older "latest" data) or, with the reverse order, metadata pointing at a nonexistent file. ADR-008 explicitly names partial metadata writes as a key danger, but no document specifies ordering, compensation, or reconciliation. Tier 2 (bordering 1) because the orphaned-file case produces stale downstream reads with no error signal; held at 2 because a `list_all()`-based reconciliation can detect it and the failure requires a mid-operation fault. No mitigation currently exists.
 
-See also C-06 (the consumer-side catch-all that would mask the partial failure).
+**Update (2026-07-28, þing-01 / issue #6) — status changes from *anticipated* to *OBSERVED*.**
+This entry was registered on 2026-06-12 as a design hazard about code that did not exist. þing-01
+produced the incident. On run-0 (2026-07-27), views-postprocessing's delivery wrote a file to
+`unfao_bucket` whose metadata document was **rejected for exceeding the 255-character `description`
+limit**; the store **logged the failure and reported success upward** (orð_09 §3). That is exactly
+this entry's first failure mode — an orphaned file invisible to `search()`/`get_latest()`, with no
+error signal — realised in production, on the first real delivery, without anyone having to
+contrive it.
+
+Three consequences. **(1) The predicted mechanism is confirmed**, including the part that made it
+Tier 2: the failure was *silent upward*, so the caller believed the write succeeded.
+**(2) A consumer-side partial mitigation now exists** — views-postprocessing's PR #132 raises on
+partial success at its upload port — which narrows but does not close the entry, since the
+mitigation lives in one consumer rather than in the shared write path. **(3) The fix is now named
+and ratified:** *a half-succeeded write must raise* (ADR-008 §1 as amended 2026-07-28;
+`PLATFORM-001` §6). The entry stays **open at Tier 2** because the ordering/compensation semantics
+this repo owes — write order, orphan reconciliation, what `OperationResult` reports on partial
+failure — are still unwritten and belong in the `DatastoreManager` CIC (C-20) before any method
+body exists.
+
+See also C-06 (the consumer-side catch-all that would mask the partial failure), C-20 (the return
+contract that must encode partial-failure semantics), and D-02 (resolved — the doctrinal half).
 
 ---
 
@@ -260,6 +291,45 @@ The roadmap's own R1 mitigation — a public-method diff of the two source files
 **Falsification round-2 evidence (2026-06-12, probe P1):** the unconsumed extraction inputs include *governance*, not just code. The source repos carry intent contracts for the very classes being extracted — faoapi `docs/CICs/AppWriteFileManager.md` and `PredictionStoreManager.md`; pipeline-core `documentation/CICs/AppWriteFileModule.md` and `DatastoreModule.md` — plus ≥19 faoapi ADRs and a faoapi risk register with ≥23 entries, none referenced by the roadmap. The Phase-1 plan to author views-appwrite's CICs from scratch (ADR-006 Notes) ignores four existing contracts that should seed them. The divergence audit should therefore cover both code *and* the source repos' ADR/CIC/register corpus.
 
 See also C-05 (ongoing drift between the copies; this entry covers the extraction-process exposure).
+
+---
+
+**Re-derivation (2026-07-28, þing-01 / issue #6) — the premise was stale; the mechanism survives and
+sharpens.** views-pipeline-core gave direct testimony on its own config object (orð_08 §1, settled as
+sáttmál S24), checked against code on disk. It replaces two of this entry's factual claims.
+
+**(a) The timeout premise is retired — and what replaces it is worse.** This entry asserted that
+pipeline-core "has `timeout_seconds` but not `connect_timeout_seconds`." False: a full-text search of
+both client modules returns **zero hits for `timeout`**. `AppwriteConfig` (`file.py:218-296`) has **no
+timeout field of any kind**, so every Appwrite call rides the SDK's transport defaults. The
+divergence is not *mismatched* fields — it is **one side having no deadline at all**. This does not
+weaken C-04, it sharpens its Tier-2 grounding: the silent path was never the constructor `TypeError`
+but *"the superset config quietly redefines a field's semantics."* Under the true premise, a superset
+that adds timeouts **introduces a deadline where none existed** — calls that today hang forever begin
+to fail — arriving as a behaviour change wearing a field addition's costume, in a version bump.
+The *operational* half of that fact (pipeline-core has no deadline on any Appwrite call **today**,
+independent of any merge) is not a field-divergence risk and would be buried here; it is split out
+as **C-26**.
+
+**(b) `path_manager` is confirmed live, and R6 is misclassified.** Live at `file.py:286` as
+`path_manager: ModelPathManager = None` — annotated non-Optional yet defaulted `None`, *the
+annotation lies* — doing three jobs, with a commented-out type check at `file.py:1621` fossilising
+the author's own doubt. The roadmap's **R6** (`README.md:578-582`) calls the `path_manager`→
+`cache_dir` migration *"a mechanical change."* That is now demonstrably wrong. Cache-dir resolution
+(`file.py:1654`) is mechanical. **Metadata name-injection is not:** `datastore.py:392-393` auto-adds
+`filters["name"] = model_path.model_name` to metadata queries, and the only escape is attribute
+surgery on a live object (`datastore.model_path = None`) — the manoeuvre that snagged the `un_fao`
+contract read during run-0. Removing `path_manager` therefore **removes behaviour consumers depend on
+or work around**, silently, at the query layer. **R6 is re-recorded as having a mechanical half and a
+semantic half**, and the semantic half is a migration blocker requiring its own contract clause.
+
+**(c) What the þing dissolved.** With `PLATFORM-001` §4's registry supplying coordinates and §7's
+in-process preflights validating them at entry, the field-merge risk **shrinks to behavioural fields
+only** — connection and target fields stop being a merge question because neither config *originates*
+them any more. C-04 is therefore **half-answered**: the field-set question is closed, the coordinate
+half is superseded by the registry, and what remains open is the semantic merge of behavioural fields
+plus (b)'s name-injection blocker. **Tier stays 2.** Cross-refs: **C-26** (the no-deadline fact),
+`PLATFORM-001` §3-§4.
 
 ---
 
@@ -343,6 +413,35 @@ The documented live integration lifecycle creates and deletes buckets and files,
 
 **Update (2026-06-12):** the isolation rule is now stated in the README Testing Strategy (stub green); the fixture-level guard (refuse to run against the production project ID) remains pending Phase 1, so this entry stays open at reduced exposure.
 
+**Amendment (2026-07-28, þing-01 / issue #6) — generalised to a hazard class, and one instance
+closed.** This entry described a single artifact (a copyable README example). þing-01 showed it is
+an instance of a recurring pattern, now named:
+
+> **Hazard class: *production coordinates reachable without a deliberate choice*.**
+
+Two recorded instances, with different vectors and different severities:
+
+| # | Instance | Vector | Status |
+|---|---|---|---|
+| i | this repo's `README.md` config example carried the live endpoint + project id | requires a human to **copy** it | **CLOSED 2026-07-28** — replaced with placeholders pointing at `coordinate_registry.toml` |
+| ii | `views-pipeline-core`'s `AppwriteConfig` dataclass **defaults** (`bucket_id = "production_forecasts"`, `file.py:276` ff.) | applies when a caller **omits** the field | open; owner committed to stripping them (orð_08 §1, its ledger row C3) |
+
+Instance (ii) is strictly the more dangerous of the two, and the distinction is worth keeping
+because it orders the fix: **a copyable example needs a human to choose wrongly; a silent default
+needs a human to choose nothing at all.** There is no moment at which anyone decides.
+
+**The structural fix for the whole class is `PLATFORM-001` §4:** one owned, versioned registry is
+where coordinates come from, so neither an example nor a default is ever where anyone learns a
+bucket id. Every seat's copy-chain scar traced to the same absence.
+
+**This entry stays open**, now tracking two things rather than the (closed) example: (1) instance
+(ii) until pipeline-core strips its defaults; (2) **the fixture-level guard** — a test fixture that
+refuses to run against the production project id — deferred with the scaffold (issue #8, trigger:
+operator ∧ test project). Note that `PLATFORM-001` §7 now **forbids integration tests against the
+production project outright** until a test project exists, which lowers the exposure to
+documentation-only but does not substitute for the guard: a prohibition in prose is not a fixture
+that refuses. Cross-refs: `PLATFORM-001` §4/§7, C-01, issue #8.
+
 ---
 
 ### C-24: `get_latest()` resolves "latest" by server clock — concurrent uploads make the result silently ambiguous
@@ -374,6 +473,88 @@ See also C-12 (partial-failure orphans interact with "latest" selection), C-14 (
 The design's metadata contract is an opaque `Dict[str, Any]` passed through unmodified (Decision D-3) — yet the plan also retains a generic `FileMetadata` class with no domain fields and no described purpose. Two representations of the same concept with no stated division of labor is precisely what ADR-001's non-entity clause forbids ("objects that mix or duplicate ontological roles"), and the class invites exactly the field-accretion drift (C-05 history) that motivated the opaque-dict decision. Tier 4: a design-clarity issue resolvable by one decision before any code depends on it. Surfaced in the expert review (GoF and Hickey perspectives) but not previously registered.
 
 See also D-01 (module granularity) and C-04 (the config-side analogue of competing partial specifications).
+
+---
+
+### C-26: No timeout or deadline exists on any `views-pipeline-core` Appwrite call
+
+| Field | Value |
+|-------|-------|
+| ID | C-26 |
+| Tier | 3 |
+| Source | þing-01 / orð_08 §1 (views-pipeline-core þingmaðr testimony), settled as sáttmál S24(a) (2026-07-28) |
+| Trigger | When any timeout field is introduced into either source config — or into the extracted `AppwriteConfig` — treat it as a **behaviour change, not a field addition**: enumerate the call paths that currently rely on unbounded waits, and drill the hang path before declaring the change done. |
+| Location | external: `views-pipeline-core/modules/appwrite/file.py` (`AppwriteConfig`, lines 218-296 — no `timeout` symbol anywhere in the module), `modules/datastore/datastore.py`; every Appwrite HTTP call made through them |
+
+A full-text search of both pipeline-core client modules returns **zero hits for `timeout`**: the
+config object has no timeout field of any kind, so every Appwrite HTTP call rides the SDK's
+transport defaults — and the underlying `requests` default is **no timeout at all**. A hung Appwrite
+call inside a delivery therefore has **no deadline**: it does not fail, it waits, and the pipeline
+stage holding it waits with it.
+
+This is split out of **C-04** deliberately. C-04 is about *merging two config objects*; this is a
+live property of one of them today, independent of whether extraction ever happens, and folding it
+into a migration-risk entry would bury an operational exposure inside a planning concern. Tier 3
+rather than 2: it degrades loudly (a stuck run is visible, if slowly) rather than corrupting data,
+and no incident has yet been attributed to it. It borders Tier 2 in combination with **C-14** (no
+retry policy) — an unbounded wait plus naive retries is the shape of a coordinated stall against a
+shared endpoint.
+
+Registered here because the config merge is this repo's problem; **views-pipeline-core is registering
+its own instance** (its ledger row C4), since the exposure is live in its runtime now and does not
+wait for extraction. Cross-refs: C-04 (re-derivation §(a)), C-14.
+
+---
+
+### C-27: Rotating a secret *value* has no propagation mechanism (PLATFORM-001 open item O1)
+
+| Field | Value |
+|-------|-------|
+| ID | C-27 |
+| Tier | 2 |
+| Source | þing-01 adversarial re-weighing (`rýni`), ruled in `dómr_endurmat` E7-O1 (2026-07-28) |
+| Trigger | Before the first key reissuance under the three-tier model (`PLATFORM-001` §5), design the propagation path — secret store, injection at launch, or per-process slots — or the cutover is manual multi-environment surgery performed under time pressure. |
+| Location | `docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md` §9 (O1); the registry carries secret **slots**, never values |
+
+The contract this repo now hosts moves *coordinates* out of the copy-chain into an owned registry —
+but the **key value** remains fanned into every process environment by copy and borrow (þing-01
+S22: one physical key, propagated). `PLATFORM-001` §5 names the operator as rotation owner, which
+assigns a responsibility while designing **no mechanism**. A first real rotation today is manual
+surgery across every environment that holds a copy, with no way to verify completeness — and the
+failure mode of an incomplete rotation is a process authenticating with a revoked key, which fails
+loudly, or worse, a process still holding a key that was meant to be revoked, which fails not at all.
+
+Recorded at Tier 2 on this register because `PLATFORM-001` §9 assigns O1 to *"the seam-home
+register"* and this repo is the seam home. **This repo cannot fix it** — it is an operator design
+task (issue #9) plus a small mechanism decision the þing deliberately declined to pre-judge. Until
+it closes, `PLATFORM-001` §5 declares rotation **manual and operator-coordinated** rather than
+pretended-solved. Cross-ref: C-28 (the same gap at its highest-stakes instance).
+
+---
+
+### C-28: The FAO external-caller credential is unmodelled (PLATFORM-001 open item O2)
+
+| Field | Value |
+|-------|-------|
+| ID | C-28 |
+| Tier | 2 |
+| Source | þing-01 adversarial re-weighing (`rýni`), ruled in `dómr_endurmat` E7-O2 (2026-07-28) |
+| Trigger | Before any additional external party (World Bank, UNHCR, or a second FAO consumer) is issued a key, settle: who issues, at what scope, with what rotation story — and whether faoapi should authenticate the caller and then act under **its own read credential** rather than re-using the caller's. |
+| Location | `PLATFORM-001` §2 and §9 (O2); external: views-faoapi's `X-API-Key` validation path (`_validate_api_key` → `client.set_key(caller_key)`), views-faoapi #279 |
+
+þing-01 *recorded* the mechanism — an external caller presents `X-API-Key`, and faoapi re-uses that
+key to read the bucket (S4) — but never governed it. Nothing states who issues keys to external UN
+parties, under what scope, or how they rotate. And the re-use itself is a **confused-deputy
+pattern**: faoapi performs storage access under a credential supplied by the caller, so the caller's
+scope, not faoapi's policy, bounds what the read can reach.
+
+The adversarial pass called this the sharpest single finding in either `rýni`, on the grounds that
+**the highest-stakes key on the platform is the least-modelled one**. Registered here because this
+repo hosts the contract that names it; **owned by views-faoapi plus the operator**, not by this
+repo. It bears directly on this repo's eventual design: the extracted client's `AuthManager`
+hierarchy (ADR-001 Category 6) is where a "authenticate the caller, act under our own credential"
+split would have to be expressible, so O2's resolution is an input to Phase 1, not merely adjacent
+to it. Cross-refs: C-27 (rotation, same absence), `PLATFORM-001` §2/§5/§9.
 
 ---
 
@@ -419,7 +600,7 @@ See also D-01 (module granularity) and C-04 (the config-side analogue of competi
 | ID | D-04 |
 | Source | expert-review (2026-06-12) |
 | Perspectives | Beck (a walking skeleton — scaffold + CI + one passing compat test — should precede ~3,100 lines of binding documentation; feedback loops beat doctrine), Governance corpus position (the source copies diverged precisely from under-documentation; the constitution is the product the roadmap says is most at risk — see README R5/C-02) |
-| Resolution | Unresolved tension, accepted: governance landed first as a deliberate choice. Revisit if CIC/register/ADR maintenance falls behind code reality (cross-ref C-09's stale-gate risk). |
+| Resolution | Unresolved tension, accepted: governance landed first as a deliberate choice. Revisit if CIC/register/ADR maintenance falls behind code reality (cross-ref C-09's stale-gate risk). **Update 2026-07-28 (þing-01):** briefly resolved in Beck's favour — the verdict approved a scaffold commit (walking skeleton: `pyproject` + CI + a reference validator + tests), which would have closed C-02 and C-18's open half. The adversarial re-weighing then **deferred it back** (`dómr_endurmat` E6): the scaffold's whole justification was hosting the validator, and the validator deferred behind *operator ∧ test project*, so the skeleton has nothing to walk toward yet. **D-04 therefore stays open**, with its resolution now trigger-tied rather than merely undecided — which is a better state than it was in, since the condition under which Beck wins is now written down (issue #8). |
 
 ---
 
@@ -468,8 +649,8 @@ See also D-01 (module granularity) and C-04 (the config-side analogue of competi
 ## Register Conventions
 
 - **ID format:** `C-xx` for concerns, `D-xx` for disagreements. IDs are permanent — gaps in numbering indicate merged or resolved entries.
-- **Sources:** `repo-assimilation`, `expert-review`, `test-review`, `falsification-audit`, `clean-architecture-review`, `pr-review`, `tech-debt-audit`, `incident`, `manual`.
-- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed.
+- **Sources:** `repo-assimilation`, `expert-review`, `test-review`, `falsification-audit`, `clean-architecture-review`, `pr-review`, `tech-debt-audit`, `incident`, `manual`, **`þing-01`** (cross-repo assembly testimony — entries sourced here carry another seat's sworn account of its own code; treat the seat as the authority for its repo, and cite the `orð`/`sáttmál` item).
+- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. Two entries (C-10, D-02) are marked resolved **in place** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved.
 - **Header counts:** Manually maintained — update whenever a concern is added or resolved.
-- **Note:** Many concerns reference locations in external repos (`views-pipeline-core`, `views-faoapi`) because this repository is a roadmap for a package not yet extracted. Confirm those locations when extraction (Phase 1) begins.
+- **Note:** Many concerns reference locations in external repos (`views-pipeline-core`, `views-faoapi`) because this repository is a roadmap for a package not yet extracted. Confirm those locations when extraction (Phase 1) begins. **As of 2026-07-28 several are external by *ownership*, not merely by location** (C-13, C-26, C-27, C-28): this repo tracks them because it hosts `PLATFORM-001`, but cannot fix them — the fix belongs to a lineage owner or to the operator.
 - **Governed by:** ADR-010 (`docs/ADRs/010_technical_risk_register.md`).
