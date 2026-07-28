@@ -70,7 +70,7 @@ principles until they are closed. It is the operational counterpart to the roadm
 ### Positive
 - Forward-looking risks survive the planning→implementation gap and are re-checked when their triggers fire.
 - Deduplication and tiering keep the register honest and prioritisable.
-- The register is the seed of future project-specific ADRs (010+) when a risk graduates into a ratified decision.
+- The register is the seed of future project-specific ADRs (011+; three-tier numbering per ADR-000 as amended 2026-07-28) when a risk graduates into a ratified decision.
 
 ### Negative
 - Many entries reference external repos (`views-pipeline-core`, `views-faoapi`); those locations must be confirmed when extraction (Phase 1) begins.

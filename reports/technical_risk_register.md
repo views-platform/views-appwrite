@@ -6,8 +6,8 @@
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-06-12                           |
 | Total Concerns    | 25                                   |
-| Open Concerns     | 21                                   |
-| Resolved Concerns | 4                                    |
+| Open Concerns     | 20                                   |
+| Resolved Concerns | 5                                    |
 
 ---
 
@@ -169,6 +169,8 @@ See also C-02 (shared root cause: invariants asserted in prose with incomplete m
 | Location | `docs/ADRs/000_use_of_adrs.md:44` ("constitutional 000–009; project-specific 010+"), `docs/ADRs/README.md:9-13` (three tiers: 010 = governance, 011+ = project-specific), `docs/ADRs/010_technical_risk_register.md:73` ("project-specific ADRs (010+)") |
 
 ADR-000 and ADR-010 both describe 010+ as the project-specific range, while `docs/ADRs/README.md` introduces a three-tier scheme in which 010 is a distinct Governance tier and project-specific numbering starts at 011. The number 010 is already occupied by the risk-register ADR, so an author following ADR-000 literally would collide with it or misclassify the new ADR. Pure documentation drift with no correctness impact, but it sits in the artifact set whose stated purpose is preventing silent inconsistency.
+
+**Resolved (2026-07-28, þing-01 / issue #3):** the three-tier scheme adopted (constitutional 000–009; governance 010; project-specific 011+); `ADR-000:44` and `ADR-010:73` amended to match `docs/ADRs/README.md`. A fourth, prefixed cross-repo tier (`docs/ADRs/platform/`, `PLATFORM-NNN`) established for platform-seam contracts, so the seam ADR's identifier is unambiguous when cited from other repos — discharging þing-01 sáttmál S16(ii).
 
 ---
 

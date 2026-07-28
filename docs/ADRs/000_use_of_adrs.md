@@ -41,7 +41,7 @@ We will use **Architecture Decision Records (ADRs)** to document significant tec
 ADRs are:
 - Written in Markdown
 - Stored in the repository under `docs/ADRs/`
-- Numbered sequentially (constitutional 000–009; project-specific 010+)
+- Numbered sequentially in three tiers: constitutional 000–009; governance 010; project-specific 011+ *(amended 2026-07-28, þing-01 / C-10: the previous two-tier text collided with ADR-010's occupancy)*. Cross-repo platform-seam contracts live in a fourth, prefixed tier: `docs/ADRs/platform/` with `PLATFORM-NNN` identifiers — unambiguous when cited from another repo's ADRs.
 - Treated as first-class project artifacts
 
 An ADR records **a decision**, not a discussion or a design proposal.
