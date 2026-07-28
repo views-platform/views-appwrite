@@ -26,7 +26,11 @@ credentials, coordinates, their classification, sourcing, validation, and failur
   seam's prefix; they are listed in the registry as exclusions, governed there.
 - **The datafactory seam** (HTTP + `~/.netrc`) — governed by views-datafactory ADR-026 +
   `credential_setup.md` (reciprocally cross-linked). A full delivery runtime needs both seams'
-  credentials in one environment; the netrc entry is the sole co-resident secret.
+  credentials in one environment; the netrc entry is the sole co-resident secret. The harvest
+  tokens (`UCDP_API_TOKEN`, `ACLED_USERNAME`/`ACLED_PASSWORD`, `GDL_API_TOKEN`) are needed **only
+  where harvests run** — the datafactory production server, or a developer machine deliberately
+  running harvest scripts; **no model, postprocessing, or serving runtime ever needs them**
+  (orð_10 §1, contributed per ledger DF3).
 - The legacy views-forecasts store credentials (retire with the store) and W&B keys.
 - **The wire format** crossing the seam (views-postprocessing ADR-013) and **payload
   eligibility** (ADR-017) — the data half, already contracted elsewhere.
