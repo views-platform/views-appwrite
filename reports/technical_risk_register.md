@@ -198,11 +198,20 @@ See also C-06 (the consumer-side catch-all that would mask the partial failure).
 | Tier | 2 |
 | Source | expert-review (2026-06-12) |
 | Trigger | When defining `AppwriteConfig` and `StorageManager`'s missing-bucket behavior, make auto-provisioning an explicit opt-in (default: raise a documented exception) and add a red-team test for the misconfigured-`bucket_id` path. |
-| Location | `README.md:66,550` (auto-create on missing bucket), ADR-008:38 (blesses auto-create as documented behavior) |
+| Location | `README.md:66,550` (auto-create on missing bucket); ~~ADR-008:38 (blesses auto-create)~~ — **amended 2026-07-28, no longer blesses it**; live exposure now external: views-faoapi `create_*` helpers, views-pipeline-core `datastore.py:350` + the `upload_file_with_metadata` provisioning chain |
 
 The planned behavior auto-creates a bucket on first upload when it does not exist. A consumer with a typo'd `bucket_id` therefore silently provisions a new empty bucket and uploads into it successfully, while readers of the intended bucket see stale data indefinitely — no error is raised anywhere in the system. This contradicts the fail-loud constitution (ADR-003) for the misconfiguration case, even though ADR-008 currently blesses auto-create as "explicit, documented behavior." Tier 2 because it is structural fragility with a concrete, realistic trigger (one wrong character in config) producing a silent wrong-data outcome. Currently unmitigated; the documented behavior actively enables it.
 
-See also D-02 (the expert disagreement over this behavior).
+**Update (2026-07-28, þing-01 / issue #5):** the *doctrinal* half is closed — D-02 resolved,
+ADR-008:38 amended to raise-by-default, and the rule ratified platform-wide at `PLATFORM-001` §6
+("a wrong or missing coordinate raises, naming the offending coordinate"). Two things sharpened the
+entry rather than closing it. **(1) It is no longer hypothetical:** þing-01 sáttmál S8 (amended)
+established from code on disk that *both* live client lineages provision-on-miss on their write
+paths, so the typo→phantom-bucket path is real today, not merely planned. **(2) The exposure moved
+out of this repo:** nothing here can fix it, because nothing here runs. C-13 therefore stays **open
+at Tier 2** as the tracking entry for the two external lineages' fixes, and closes when both have
+shipped raise-by-default *and* declared it per the drill ordering (amend → ship → drill the raise
+path → test project → drill the provisioning path). See also D-02 (resolved) and PLATFORM-001 §6.
 
 ---
 
@@ -388,7 +397,7 @@ See also D-01 (module granularity) and C-04 (the config-side analogue of competi
 | ID | D-02 |
 | Source | expert-review (2026-06-12) |
 | Perspectives | ADR-008:38 as written (auto-create is "explicit, documented behavior", not a hidden fallback — keep faoapi's behavior per `README.md:550`), Nygard (the typo'd-`bucket_id` scenario converts a config error into permanent silent data divergence — exactly what ADR-003 forbids; default must raise) |
-| Resolution | Proposed: Nygard's position wins — auto-provisioning becomes config opt-in, missing bucket raises by default (tracked as C-13). ADR-008:38 amendment pending — not yet applied; it falls in the deferred contracts session (Cluster C). |
+| Resolution | **RESOLVED 2026-07-28 (þing-01 / issue #5).** Nygard's position wins, now ratified beyond this repo: a missing coordinate raises and names itself; provisioning is opt-in, default off, reachable only from a deliberate setup entrypoint. `ADR-008:38`'s blessing parenthetical is **struck and replaced** (ADR-008 Amendment Log, 2026-07-28); the rule is platform law at `PLATFORM-001` §6. The disagreement is closed: the position ADR-008 held was contradicted by a settled fact of the record — þing-01 sáttmál S8 (amended) established that **both** client lineages auto-provision on write-path misses, so the behavior was never the "documented, explicit" choice the clause claimed but a fallback hiding semantic failure. Live-code fixes belong to the lineages (views-faoapi #275; views-pipeline-core ADR-046 §5 + write path) and flip independently per `dómr_endurmat` E4; **C-13 carries the remaining code-side exposure** until they ship. |
 
 ---
 
