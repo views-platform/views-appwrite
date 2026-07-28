@@ -2,7 +2,10 @@
 
 Shared Appwrite client library for the VIEWS platform. Extracts the duplicated Appwrite storage, metadata, and caching logic from `views-pipeline-core` and `views-faoapi` into a single, independently versioned package.
 
-**Status:** Planned (this document is the roadmap)
+**Status:** **Contract home, live · code, parked.** This repo hosts the platform's seam contract
+([`PLATFORM-001`](docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md) and its
+[coordinate registry](docs/ADRs/platform/coordinate_registry.toml)) and ships no code. The package
+described below is a roadmap — see [Current posture](#current-posture) before acting on it.
 
 ---
 
@@ -623,6 +626,42 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 8 | 2026-06-12 | Repository created at `views-platform/views-appwrite`; governance scaffolded (ADRs 000–010, contributor protocols, risk register) ahead of any extraction trigger. Phase 1 start is **deferred** pending in-flight work on adjacent repositories. | Records the honest current state: none of the §Datafactory triggers has clearly fired; the hold recommendation stands until upstream work settles. Resolves register C-11. |
 | 9 | 2026-06-22 | Stay **parked** despite the sibling leaf `views-frames` shipping `v1.0.0` to PyPI. Adopt `views-frames` as the **scaffold template / proof-of-pattern** for this repo's eventual Phase 1, but do **not** start extraction and do **not** add `views-frames` as a dependency. | `views-frames` (numpy-only data-contract leaf, `views-platform` org) executed exactly this repo's extract→publish→shim playbook end-to-end — de-risking it and providing a copyable scaffold (hatchling+uv, `requires-python>=3.10`, MIT, single-dep + optional extras behind submodules, `type-floor` CI job, `py.typed`, in-package conformance suite, `GOVERNANCE.md` with a versioned conformance floor). But its publication is **not** one of the §Datafactory triggers, so the hold stands. The two are **sibling leaves**: neither imports the other; frame↔store integration is a *consumer* saver concern (pipeline-core/faoapi), never code in this repo. See `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`. |
 | 10 | 2026-07-28 | Activation of the shared client remains **deferred**, now under a **platform-ratified two-component trigger**. **Demand:** a second incident whose root cause is auth/provision handling in a duplicated client path — *whether by divergence between copies or by a defect common to them*. **Supply:** `views-pipeline-core`'s **C-221** decomposition freeing the auth/config seam. **Either component alone triggers a revisit; both together activate Phase 1.** The three repo-local triggers in §Datafactory below are **retained and remain independently sufficient**; composition is: activate on `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)`, revisit on `demand ∨ supply`. | Ratified by **þing-01** (the cross-repo assembly on identity, secrets and configuration: `orð_dómr.md` D8 as amended by `dómr_endurmat.md`; six seats, human sign-off Simon Polichinel von der Maase). This **supersedes the unilateral character** of the hold recorded in #8/#9 — the deferral now belongs to the platform, not to this repo alone, and cannot be reversed here without returning to the þing. The demand component was deliberately widened from its original "divergence between copies" wording: þing-01 sáttmál S8 (amended) settled that the two lineages **do not diverge** on their write paths — they share the same defect — so a divergence-only trigger could not fire where the evidence actually lives. Recording it here also keeps **C-11** closed: no posture change of this repo goes unrecorded. |
+
+### Current posture
+
+*Recorded 2026-07-28, on completion of this repo's þing-01 obligations.*
+
+> **Contract home: live. Code: parked.**
+
+**What is live here.** `PLATFORM-001` — the VIEWS Appwrite seam's identity, secrets and
+configuration contract — and its `coordinate_registry.toml`, both under `docs/ADRs/platform/`.
+Five other repos reference them **by URL at a pinned commit**. Changes come by supersession and a
+version bump, never by silent edit (`PLATFORM-001` §10). Hosting a document creates no dependency
+edge on this repo's code maturity; that is precisely why the seam's contract lives in the platform's
+only leaf that depends on nothing.
+
+**What is parked.** Everything else. No `src/`, no `pyproject.toml`, no CI, by recorded decision —
+not by neglect. The scaffold and the reference validator were approved by the þing's verdict and
+then **deferred again** on adversarial review (`dómr_endurmat` E5/E6): the scaffold's justification
+was hosting the validator, and the validator's distinctive jobs only become real at the credential
+cutover, so both wait behind one trigger. C-02, C-18's open half and D-04 stay open with them —
+they were priced against hosting code, and no code is hosted.
+
+**Next wake-up — one of two triggers, nothing else:**
+
+| # | Trigger | Fires when | Recorded at |
+|---|---|---|---|
+| 1 | **Scaffold + reference validator** | **operator named ✓ ∧ test project exists ✗** — currently blocked on the test project | issue [#8](https://github.com/views-platform/views-appwrite/issues/8); `PLATFORM-001` §7 |
+| 2 | **Phase 1 (the shared client)** | `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)` — the three repo-local triggers below, **or** the platform's two-component trigger | Decision Log **#10**; þing-01 D8 |
+
+Trigger 2's deferral is **no longer this repo's to reverse**: it was ratified by six seats, so
+un-parking on that path returns to the þing (or its successor process). Trigger 1 is the operator's
+to unblock (issue [#9](https://github.com/views-platform/views-appwrite/issues/9)).
+
+**What is *not* waiting on either trigger:** the contract and registry are in force now, and the
+seam's live risks belong to other repos' code — the two client lineages shipping raise-by-default
+(C-13), and the operator's rotation and external-caller design (C-27/C-28). Nothing here blocks
+them.
 
 ---
 
