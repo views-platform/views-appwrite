@@ -84,30 +84,56 @@ echo "--- Checking template status markers ---"
 template_count=$(grep -rl '\-\-template\-\-' --include='*.md' . 2>/dev/null | wc -l)
 echo "  INFO: $template_count files still have --template-- status (expected in template repo)"
 
-# 6. Platform-tier reference integrity (PLATFORM-NNN -> ADRs/platform/)
+# 6. The seam contract resolves, and its retired alias still points somewhere.
 #    Check 3 above hard-codes ADR-00[0-9] and is structurally blind to the
 #    platform tier — which is this repo's only live artifact. þing-02 /falsify
 #    C-32: the one automated check could not see the one thing that ships.
-echo "--- Checking platform-tier ADR references (PLATFORM-NNN) ---"
-while IFS= read -r ref; do
-    [[ -z "$ref" ]] && continue
-    file=$(echo "$ref" | cut -d: -f1)
-    pnum=$(echo "$ref" | grep -oP 'PLATFORM-\K[0-9]{3}' | head -1)
-    if [ -n "$pnum" ]; then
-        match_count=$(find ADRs/platform -name "PLATFORM-${pnum}_*.md" 2>/dev/null | wc -l)
-        if [ "$match_count" -eq 0 ]; then
-            echo "  ERROR: $file references PLATFORM-${pnum} but no matching file found"
+#    ADR-011 retired the PLATFORM-NNN scheme; this check follows the rename.
+echo "--- Checking seam-contract references ---"
+SEAM="ADRs/platform/appwrite_seam_contract.md"
+if [ ! -f "$SEAM" ]; then
+    echo "  ERROR: the seam contract is missing from $SEAM"
+    errors=$((errors + 1))
+else
+    # The retired name must remain resolvable: anything still citing PLATFORM-001
+    # has to find the alias recorded in the contract, or the rename stranded it.
+    if grep -rqn 'PLATFORM-001' --include='*.md' . 2>/dev/null; then
+        if ! grep -q 'Former name' "$SEAM"; then
+            echo "  ERROR: docs still cite PLATFORM-001 but $SEAM records no 'Former name' alias"
             errors=$((errors + 1))
         fi
     fi
-done < <(grep -rn 'PLATFORM-[0-9][0-9][0-9]' --include='*.md' . 2>/dev/null || true)
+    # No document may POINT AT the pre-rename path. A markdown link resolves and
+    # therefore breaks; inline code in prose is a quotation and does not. ADR-011
+    # quotes the retired filename as its own evidence, which must stay readable —
+    # so match link syntax, not every occurrence.
+    # Scanned from the REPO ROOT, not from docs/. The script cd's to docs/ at
+    # line 8, so every other check here is blind to README.md, reports/ and
+    # tests/ — and README.md is the likeliest place for a stale contract link.
+    # Verified by planting one: under the docs/-only scope it was not caught.
+    # This check widens its own scope only; the rest of the script is unchanged.
+    while IFS= read -r stale; do
+        [[ -z "$stale" ]] && continue
+        echo "  ERROR: ${stale%%:*} links to the pre-rename contract path"
+        errors=$((errors + 1))
+    done < <(grep -rn '](\([^)]*\)\?PLATFORM-001_identity_secrets_configuration_contract\.md' \
+             --include='*.md' .. 2>/dev/null || true)
+    # In TOML and shell there is no prose, so any occurrence is a pointer.
+    while IFS= read -r stale; do
+        [[ -z "$stale" ]] && continue
+        case "${stale%%:*}" in ./validate_docs.sh) continue ;; esac
+        echo "  ERROR: ${stale%%:*} references the pre-rename contract path"
+        errors=$((errors + 1))
+    done < <(grep -rn 'PLATFORM-001_identity_secrets_configuration_contract\.md' \
+             --include='*.toml' --include='*.sh' . 2>/dev/null || true)
+fi
 
 # 7. Contract/registry version coherence
-#    PLATFORM-001 §10: "The registry and this contract version together."
+#    Seam contract §10: "The registry and this contract version together."
 #    That rule was ratified and held by hand in two files. þing-02 /falsify
-#    C-33: nothing enforced it, and the v1.2.0 edit touches both.
+#    C-33: nothing enforced it, and the v1.2.0 edit touched both.
 echo "--- Checking contract/registry version coherence ---"
-CONTRACT="ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md"
+CONTRACT="$SEAM"
 REGISTRY="ADRs/platform/coordinate_registry.toml"
 if [ -f "$CONTRACT" ] && [ -f "$REGISTRY" ]; then
     contract_ver=$(grep -P '^\| Version \|' "$CONTRACT" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -119,7 +145,7 @@ if [ -f "$CONTRACT" ] && [ -f "$REGISTRY" ]; then
         echo "  ERROR: cannot parse a version from $REGISTRY (expected [meta] version = \"x.y.z\")"
         errors=$((errors + 1))
     elif [ "$contract_ver" != "$registry_ver" ]; then
-        echo "  ERROR: PLATFORM-001 is v${contract_ver} but coordinate_registry.toml is v${registry_ver}"
+        echo "  ERROR: the seam contract is v${contract_ver} but coordinate_registry.toml is v${registry_ver}"
         echo "         §10 requires them to version together. Bump both or neither."
         errors=$((errors + 1))
     else

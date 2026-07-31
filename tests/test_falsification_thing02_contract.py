@@ -32,7 +32,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 PLATFORM = REPO / "docs" / "ADRs" / "platform"
-CONTRACT = PLATFORM / "PLATFORM-001_identity_secrets_configuration_contract.md"
+CONTRACT = PLATFORM / "appwrite_seam_contract.md"
 REGISTRY = PLATFORM / "coordinate_registry.toml"
 WORKSPACE = REPO.parent
 

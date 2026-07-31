@@ -87,7 +87,8 @@ If a change establishes a **standing rule** for this codebase — something a fu
 violate without knowing it existed — write a short ADR in `docs/ADRs/` alongside the code.
 A closed GitHub issue is not where architectural reasoning survives.
 
-Cross-repo contracts live in `PLATFORM-001` (homed in `views-appwrite`) and are referenced **by URL
+Cross-repo contracts live in **The Appwrite Seam Contract** (homed in `views-appwrite`, formerly
+`PLATFORM-001`) and are referenced **by URL
 at a pinned commit, never copied**.
 
 ---

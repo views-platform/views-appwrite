@@ -514,7 +514,7 @@ wait for extraction. Cross-refs: C-04 (re-derivation §(a)), C-14.
 | Tier | 2 |
 | Source | þing-01 adversarial re-weighing (`rýni`), ruled in `dómr_endurmat` E7-O1 (2026-07-28) |
 | Trigger | Before the first key reissuance under the three-tier model (`PLATFORM-001` §5), design the propagation path — secret store, injection at launch, or per-process slots — or the cutover is manual multi-environment surgery performed under time pressure. |
-| Location | `docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md` §9 (O1); the registry carries secret **slots**, never values |
+| Location | `docs/ADRs/platform/appwrite_seam_contract.md` §9 (O1); the registry carries secret **slots**, never values |
 
 The contract this repo now hosts moves *coordinates* out of the copy-chain into an owned registry —
 but the **key value** remains fanned into every process environment by copy and borrow (þing-01

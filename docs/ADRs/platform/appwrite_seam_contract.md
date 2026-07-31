@@ -1,4 +1,4 @@
-# PLATFORM-001 — Identity, Secrets & Configuration Contract (VIEWS Appwrite seam)
+# The Appwrite Seam Contract — Identity, Secrets & Configuration
 
 > **SCOPE BANNER: this ADR governs the VIEWS *platform seam*, not the views-appwrite
 > repository.** It is the canonical contract for identity, secrets, and shared configuration on
@@ -8,6 +8,7 @@
 
 | Field | Value |
 |---|---|
+| **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
 | Version | **1.2.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
 | Amended | 2026-07-31 — §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, **§5.7 struck**, §10 gains tag immutability. See §11 Amendment Log. |

@@ -12,7 +12,7 @@ repo uses to reach the common Appwrite store. Five repositories read from here.
 
 | | |
 |---|---|
-| [The seam contract](docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md) | Identity, secrets and configuration on the Appwrite seam. Consumers are **required** to reference it at a pinned tag — currently `platform-001-v1.2.0`. **Most do not yet**; see issue #20. Being renamed to *The Appwrite Seam Contract* ([ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md), issue #16) |
+| [The seam contract](docs/ADRs/platform/appwrite_seam_contract.md) | Identity, secrets and configuration on the Appwrite seam. Consumers are **required** to reference it at a pinned tag — currently `platform-001-v1.2.0`. **Most do not yet**; see issue #20. Formerly `PLATFORM-001`, renamed by [ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md) |
 | [The coordinate registry](docs/ADRs/platform/coordinate_registry.toml) | The canonical source for every bucket, collection and database id on the seam, plus named secret slots — **never secret values** |
 
 **What is planned.** This repo is also the intended home of a **shared Appwrite client library**,
@@ -285,7 +285,7 @@ from views_appwrite import AppwriteConfig, DatastoreManager, OperationResult
 #
 # The values below are PLACEHOLDERS. Real coordinates come from the canonical
 # registry -- docs/ADRs/platform/coordinate_registry.toml, governed by
-# PLATFORM-001 -- read at a pinned commit and passed in explicitly. Never copy
+# the seam contract -- read at a pinned tag and passed in explicitly. Never copy
 # a coordinate out of this example, out of a .env, or out of a dataclass
 # default. Credentials come from the operator-issued key for your tier
 # (read / write-object / provision), never from this file.
@@ -551,7 +551,7 @@ A single `test_integration.py` that connects to a real Appwrite instance and exe
 Skipped in CI via `@pytest.mark.skipif(not os.getenv("APPWRITE_TEST_ENDPOINT"))`. Run manually before releases.
 
 > **⚠ BLOCKED (2026-07-28, þing-01):** the integration lifecycle described above **must not be run
-> today.** `PLATFORM-001` §7 **forbids integration tests against the production project**, and
+> today.** the seam contract §7 **forbids integration tests against the production project**, and
 > þing-01 established as settled fact (sáttmál S23, five seats testifying) that **no non-production
 > Appwrite project exists**. Until the operator creates one (issue #9), the only permitted live
 > check is **read-only** preflight validation. This section describes the intended Phase-1 strategy,
@@ -647,10 +647,10 @@ Decisions made during planning and extraction. Updated as work progresses.
 
 > **Contract home: live. Code: parked.**
 
-**What is live here.** `PLATFORM-001` — the VIEWS Appwrite seam's identity, secrets and
+**What is live here.** **The Appwrite Seam Contract** — the VIEWS Appwrite seam's identity, secrets and
 configuration contract — and its `coordinate_registry.toml`, both under `docs/ADRs/platform/`.
 Five other repos reference them **by URL at a pinned commit**. Changes come by supersession and a
-version bump, never by silent edit (`PLATFORM-001` §10). Hosting a document creates no dependency
+version bump, never by silent edit (seam contract §10). Hosting a document creates no dependency
 edge on this repo's code maturity; that is precisely why the seam's contract lives in the platform's
 only leaf that depends on nothing.
 
@@ -665,7 +665,7 @@ they were priced against hosting code, and no code is hosted.
 
 | # | Trigger | Fires when | Recorded at |
 |---|---|---|---|
-| 1 | **Scaffold + reference validator** | **operator named ✓ ∧ test project exists ✗** — currently blocked on the test project | issue [#8](https://github.com/views-platform/views-appwrite/issues/8); `PLATFORM-001` §7 |
+| 1 | **Scaffold + reference validator** | **operator named ✓ ∧ test project exists ✗** — currently blocked on the test project | issue [#8](https://github.com/views-platform/views-appwrite/issues/8); seam contract §7 |
 | 2 | **Phase 1 (the shared client)** | `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)` — the three repo-local triggers below, **or** the platform's two-component trigger | Decision Log **#10**; þing-01 D8 |
 
 Trigger 2's deferral is **no longer this repo's to reverse**: it was ratified by six seats, so

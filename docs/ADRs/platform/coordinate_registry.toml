@@ -1,7 +1,7 @@
 # ============================================================================
-# VIEWS Appwrite-seam coordinate registry — THE canonical source (PLATFORM-001 §4)
+# VIEWS Appwrite-seam coordinate registry — THE canonical source (Appwrite Seam Contract §4)
 # ============================================================================
-# Governed by PLATFORM-001 (this directory). Rules:
+# Governed by the Appwrite Seam Contract (this directory). Rules:
 #   - Consumers READ/VALIDATE against this file and pass values in explicitly.
 #     Never copy it into a repo; never bake a value into code, an example, or a
 #     dataclass default. Reference by pinned URL/commit.
@@ -12,11 +12,12 @@
 #     no CI attachment. Just the file, owned and versioned.
 # Owner: the views-appwrite repo (seam home). Operator (keys, console,
 # rotation): Simon Polichinel von der Maase.
-# Changes: by PR to this file + PLATFORM-001 version bump. Rotation of a
+# Changes: by PR to this file + a seam-contract version bump. Rotation of a
 # coordinate is a platform event — announce before merging.
 
 [meta]
-contract = "PLATFORM-001"
+contract = "The Appwrite Seam Contract"
+former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
 version = "1.2.0"                          # RATIFIED — þing-02. Versions in lockstep with the
                                            # contract (§10); docs/validate_docs.sh enforces it.
 ratified = "2026-07-31"                    # þing-02; v1.0.0 was þing-01, v1.1.0 never ratified
@@ -155,11 +156,11 @@ serves_identities = [
   "preflights / validators",
 ]
 observed = """2026-07-31, operator console: 20 scopes, expires ~2026-11-30.
-VIOLATES PLATFORM-001 §5.3 — one key, three identities. Read by BOTH
+VIOLATES seam contract §5.3 — one key, three identities. Read by BOTH
 views-pipeline-core/views_pipeline_core/configs/prediction_store.py:16 and
 views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187, so the
 publisher into FAO's outbound bucket runs under a key named for another service."""
-note = """RETIRED by reissuance under PLATFORM-001 §5 — but NOT by console action alone:
+note = """RETIRED by reissuance under seam contract §5 — but NOT by console action alone:
 the incumbent client's ordinary upload path provisions transitively (§5.5 table), so
 narrowing scopes today breaks every upload. RATIFIED ORDER (þing-02 D4):
   fix C-231/C-227 -> probe a scoped key -> issue tier keys -> declare schema
@@ -177,10 +178,10 @@ console_key_name = "UN FAO"
 issued_by = "operator"
 owning_contract = "views-faoapi (local ADR) — the compromise and its remediation are that repo's"
 observed = """2026-07-31, operator console: 20 scopes, expires ~2026-11-30.
-Serves FAO + developer/ops use simultaneously (PLATFORM-001 §5.3 violation), and the
+Serves FAO + developer/ops use simultaneously (seam contract §5.3 violation), and the
 value is present in views-faoapi git history. Remediation sequencing is the operator's
 decision, recorded in views-faoapi; this registry records the slot, not the incident."""
-open_item = "O2 — confused-deputy half unresolved (PLATFORM-001 §9)"
+open_item = "O2 — confused-deputy half unresolved (seam contract §9)"
 
 # --- Incoming consumers, one credential slot each (§5.3's floor) -------------
 # The floor: no key is held by two parties who could need revoking separately.
@@ -230,7 +231,7 @@ class = "secret"
 status = "planned — operator issues (D4). NEVER given to a long-running process."
 scopes = "buckets.write, databases.write, collections.write, attributes.write"
 
-# Not a slot yet — a carrier with no home. See PLATFORM-001 §9 O3.
+# Not a slot yet — a carrier with no home. See seam contract §9 O3.
 [unmodelled.session_auth_email_password]
 class = "secret (carrier: email + password)"
 location = "views-pipeline-core/views_pipeline_core/modules/appwrite/file.py:359-412 (SessionAuth)"
@@ -266,4 +267,4 @@ note = "views-forecasts store credentials (retire with the store) and W&B keys �
 status = "none"
 fact = """No non-production Appwrite project exists (þing-01 S23, five-seat testimony).
 Until the operator creates one: integration tests against the production project are
-FORBIDDEN by PLATFORM-001; read-only preflight validation is the only permitted live check."""
+FORBIDDEN by the seam contract; read-only preflight validation is the only permitted live check."""

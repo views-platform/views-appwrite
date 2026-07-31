@@ -2,7 +2,7 @@
 
 **Status:** Active  
 **Governing ADRs:** ADR-003 (Authority of Declarations Over Inference), ADR-005 (Testing), ADR-008 (Observability and Explicit Failure)  
-**Also governed by:** `PLATFORM-001` §5 (the platform-wide, multi-carrier credential-redaction clause — §2.3 below is this repo's statement of it)  
+**Also governed by:** the **Appwrite Seam Contract** §5 (the platform-wide, multi-carrier credential-redaction clause — §2.3 below is this repo's statement of it)  
 **Amended:** 2026-07-28 — §2.3 widened to multi-carrier redaction (þing-01 / issue #7)  
 
 ---
@@ -39,7 +39,7 @@ must not rely on tribal knowledge to interpret.
 > **Credentials in any carrier — environment variable, config field, request header, `~/.netrc`
 > entry, or tool keychain — must never be logged. Endpoints may be.**
 
-This is the platform-wide redaction clause adopted by þing-01 (`PLATFORM-001` §5), binding on every
+This is the platform-wide redaction clause adopted by þing-01 (seam contract §5), binding on every
 repo on the Appwrite seam. It is stated here in carrier-neutral form deliberately. **A secret is a
 class, not a storage location** — the earlier wording of this clause named only
 `AppwriteConfig.credentials` and would, read literally, have permitted logging the same secret

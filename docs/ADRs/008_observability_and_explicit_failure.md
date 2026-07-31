@@ -74,7 +74,7 @@ structural failures. It does not prescribe formatting or specific logging utilit
 **Cause:** þing-01, the platform assembly on identity, secrets and configuration across the VIEWS
 Appwrite seam (verdict `orð_dómr.md` D5, as amended by `dómr_endurmat.md`; ratified by all six
 seats, human sign-off Simon Polichinel von der Maase). Governing contract:
-`docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md` §6.
+`docs/ADRs/platform/appwrite_seam_contract.md` §6.
 
 **Struck.** The parenthetical that read:
 
@@ -105,7 +105,7 @@ views-pipeline-core amends its ADR-046 §5 and write path. Per `dómr_endurmat` 
 cross-references are **informational, not a coordination barrier** — each lineage flips on its own
 schedule, and a repo that raises early is strictly safer than one that waits.
 
-**Declaration discipline (PLATFORM-001 §6), for whoever implements this.** Each lineage's change is
+**Declaration discipline (the Appwrite Seam Contract §6), for whoever implements this.** Each lineage's change is
 preceded by a characterization test enumerating its `create_*` call sites, and is declared done only
 after real-exception-type tests and a live drill run **in this order: amend → ship the raise change
 → drill the raise path → (test project exists) → drill the provisioning path.** Drilling before
