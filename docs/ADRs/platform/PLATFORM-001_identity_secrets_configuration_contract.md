@@ -10,7 +10,7 @@
 |---|---|
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
 | Version | **1.2.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-07-31 — §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, **§5.7 struck**, §10 gains tag immutability. See §11 Amendment Log. |
+| Amended | 2026-07-31 — §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, **§5.7 struck**, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -35,6 +35,14 @@ credentials, coordinates, their classification, sourcing, validation, and failur
 - The legacy views-forecasts store credentials (retire with the store) and W&B keys.
 - **The wire format** crossing the seam (views-postprocessing ADR-013) and **payload
   eligibility** (ADR-017) — the data half, already contracted elsewhere.
+
+**How to tell whether a rule belongs here at all.** Admission is decided by a three-question test —
+*(Q1) does the thing it governs cross the Appwrite seam · (Q2) is it true, unchanged, for a seat
+that does not exist yet · (Q3) does honouring it require importing a shared implementation* — and a
+rule is platform surface only if it passes all three. **The test is stated at `orð_dómr §I` D7 in
+the þing-02 record and is deliberately not reproduced here**: it governs contract admission, which
+does not cross the Appwrite seam, so by its own Q1 it is not contract text. Citing it rather than
+importing it is §5.8 applied to this contract itself.
 
 ## 2. The identity model
 
@@ -432,6 +440,7 @@ v1.1.0's clauses were disposed of individually rather than accepted as a block.
 
 | § | Disposition |
 |---|---|
+| 1 | **New**: cites the admission test by reference (A2′). The test is *not* contract text — it fails its own Q1, and a meta-rule exemption would have reopened §5.7's strike, which rested on that same question. Found by the reviewer against its own ledger row |
 | 2 | **Ratified**, with four corrections owed to it — each supplied by the seat it cost (D1) |
 | 5.1 | **Split** (D2): the cache salt lands now; the two-live-keys property is unratified and goes to the operator |
 | 5.3 | **Ratified as amended** (D3): "environment" defined; the binding form is the floor, not the matrix |
