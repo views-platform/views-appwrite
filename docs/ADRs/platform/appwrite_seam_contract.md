@@ -22,6 +22,11 @@
 This contract governs **how a component connects** to the shared Appwrite substrate: identities,
 credentials, coordinates, their classification, sourcing, validation, and failure semantics.
 
+> **Building a new consumer API?** [`joining_the_seam.md`](joining_the_seam.md) is a non-normative
+> checklist of what to do, in order, starting with pinning this contract at a tag. It imposes
+> nothing this document does not; it exists because the steps were previously readable only in the
+> þing record, which consumers do not pin.
+
 **Explicitly out of scope, by cross-reference (never by omission):**
 - **Eligibility** — *which* run/artifact may be served — is views-models' ADR-017 contract. The
   `APPWRITE_UNFAO_{APPROVED,QUARANTINED}_FILE_IDS` lists are eligibility *data* wearing this
