@@ -12,7 +12,8 @@ repo uses to reach the common Appwrite store. Five repositories read from here.
 
 | | |
 |---|---|
-| [The seam contract](docs/ADRs/platform/appwrite_seam_contract.md) | Identity, secrets and configuration on the Appwrite seam. Consumers are **required** to reference it at a pinned tag — currently `platform-001-v1.2.0`. **Most do not yet**; see issue #20. Formerly `PLATFORM-001`, renamed by [ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md) |
+| [The seam contract](docs/ADRs/platform/appwrite_seam_contract.md) | Identity, secrets and configuration on the Appwrite seam. Formerly `PLATFORM-001`, renamed by [ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md) |
+| **Pin against this tag** | **`platform-001-v1.2.0`** — the newest *published* tag. `main` currently carries **v1.3.0** (the rename; no clause changed), which is untagged until the operator cuts it — see [#21](https://github.com/views-platform/views-appwrite/issues/21). Consumers are **required** to pin; **most do not yet**, see [#20](https://github.com/views-platform/views-appwrite/issues/20) |
 | [The coordinate registry](docs/ADRs/platform/coordinate_registry.toml) | The canonical source for every bucket, collection and database id on the seam, plus named secret slots — **never secret values** |
 
 **What is planned.** This repo is also the intended home of a **shared Appwrite client library**,

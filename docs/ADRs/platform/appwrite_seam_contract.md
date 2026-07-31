@@ -10,8 +10,8 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
-| Version | **1.2.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-07-31 — §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, **§5.7 struck**, §10 gains tag immutability. See §11 Amendment Log. |
+| Version | **1.3.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-07-31 — **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -433,6 +433,38 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.3.0 — 2026-07-31 — renamed; no clause changed
+
+**Status: RATIFIED** — this version changes the document's *identity*, not its obligations. Every
+clause is byte-identical to v1.2.0 apart from §1's pointer to the onboarding checklist.
+
+**What changed**
+
+| | |
+|---|---|
+| **Name** | `PLATFORM-001` → **The Appwrite Seam Contract**. File moves to `appwrite_seam_contract.md`. Recorded by [ADR-011](../011_naming_of_cross_repo_contracts.md) |
+| **Alias** | `PLATFORM-001` retained as a `Former name` header row. Historical text, this log, and þing records keep the old name deliberately |
+| **§1** | Gains a five-line pointer to [`joining_the_seam.md`](joining_the_seam.md), a **non-normative** onboarding checklist. Imposes nothing new |
+
+**Why.** The identifier carried no information at the point of use, and on this platform that has a
+measured cost: unreadable identifiers **hide staleness**. Two consumer repos are pinned at commit
+`60674b2` — v1.0.0 — and neither noticed through two subsequent versions, because nothing about that
+string can be compared by eye. `PLATFORM-001` fails the same way. The number also indexed a set of
+size one. The maintainer reported being unable to remember what it referred to on three separate
+occasions.
+
+**Nothing downstream breaks.** Correctly-pinned URLs resolve against commits where the old filename
+still exists. The alias catches readers arriving with the old identifier. The 76 prose citations in
+the five consumer repos are tracked per-repo (views-faoapi#340, views-models#304,
+views-pipeline-core#335, views-postprocessing#158, views-datafactory#395) and are explicitly
+**cosmetic and non-blocking** — no consumer is asked to repoint a pin as part of a rename.
+
+**`platform-001-v1.2.0` is not moved**, per §10. Anyone pinned to it continues to resolve to the
+pre-rename file, correctly, indefinitely. That is the pinning rule working as designed, and it is
+what makes a rename safe to perform at all.
+
+---
 
 ### v1.2.0 — 2026-07-31 — ratified by þing-02; §5.7 struck
 
