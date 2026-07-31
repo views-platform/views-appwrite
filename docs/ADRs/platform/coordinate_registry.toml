@@ -177,10 +177,28 @@ carrier = "X-API-Key request header (presented by the caller to views-faoapi, re
 console_key_name = "UN FAO"
 issued_by = "operator"
 owning_contract = "views-faoapi (local ADR) — the compromise and its remediation are that repo's"
-observed = """2026-07-31, operator console: 20 scopes, expires ~2026-11-30.
-Serves FAO + developer/ops use simultaneously (seam contract §5.3 violation), and the
-value is present in views-faoapi git history. Remediation sequencing is the operator's
-decision, recorded in views-faoapi; this registry records the slot, not the incident."""
+observed = """2026-07-31, operator console: 20 scopes, EXACT EXPIRY 2026-11-17 16:10
+(supersedes the earlier "~2026-11-30" relay). Serves FAO + developer/ops
+simultaneously — a seam contract §5.3 violation, still open."""
+history_leak = """CLOSED 2026-07-31 — the leaked value is DEAD. Tested live against
+the project by the operator; the key in views-faoapi's notebook history is
+indistinguishable from a fabricated one, so it is not a valid key.
+
+Evidence (three-way discrimination on GET /v1/storage/buckets):
+  no key at all  -> general_unauthorized_scope, "User (role: guests) missing
+                    scopes ([buckets.read])"      <- endpoint DOES discriminate
+  fabricated key -> user_unauthorized
+  notebook key   -> user_unauthorized             <- byte-identical to fabricated
+
+Timeline: pasted 2025-10-24, re-added 2025-10-27 (views-faoapi d7988a8, 1d9867f,
+49fd655); removed from the TREE 2026-06-26 (1930280) but retained in history.
+Current keys expire 2026-11-17, so on a 12-month expiry they were issued
+~2025-11-17 — three weeks after the paste, which is what retired it.
+
+Consequence: this NO LONGER GATES THE CLONES. A history scrub of the three
+notebooks is optional hygiene, not remediation — a dead key in history is a wart,
+not a risk. Revoke-then-scrub ordering is moot because revocation already
+happened, by reissuance, before anyone noticed the paste."""
 open_item = "O2 — confused-deputy half unresolved (seam contract §9)"
 
 # --- Incoming consumers, one credential slot each (§5.3's floor) -------------
