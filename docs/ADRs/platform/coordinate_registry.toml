@@ -17,8 +17,9 @@
 
 [meta]
 contract = "PLATFORM-001"
-version = "1.1.0"                          # PROPOSED — v1.0.0 is the ratified text
-ratified = "2026-07-28"                    # þing-01, ratified as amended
+version = "1.2.0"                          # RATIFIED — þing-02. Versions in lockstep with the
+                                           # contract (§10); docs/validate_docs.sh enforces it.
+ratified = "2026-07-31"                    # þing-02; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-07-31"                     # secret slots corrected against operator console
 
 # ---------------------------------------------------------------- connection
@@ -89,8 +90,13 @@ views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187, so the
 publisher into FAO's outbound bucket runs under a key named for another service."""
 note = """RETIRED by reissuance under PLATFORM-001 §5 — but NOT by console action alone:
 the incumbent client's ordinary upload path provisions transitively (§5.5 table), so
-narrowing scopes today breaks every upload. Order: ship the create_* gating, THEN narrow.
-The narrowing is the acceptance test for the §6 change."""
+narrowing scopes today breaks every upload. RATIFIED ORDER (þing-02 D4):
+  fix C-231/C-227 -> probe a scoped key -> issue tier keys -> declare schema
+  -> relocate create_* -> narrow scopes.
+The gate binds before any tier key is ISSUED, not only before narrowing. The probe
+key must have DATABASE READ AND NO BUCKET FILE READ (a wholly read-restricted key
+false-passes). Narrowing is the acceptance test for the §6 change, and does not
+begin before the 20 scopes are enumerated."""
 
 # The caller's key — NOT a platform identity. Listed because it crosses the seam.
 [secret.FAO_CALLER_API_KEY]
@@ -126,9 +132,9 @@ scopes = "buckets.write, databases.write, collections.write, attributes.write"
 [unmodelled.session_auth_email_password]
 class = "secret (carrier: email + password)"
 location = "views-pipeline-core/views_pipeline_core/modules/appwrite/file.py:359-412 (SessionAuth)"
-note = """Fits none of §5.2's three tiers, appears in no slot, invisible to the §5.7
-registry check. The excision recorded in §2 is views-faoapi #274 and covers faoapi only.
-Either excise on the pipeline-core lineage too, or declare it as a slot with an owner."""
+note = """Fits none of §5.2's three tiers and appears in no slot. The excision
+recorded in §2 is views-faoapi #274 and covers faoapi only. Either excise on the
+pipeline-core lineage too, or declare it as a slot with an owner."""
 
 # ------------------------------------- explicit exclusions (listed, not governed)
 [excluded.APPWRITE_UNFAO_APPROVED_FILE_IDS]

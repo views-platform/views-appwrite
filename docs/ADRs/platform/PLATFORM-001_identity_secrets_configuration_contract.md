@@ -8,13 +8,13 @@
 
 | Field | Value |
 |---|---|
-| Status | **Accepted** — ratified as amended by þing-01, 2026-07-28 |
-| Version | **1.1.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-07-31 — §2 identity table corrected against observed state; §5 gains the credential-identity rules (5.1) and least-privilege-with-teeth (5.5); §9 O2 restated, O3 added. See §11 Amendment Log. |
-| Ratified by | all six seats: views-faoapi, views-postprocessing, views-models, views-pipeline-core, views-datafactory, views-appwrite; human sign-off Simon Polichinel von der Maase |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
+| Version | **1.2.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-07-31 — §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, **§5.7 struck**, §10 gains tag immutability. See §11 Amendment Log. |
+| Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
-| Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source |
-| Record | `views_platform/þingit/01_identity_secrets_config/` (local þing record: orð_00–14, sáttmál, ágreiningr, orð_dómr + dómr_endurmat) |
+| Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
+| Record | þing-01: `views_platform/þingit/01_identity_secrets_config/` · **þing-02: `views_platform/þingit/02_credential_identity_key_ownership/`** (orð_00–13, sáttmál, ágreiningr, aðgát, orð_dómr, rýni_00, dómr_endurmat) |
 
 ## 1. Scope
 
@@ -46,17 +46,43 @@ identity section therefore describes **callers and processes**:
 | Process | Identity on the seam | Key it runs under **today** (observed 2026-07-31) |
 |---|---|---|
 | model/ensemble runs (views-models launcher) | writer to `production_forecasts` | `VIEWS Pipeline Core` |
-| the un_fao delivery (runs *inside* the models launcher) | reader of `production_forecasts`, sole writer of `unfao_bucket` | `VIEWS Pipeline Core` — **same key value**: `views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187` and `views-pipeline-core/views_pipeline_core/configs/prediction_store.py:16` both read `APPWRITE_DATASTORE_API_KEY` |
-| views-faoapi serving | validates the **caller's** presented key (`X-API-Key`) and re-uses it read-only | the caller's key |
+| the un_fao delivery (runs *inside* the models launcher) | reader of `production_forecasts`, sole writer of `unfao_bucket` | `VIEWS Pipeline Core` — **same key value, and the same client**: see correction (i) |
+| views-faoapi serving | validates the **caller's** presented key (`X-API-Key`) and re-uses it read-only. **Provisions nothing** — correction (ii) | the caller's key |
 | preflights/validators | read-only | `VIEWS Pipeline Core` |
 
 **Observed state, recorded so the contract is not read as describing reality.** The Appwrite
 console holds **two** keys — `VIEWS Pipeline Core` and `UN FAO` — each carrying 20 scopes, each
 expiring ~2026-11-30. Only one of them is a *platform* identity; it serves **three** of the four
-rows above. `UN FAO` is a *caller's* key (and is separately compromised — views-faoapi's local
-ADR owns that wound and its remediation). The four-identity model in this table is therefore the
-**target**, not the present. §5.3 states the rule; §5.5 states why the gap cannot be closed by
-console action alone.
+rows above. `UN FAO` is a *caller's* key, and it serves **two holders** — FAO **and** this
+platform's developers/operators (§5.3's floor requires that split). The four-identity model in this
+table is the **target**, not the present. §5.3 states the rule; §5.5 states why the gap cannot be
+closed by console action alone.
+
+> **Nothing in this section has been read from a console by any repository.** The scope counts, the
+> `~` on the expiry, and the key names are **operator testimony relayed by a seat** (þing-02 S2,
+> S36). No seat can grep a console, and the record must keep saying so rather than letting relay
+> harden into fact. Enumerating the 20 scopes and the exact expiry is an operator gate.
+
+**Four corrections, adopted 2026-07-31 (þing-02 D1).** Each was supplied by the seat it cost:
+
+- **(i) views-postprocessing imports pipeline-core's *client*, not merely its key value.**
+  `views-postprocessing:views_postprocessing/unfao/managers/unfao.py:9-10` imports `AppwriteConfig`
+  **and** `DatastoreModule` from `views_pipeline_core` (þing-02 S3, read at `688e19c`, corroborated
+  at `e0433b4`). Every defect in that storage module is therefore live on FAO's outbound bucket
+  under another repo's name. The coupling is one level deeper than "a shared secret."
+- **(ii) views-faoapi provisions never.** Every `create_*` leaf is guarded by `_require_provisioning`
+  (`views-faoapi@2415991:src/views_faoapi/managers/appwrite.py:482, :635, :713, :1905`) and is dead
+  on the serving path (S4). The transitive-provisioning finding in §5.5 is true of
+  **views-pipeline-core alone**.
+- **(iii) `views-models/.env` is canonical as a *document*, not as the *mechanism*.** No
+  `load_dotenv` exists in that repo (S5); `views-faoapi@2415991:deployment/bootstrap.sh:69-70` greps
+  the file and is reading it correctly as a document. Separately, that repo's liveness tool reads
+  **faoapi's** `.env` by a hardcoded foreign path (S6) — two `.env` files, two formats, already
+  diverged.
+- **(iv) A fourth provisioning site exists one level up**, at
+  `views-pipeline-core@43362f7:views_pipeline_core/modules/datastore/datastore.py:350-370`, which
+  catches `storage_bucket_not_found` and creates the bucket (S15). It is the site an operator hits
+  first. Carried into §5.5's table.
 
 **One live credential kind** operates on the seam (the Appwrite API key); the session-auth
 strategies in the client libraries are vestigial on the serving path (þing-01 S4) and are being
@@ -121,13 +147,30 @@ fusion on the seam (the shared platform key of §2; the caller key faoapi re-use
 trace to exactly this.
 
 **The mapping is contract surface.** A component whose only input is a presented key cannot
-recover a stable identity without a **key → identity mapping**. That mapping is declared in the
-registry as slot metadata (which identity each slot serves) and must satisfy one property:
+recover a stable identity without a **key → identity mapping**, declared in the registry as slot
+metadata (which identity each slot serves).
 
-> **Two live keys may map to one identity simultaneously.**
+**The fix that lands now, and needs no substrate feature.** The one live instance of the fusion is
+views-faoapi's cache, which partitions on `sha256(x_api_key)[:16]`
+(`views-faoapi@2415991:src/views_faoapi/managers/api.py:246` →
+`.../managers/disk_cache.py:71-81`), so rotating a caller's key orphans that caller's cache. A
+**server-side random salt per first-seen key**, stored beside the cache, decouples the label from
+the key value — no identity store, no dual-key support (þing-02 S20, D2). Four other seats grepped
+and found **zero** derived labels; this is the only one.
 
-Without that overlap window, rotation is a coordinated hard cutover with downtime — which is the
-friction that has kept keys from being rotated at all. With it, §5.4 is achievable.
+> **UNRATIFIED — the overlap property.** *"Two live keys may map to one identity simultaneously"*
+> was asserted by a seat that has never called the substrate, and is **not** ratified. Whether
+> Appwrite can express it is an **operator gate**. Without an overlap window, rotation is a
+> coordinated hard cutover with downtime — the friction that has kept keys from being rotated at
+> all.
+>
+> **Pre-commitment, accepted at þing-02 by the clause's own author:** if the substrate cannot
+> express two live keys for one identity, **§5.4's "rotation is a routine chore" is struck** to
+> *"rotation is a coordinated cutover until an overlap mechanism exists"* — rather than left
+> standing as an aspiration the contract cannot cash.
+>
+> The salt (above) does **not** depend on this and does **not** wait for it. It also does not make
+> rotation survivable on its own: a rotated key still gets a cold partition.
 
 ### 5.2 Tiers
 
@@ -135,12 +178,38 @@ Tiers: **read** · **write-object** · **provision**. Split keys per tier, named
 independently rotatable. **The provision key is issued to no long-running process, ever** — it is
 used by a human, deliberately, through explicit setup entrypoints.
 
-### 5.3 One key per (identity × environment); no key serves two owners
+### 5.3 The floor — no key serves two parties who could need revoking separately
 
-Every key serves exactly one identity in exactly one environment. `un_fao`-production,
-`un_fao`-test, `crafd`-production, `views-delivery`-production, `views-ops`-dev are all distinct
-keys. A key that serves two identities cannot be revoked for one without revoking it for both,
-and its blast radius on leak is the union of both.
+**"Environment" is defined**, because on this platform it is not obvious:
+
+> An **environment** is a **credential-holding location under one party's control** — one deployed
+> host, one CI runner, one person's machine.
+
+On this platform "production" is therefore **two** locations, not one: the deployed host and the
+laptop. Undefined, the rule reads as *one key per developer*, which is not what it means.
+
+**The binding form is a floor, not a matrix** (þing-02 D3). The (identity × environment)
+cross-product **generates** candidate keys; what *binds* is:
+
+> **No key is held by two parties who could need revoking separately.**
+
+A key serving two parties cannot be revoked for one without revoking it for both, and its blast
+radius on leak is the union of both.
+
+**Applied to today's holders**, the floor yields exactly two obligations, and no more:
+
+1. **FAO gets its own key, separate from dev/ops.** The `UN FAO` key currently serves both (§2).
+2. By correction (i) in §2, the un_fao delivery and the model writer are **one holder today, not
+   two** — they run the same client under the same value — so the floor does not split them yet.
+
+**The floor gains two new holders at the clones, not one** (þing-02 S35): `un-crafdapi` brings a
+second external party and `views-productionapi` a third holder. §5.3 is **free at creation and a
+migration afterwards** — which is why the clone runbook places it at t=0.
+
+> **Assumption not verified: that issuance is cheap and unlimited.** Nobody has asked the operator
+> whether there is a cap, a cost, or a lead time on issuing N keys. Both this clause and §5.5 assume
+> there is not. It is an **operator gate**, and it is the same class of unverified substrate
+> assertion as §5.1's overlap property.
 
 ### 5.4 Rotation touches exactly one identity
 
@@ -162,36 +231,76 @@ remembering.
 
 **Sequencing — binding, and derived from observed evidence, not from principle.** This clause
 cannot be satisfied by console action alone, because the incumbent client's *ordinary* write path
-provisions transitively:
+provisions transitively, at **four** sites (þing-02 S15, all verified by the owning seat):
 
-| Call site (`views-pipeline-core/views_pipeline_core/modules/appwrite/file.py`) | Provisioning it reaches |
+| Call site, `views-pipeline-core@43362f7:views_pipeline_core/…` | Provisioning it reaches |
 |---|---|
-| `upload_file_with_metadata` → `:2205`, `:2351`, `:2395` | `create_metadata_collection_if_not_exists` |
-| `create_metadata_collection_if_not_exists:1228` | `create_database_if_not_exists` |
-| `:1238`, `:1264` | `_create_dynamic_attributes` |
-| `create_bucket:2811` → `:2882` | bucket **and** database |
+| `…/modules/datastore/datastore.py:350-370` | catches `storage_bucket_not_found` → **creates the bucket and retries** — the site an operator hits first |
+| `…/modules/appwrite/file.py` `upload_file_with_metadata` → `:2205`, `:2351`, `:2395` | `create_metadata_collection_if_not_exists` |
+| `…/modules/appwrite/file.py:1228` | `create_database_if_not_exists` |
+| `…/modules/appwrite/file.py:1238`, `:1264` | `_create_dynamic_attributes` — attributes **inferred from the payload**, so the collection's shape is whatever the last caller sent |
+| `…/modules/appwrite/file.py:2811` → `:2882` | bucket **and** database |
 
-Narrowing that key today breaks every upload. The order is therefore forced, and it extends §6's
-drill ordering by one step:
+Narrowing that key today breaks every upload. **The order is therefore forced:**
 
-> **amend → ship the `create_*` gating → drill the raise path → narrow the key → (test project
-> exists) → drill the provisioning path under the provision key.**
+> **fix C-231/C-227 → probe a scoped key → issue tier keys → declare schema → relocate `create_*`
+> → narrow scopes.**
 
-**The narrowing is the acceptance test.** A lineage's §6 change is declared done when its
-delivery runtime completes an upload under a key that lacks the four provisioning scopes. That is
-a substrate-enforced proof and it supersedes code review as the evidence of completion.
+**Amendment 1 — the gate binds before *issuance*, not only before narrowing.** A tier key could
+otherwise be cut with wrong scopes and fail only in production. Added by the seat that pays for it.
+
+**Amendment 2 — the probe's key shape is normative.** The two reads are in different scope
+families: the de-dup lookup is a **database** read and the verify step a **storage** read, and the
+destructive branch is entered only when the lookup *succeeded*. A **wholly** read-restricted key
+never reaches it and **passes benignly, certifying nothing**. The probe key must therefore have:
+
+> **database read, and no bucket file read** — plus a wrong bucket id.
+
+Without that shape the gate is theatre, and þing-02 struck one clause for being exactly that.
+
+**Why the fix comes first, and it is not a priority ranking.** `get_file` collapses every
+`AppwriteException` into one `success=False`; the de-dup path reads that as "orphan" and **deletes
+the metadata document**. *File genuinely absent*, *wrong bucket id* and ***key lacks read scope***
+are indistinguishable — so **a key that is correct under this contract could begin deleting valid
+metadata the day it is issued.** That branch ran **108 times in production** on FAO's outbound
+delivery on 2026-07-27, harmlessly, because the files were readable. This is a **precondition of
+issuing scoped writer keys**, not a line in a priority list.
+
+**Narrowing is the acceptance test.** A lineage's §6 change is declared done when its delivery
+runtime completes an upload under a key lacking the four provisioning scopes — a substrate-enforced
+proof that supersedes code review as evidence of completion. **Narrowing does not begin until the
+20 scopes have been enumerated** (operator gate): nothing can be narrowed against a privilege set
+nobody has listed.
 
 ### 5.6 Redaction — platform-wide and binding
 
 Credentials in any carrier — env var, config field, request header, netrc entry, tool keychain —
 are never logged; endpoints may be.
 
-### 5.7 Safety nets, per repo
+### 5.7 ~~Safety nets, per repo~~ — **STRUCK 2026-07-31 (þing-02 D5)**
 
-Two mechanical checks, in every repo on the seam: a **secret scan** (a real key can never be
-committed) and a **registry check** (every identity × environment has its own declared slot; no
-slot serves two identities). These are per-repo obligations — one *definition*, stated here;
-implementations are not shared code (see §5.8).
+> ~~Two mechanical checks, in every repo on the seam: a **secret scan** and a **registry check**.~~
+>
+> **Struck by its own author, under this contract's own admission test (§1), after both seats
+> defending the clause withdrew on their own reasoning.** Secret scanning does not cross the
+> Appwrite seam, so it is not this contract's to impose. The arithmetic is decisive: an
+> organisation-level setting reaches **all 16 public repos**; a seam contract reaches **6**, and
+> **10 of the exposed repos have no seat at this þing**. A clause covering a third of the problem
+> while reading as coverage is worse than no clause.
+
+**What survives, as a statement of fact rather than an obligation:**
+
+> **A clean scanner run is a floor, not a proof.** Three limits are on the record and each was
+> reported by the seat whose own clean result it undercut: (i) **prose** — a working password sat in
+> an English sentence across three commits and no scanner flagged it; (ii) **merge-only content** —
+> content existing solely as a merge resolution goes unscanned; (iii) **unreconciled coverage** — a
+> seat reported 165 commits scanned against 226 reachable and declined to claim the gap.
+> Scanning must additionally read **`.ipynb` cell contents**, which is exactly where the one real
+> finding on this platform hid.
+
+The replacement is an **organisation-level default**, not a clause, and it is an operator action.
+Where a repo wants a mechanical check of its own, that is its own business and needs no
+authorisation from this contract.
 
 ### 5.8 One definition, referenced — not one implementation, imported
 
@@ -204,6 +313,26 @@ Whether a shared *implementation* should exist is a separate, live question: **D
 behind its own trigger. That trigger is not this section, and this section must not be read as
 firing it. Should D8 activate on its own terms — cloning `views-faoapi` into a second consumer
 API is Trigger 1 — the implementation question is answered then, on the ratified route.
+
+**What this clause buys, and what it costs — both recorded** (þing-02 Ó-7). It buys the absence of
+a dependency edge on a repo that ships nothing, and it has live evidence behind it: correction (i)
+in §2 is a two-repo defect that reached a third repo *because* a client was shared. It costs
+**three independently written clients** once the clones exist — faoapi, `un-crafdapi`,
+`views-productionapi`. The **conformance vector** (below) guards one invariant across them and
+guards nothing else. The alternative — one shared implementation — has evidence against it and **no
+pricing anywhere in the record**. That residual is **unresolved, not refuted**, and it is the right
+question for D8's trigger rather than for first contact.
+
+**The conformance vector.** A shared *test*, hosted beside this contract and run by each client
+against its **own** copy — no import, no edge. It asserts one invariant:
+
+> Two distinct callers never share a cache partition, and a partition label is neither the key
+> value nor derivable from it.
+
+Pass/fail: (i) two distinct keys yield two distinct partitions; (ii) the label cannot be derived
+from the key value; (iii) a request bearing key A never serves content cached for key B. It is
+authored from the **post-salt** implementation (§5.1) — written before that, it would encode the
+fused behaviour as the reference and every clone would conform to the bug.
 
 ## 6. Failure semantics — raise, never provision
 
@@ -262,7 +391,7 @@ The shared substrate's own properties are contract surface. Authoritative source
   §2 records session auth as vestigial and "being excised" — that excision is views-faoapi #274
   and covers faoapi only. `views-pipeline-core/.../modules/appwrite/file.py:359–412` still ships
   `SessionAuth`, which takes **email + password**: a credential kind that appears in no registry
-  slot, fits none of §5.2's three tiers, and is unreachable by the §5.7 registry check. Either
+  slot and fits none of §5.2's three tiers. Either
   excise it on the pipeline-core lineage too, or declare it as a slot with an owner.
 
 ## 10. Change process
@@ -272,12 +401,74 @@ tag/commit and upgrade deliberately. The registry and this contract version toge
 about this contract return to the þing (or its successor process) — the seam's decisions belong
 to the platform, not to any one repo.
 
+**A published version tag is never moved.** A git tag is a *movable* reference: `git tag -f` plus a
+force-push repoints a name that consumers believe is frozen, which reintroduces exactly the
+mutability the pinning rule exists to remove. A commit id cannot lie about its content; a tag can.
+The tag is therefore the readable handle **and** this sentence is what makes it trustworthy. To
+correct a published version, cut a new one — `platform-001-v1.2.1` — and supersede.
+
+**The pin is a rule, and rules on this platform decay unobserved unless something checks them.**
+As of 2026-07-31, of five consumer repositories: one pins to a commit and that pin is **stale**
+(it points at v1.0.0); one links to `/blob/main/`, which is not a pin at all and silently changed
+meaning when this version landed; three cite this contract by name with no reference. **Pinning is
+the consumer's obligation, and an unpinned reference is a defect in the consuming repo**, not a
+licence to edit this file freely.
+
+**Versioning is versioning of the rules.** Where this contract records observed state (§2) rather
+than obligation, that state is marked as such. A version bump driven only by an observation carries
+no new obligation, and a consumer diffing two versions is entitled to that distinction.
+
 ## 11. Amendment Log
+
+### v1.2.0 — 2026-07-31 — ratified by þing-02; §5.7 struck
+
+**Status: RATIFIED.** This is the first ratified version since v1.0.0 — **v1.1.0 was proposed and
+never ratified**, and is superseded here by the assembly rather than by its author.
+
+**Cause.** þing-02, *"Credential identity, key ownership and least privilege on the Appwrite
+seam"* (`views_platform/þingit/02_credential_identity_key_ownership/`). Six seats plus an unstaked
+doubter and lawspeaker; `orð_dómr.md` as amended by `dómr_endurmat.md` (E1–E11); operator sign-off.
+v1.1.0's clauses were disposed of individually rather than accepted as a block.
+
+| § | Disposition |
+|---|---|
+| 2 | **Ratified**, with four corrections owed to it — each supplied by the seat it cost (D1) |
+| 5.1 | **Split** (D2): the cache salt lands now; the two-live-keys property is unratified and goes to the operator |
+| 5.3 | **Ratified as amended** (D3): "environment" defined; the binding form is the floor, not the matrix |
+| 5.5 | **Ratified**, amended twice (D4): the gate binds before *issuance*; the probe's key shape is normative |
+| 5.7 | **STRUCK** (D5) — see below |
+| 5.8 | **Ratified** (D6), the most attacked clause in the matter; plus the conformance vector, and its residual recorded |
+| 10 | tag immutability, the pin-decay finding, and the observation-vs-obligation distinction |
+
+**§5.7's strike is the finding of this version, and the clause count goes *down*.** Struck by its
+own author under this contract's own admission test, after **both** seats defending it withdrew on
+their own reasoning. Secret scanning does not cross the Appwrite seam. The replacement is an
+organisation-level setting reaching 16 repositories where a clause reaches 6 — and ten of the
+exposed repositories have no seat at any þing, so no clause here could ever have reached them.
+
+**What this version deliberately does not do.** No identity store. No shared client library. No
+platform-wide branch-retirement programme. No new secret-scanning clause. views-appwrite remains
+**parked**: no repository imports it, and þing-01 D8's trigger is untouched.
+
+**Corrections this version makes to its own predecessor.** v1.1.0's §2 was wrong in two ways that
+mattered: it claimed `views-models/.env` was the credential *mechanism* (it is a document — there is
+no `load_dotenv` in that repo), and its transitive-provisioning finding was written as though it
+applied to views-faoapi (it does not — faoapi provisions never). Both were corrected by the seats
+whose testimony they had made load-bearing.
+
+**Known and unresolved, carried rather than papered over.** Three independently written clients
+will exist once the clones are cut; the conformance vector guards one invariant and nothing else;
+the alternative has no pricing in the record (§5.8). Whether the substrate can express two live
+keys for one identity is unverified (§5.1). Whether key issuance is cheap and unlimited is
+unverified (§5.3). Nobody has read the 20 scopes on either key (§2).
+
+---
 
 ### v1.1.0 — 2026-07-31 — credential identity, least privilege with teeth, observed state
 
-**Status of this version: PROPOSED.** v1.0.0 remains the ratified text until the seats bound by
-these clauses accept. Consumers pinned to v1.0.0 are unaffected until they move their pin.
+**Status: SUPERSEDED by v1.2.0, never ratified.** Proposed by views-appwrite and put to þing-02,
+which disposed of its clauses individually — five ratified (three with amendments), one struck.
+Consumers pinned to v1.0.0 were unaffected throughout.
 
 **Cause.** Two inputs. (1) A draft platform ADR from the views-faoapi seat
 (*"How VIEWS APIs Handle Keys and Who Owns Them"*, 2026-07-31) proposing general key-ownership
