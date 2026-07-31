@@ -1,11 +1,25 @@
 # views-appwrite
 
-Shared Appwrite client library for the VIEWS platform. Extracts the duplicated Appwrite storage, metadata, and caching logic from `views-pipeline-core` and `views-faoapi` into a single, independently versioned package.
+**Home of the VIEWS platform's Appwrite seam contract** — the rules and shared coordinates every
+repo uses to reach the common Appwrite store. Five repositories read from here.
 
-**Status:** **Contract home, live · code, parked.** This repo hosts the platform's seam contract
-([`PLATFORM-001`](docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md) and its
-[coordinate registry](docs/ADRs/platform/coordinate_registry.toml)) and ships no code. The package
-described below is a roadmap — see [Current posture](#current-posture) before acting on it.
+> **This repository ships no code today.**
+>
+> There is no `src/`, no `pyproject.toml`, no package to install or import. That is a recorded
+> decision, not neglect — see [Current posture](#current-posture).
+
+**What is live now:**
+
+| | |
+|---|---|
+| [The seam contract](docs/ADRs/platform/PLATFORM-001_identity_secrets_configuration_contract.md) | Identity, secrets and configuration on the Appwrite seam. Consumers are **required** to reference it at a pinned tag — currently `platform-001-v1.2.0`. **Most do not yet**; see issue #20. Being renamed to *The Appwrite Seam Contract* ([ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md), issue #16) |
+| [The coordinate registry](docs/ADRs/platform/coordinate_registry.toml) | The canonical source for every bucket, collection and database id on the seam, plus named secret slots — **never secret values** |
+
+**What is planned.** This repo is also the intended home of a **shared Appwrite client library**,
+extracting the storage, metadata and caching logic currently duplicated across
+`views-pipeline-core` and `views-faoapi` into one independently versioned package. Everything below
+this line describes *that package*. It does not exist yet, and its extraction is deferred behind a
+named trigger — read [Current posture](#current-posture) before acting on any of it.
 
 ---
 
