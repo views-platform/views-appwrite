@@ -72,6 +72,77 @@ value = "unfao"
 class = "target"
 value = "UNFAO File Metadata"
 
+# ------------------------------------------- INCOMING CONSUMERS (values pending)
+# Two consumer APIs are about to be cloned from views-faoapi. Their slots are
+# declared HERE, BEFORE the repos exist, because §5.3's credential floor is
+# "free at creation and a migration afterwards" — which only holds if there is
+# somewhere to read a coordinate from on day one. A repo that finds no slot
+# invents one locally, which is the pathology this registry exists to remove.
+#
+# status = "planned" means: the SLOT is canonical, the VALUE is not yet decided.
+# Do NOT fill these with plausible-looking placeholders. A placeholder that later
+# gets used verbatim is the "production coordinates reachable without a
+# deliberate choice" hazard class (views-appwrite C-21). The operator sets the
+# values in the console; this file records them afterwards.
+#
+# NAMING: the þing-02 record calls the CRAFD consumer "un-crafdapi" (28
+# occurrences). The operator has since named it "views-crafdapi", which also
+# matches the views-* convention every other repo on the platform follows. This
+# file uses views-crafdapi; the former name is recorded so the þing record stays
+# findable.
+
+# The four CRAFD slots below rest on an INFERENCE, declared here rather than left
+# silent (ADR-003: declarations over inference). views-crafdapi is a direct clone
+# of views-faoapi serving a second external party, and faoapi's shape is
+# "external party reads a curated outbound bucket" — so a bucket of its own is
+# the clone's shape, not a new decision. Confirm at creation; if CRAFD instead
+# reads an existing container, delete these rather than leaving them to look
+# canonical.
+
+[target.APPWRITE_CRAFD_BUCKET_ID]
+class = "target"
+status = "planned — views-crafdapi (þing-02 record: 'un-crafdapi')"
+consumer = "views-crafdapi"
+
+[target.APPWRITE_CRAFD_BUCKET_NAME]
+class = "target"
+status = "planned"
+consumer = "views-crafdapi"
+
+[target.APPWRITE_CRAFD_COLLECTION_ID]
+class = "target"
+status = "planned"
+consumer = "views-crafdapi"
+
+[target.APPWRITE_CRAFD_COLLECTION_NAME]
+class = "target"
+status = "planned"
+consumer = "views-crafdapi"
+
+# views-productionapi has NO target slots here, deliberately.
+#
+# Everything the record establishes about it is that it is "a write API by
+# definition" (þing-02 orð_13 §2, þingmenn). Nothing says it needs its own
+# bucket. The unfao_bucket precedent does NOT generalise: FAO has a separate
+# bucket because it receives a CURATED SUBSET — which is why the eligibility
+# lists exist — and a write API may simply write to production_forecasts, the
+# shelf that already exists.
+#
+# Declaring slots for a container nobody has decided on would assert an
+# architecture as canonical when no one chose it, which is the same defect as
+# filling in a placeholder value. It also risks C-228: a coordinate named
+# APPWRITE_PRODUCTIONAPI_BUCKET_ID sits one glance away from
+# APPWRITE_PROD_FORECASTS_BUCKET_ID in a sorted .env, and a wrong bucket id
+# silently provisions new production storage rather than failing.
+#
+# OPEN QUESTION, to be answered before views-productionapi is cut:
+#   does it write to production_forecasts, or to a store of its own?
+# If a store of its own, add the slots then — with a token that cannot be
+# misread against PROD_FORECASTS.
+#
+# Its CREDENTIAL slot is declared regardless (see PRODUCTIONAPI_API_KEY below):
+# §5.3's floor binds on the holder, not on which container it touches.
+
 # ------------------------------------------------------- secret SLOTS (no values!)
 [secret.APPWRITE_DATASTORE_API_KEY]
 class = "secret"
@@ -110,6 +181,37 @@ Serves FAO + developer/ops use simultaneously (PLATFORM-001 §5.3 violation), an
 value is present in views-faoapi git history. Remediation sequencing is the operator's
 decision, recorded in views-faoapi; this registry records the slot, not the incident."""
 open_item = "O2 — confused-deputy half unresolved (PLATFORM-001 §9)"
+
+# --- Incoming consumers, one credential slot each (§5.3's floor) -------------
+# The floor: no key is held by two parties who could need revoking separately.
+# views-crafdapi is a SECOND EXTERNAL PARTY and views-productionapi a THIRD
+# holder, so neither may share a key with FAO or with each other. Issuing these
+# is free at repo creation and a coordinated migration afterwards — which is the
+# whole reason they are declared before the repos exist.
+
+[secret.CRAFD_CALLER_API_KEY]
+class = "secret"
+status = "planned — operator issues at views-crafdapi creation"
+carrier = "X-API-Key request header (presented by the caller, re-used by the API)"
+consumer = "views-crafdapi"
+scopes = "files.read, documents.read, databases.read — read tier only (§5.2)"
+note = """Second external party. Must NOT share FAO's key: §5.3's floor, and the
+UN FAO key is the worked example of what sharing costs (it serves FAO and this
+platform's dev/ops at once and cannot be revoked for one without the other).
+Inherits O2's open confused-deputy question (§9) — this slot records the key,
+not a decision that re-using a caller's credential for storage is correct."""
+
+[secret.PRODUCTIONAPI_API_KEY]
+class = "secret"
+status = "planned — operator issues at views-productionapi creation"
+consumer = "views-productionapi"
+scopes = "PENDING — see note; do not copy the read tier without deciding"
+note = """views-productionapi is a WRITE API by definition, so its scopes are not
+simply the read tier. Two things gate this slot and both are in §5.5's ordering:
+(1) no scoped writer key is issued before C-231/C-227 ship, because a correctly
+scoped key meeting the unfixed delete branch begins deleting valid metadata;
+(2) the scoped-key probe must pass first, with the normative shape — database
+read and no bucket file read. Fill the scopes when those gates clear, not now."""
 
 [secret.APPWRITE_READ_API_KEY]
 class = "secret"
