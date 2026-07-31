@@ -152,8 +152,8 @@ def test_falsify_c41_readme_first_sentence_is_true():
     Expected: the opening sentence describes what the repo IS, before it
     describes what it may become.
     """
-    lines = [l.strip() for l in (REPO / "README.md").read_text(encoding="utf-8").split("\n")]
-    first_prose = next(l for l in lines if l and not l.startswith("#"))
+    lines = [line.strip() for line in (REPO / "README.md").read_text(encoding="utf-8").split("\n")]
+    first_prose = next(line for line in lines if line and not line.startswith("#"))
     claims_to_be_a_library = re.search(r"^Shared Appwrite client library", first_prose)
     assert not claims_to_be_a_library, (
         "README's first sentence claims this repo IS a shared client library. "

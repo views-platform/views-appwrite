@@ -30,6 +30,7 @@ ADRs are divided into:
 ## Governance ADRs
 
 - **ADR-010** — [Technical Risk Register](010_technical_risk_register.md). Formalises `reports/technical_risk_register.md` (seeded with C-01…C-07).
+- **ADR-011** — [Cross-Repo Contracts Are Named, Not Numbered](011_naming_of_cross_repo_contracts.md). Retires the `PLATFORM-NNN` scheme; the seam contract becomes *The Appwrite Seam Contract*. Constitutional ADRs stay numbered — they are a series a reader traverses.
 
 ---
 
