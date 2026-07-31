@@ -34,8 +34,11 @@ A published tag is **never moved** (contract §10), so a tag you pin today means
 forever. Moving to a newer version is then a deliberate act: read the diff, accept the changes,
 repoint. That deliberate act is the entire point.
 
-**You will be cloning a repo that gets this wrong.** `views-faoapi` cites the contract by name with
-no link at all. Do not inherit that by copying.
+**You will be cloning a repo that gets this half right.** `views-faoapi` *does* pin — at
+`docs/ADRs/README.md:156`, to a full commit sha — but it pins the **registry**, not the contract, and
+that sha is **v1.0.0**: two versions behind, and stale since before either amendment. The contract
+itself it cites by name, with no link. Both halves are worth not inheriting: pin the contract too,
+and pin something you intend to re-read.
 
 ## 2. Declare your slots in the registry — before your repo exists
 
