@@ -18,10 +18,12 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.3.0"                          # RATIFIED — þing-02. Versions in lockstep with the
-                                           # contract (§10); docs/validate_docs.sh enforces it.
-ratified = "2026-07-31"                    # þing-02; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-07-31"                     # secret slots corrected against operator console
+version = "1.4.0"                          # AMENDED, NOT re-ratified — see contract §11 v1.4.0.
+                                           # Versions move in lockstep with the contract (§10);
+                                           # docs/validate_docs.sh check 7 enforces it.
+ratified = "2026-07-31"                    # þing-02 ratified v1.2.0; v1.0.0 was þing-01;
+                                           # v1.1.0 never ratified; v1.3.0/v1.4.0 amended
+amended = "2026-08-02"                     # v1.4.0: contract §5.9, one writer per value
 
 # ---------------------------------------------------------------- connection
 [connection.APPWRITE_ENDPOINT]

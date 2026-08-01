@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
-| Version | **1.3.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-07-31 — **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31. **v1.4.0 is amended, not re-ratified — see §11 and the objection window.** |
+| Version | **1.4.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-02 — **v1.4.0**: §5.9 states one writer per value; a conflicting second source is an error, not a precedence question. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -142,6 +142,10 @@ coordinates. Consumers read/validate against it and pass values in explicitly. B
 - The registry is exhaustive over the seam's environment **including what it does not govern** —
   explicit exclusions with owning contracts, so nothing reads as unaccounted-for.
 - The registry stays minimal: a file, owned and versioned. No tooling (dómr_endurmat E3).
+
+**What happens when a coordinate arrives from somewhere else anyway** — the rule above prohibits it;
+**§5.9** states the consequence. It is an *error naming both sources*, not a precedence question.
+The two clauses are one rule: §4 says where coordinates live, §5.9 says what a second writer means.
 
 ## 5. Credentials — identity, tiers, one operator
 
@@ -348,6 +352,44 @@ from the key value; (iii) a request bearing key A never serves content cached fo
 authored from the **post-salt** implementation (§5.1) — written before that, it would encode the
 fused behaviour as the reference and every clone would conform to the bug.
 
+### 5.9 One writer per value
+
+§4 already forbids treating a repo-local `.env` as a source of truth for coordinates. This clause
+states what happens when one is anyway, because that was left to chance and chance chose badly.
+
+> **A process environment is populated from exactly one source per value.**
+>
+> - **Coordinates are owned by the registry.** Nothing else may supply them.
+> - **The credential is owned by the operator.** A `.env`, an `EnvironmentFile` or an injected
+>   secret may carry it; nothing else may.
+> - Where a second source supplies a value the first already owns, **that is an error, not a
+>   precedence question.** The consumer fails loud, naming the conflicting variable and both
+>   sources. It does not pick a winner.
+
+**Ordering is not a rule.** The observed failure this clause exists to remove: a launcher sourced a
+`.env` carrying 15 coordinates, then exported registry values over the top. The registry won
+*because it ran second*. Nothing said it should, nothing tested that it did, and reversing the two
+blocks would have inverted the platform's coordinate source silently, with no signal anywhere.
+
+**Why this is a correctness clause and not a tidiness one.** Two writers to one shared mutable store
+with no synchronising mechanism is the textbook definition of a data race — the process environment
+is shared mutable state, and it has no borrow checker. Rust's rule (*"either one mutable reference
+or any number of immutable references"*) exists because the alternative produces failures that are,
+in its own words, *"difficult to diagnose and fix when you're trying to track them down at
+runtime."* That is exactly what a wrong coordinate does here: it surfaces as a phantom bucket or a
+stale delivery, far from the line that set it.
+
+**This clause is the environment-level statement of what §2 already requires of libraries.** §2 says
+a library receives credentials *as constructor parameters from the launching process* and never
+sources them — ownership and borrowing, stated for code. §5.9 states the same rule one layer down,
+for the environment the launching process itself assembles. A shell launcher cannot pass parameters
+to a child process; it has only the global environment. So the discipline §2 achieves by signature,
+a launcher must achieve by rule.
+
+**Consequences for implementers.** A consumer that resolves coordinates from the registry must not
+also accept them from the ambient environment without checking. Where both are present and agree,
+that is still a conflict — agreement today is not a mechanism, and it will not hold. Report it.
+
 ## 6. Failure semantics — raise, never provision
 
 - **A wrong or missing coordinate raises, naming the offending coordinate.** On any path, read or
@@ -433,6 +475,71 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.0 — 2026-08-02 — §5.9, one writer per value
+
+**Status: AMENDED, NOT RE-RATIFIED.** This version adds a clause without convening a þing. The
+reasoning is below and the route is contestable; **if the operator or any seat objects, this becomes
+a þing matter and v1.4.0 is withdrawn**, not defended.
+
+**What changed.** One new clause, **§5.9**, plus a three-line cross-reference added to **§4** so a
+reader of the coordinate section finds the enforcement rule (§5.9 governs coordinates but lives in
+the credentials section — the clause's real subject is the assembled process environment, which
+belongs cleanly to neither).
+
+**Verified mechanically, not asserted:** §1–3 and §6–10 are byte-identical to v1.3.0, and §5 is
+additive only — all 155 pre-existing non-blank lines present and in order. §4 changed by exactly the
+cross-reference described above and nothing else.
+
+**Why it was needed.** §4 already forbade treating a repo-local `.env` as a source of truth for
+coordinates. It did not say what happens when one is anyway — so nothing did, and the observed
+behaviour was: a launcher sourced a `.env` carrying 15 coordinates, then exported registry values
+over the top, and **the registry won because it ran second.** Reversing two blocks in a shell script
+would have inverted the platform's coordinate source silently. No test covered it; no clause
+addressed it.
+
+**What reclassified it.** Two prior reviews read this as a duplication and discoverability problem.
+A third, reading it through Rust's ownership model, found it meets the formal definition of a data
+race: two or more pointers to the same data, at least one writing, **no mechanism synchronising
+access**. All three conditions hold, with the process environment as the shared mutable store. That
+moved the finding from tidiness to correctness, and it is why §5.9 says a conflict is an *error*
+rather than specifying a precedence order — **documenting which write lands does not remove a data
+race, it annotates one.**
+
+**Why it is not a new obligation.** §5.9 is the environment-level statement of what §2 already
+requires of libraries: *receives credentials as constructor parameters from the launching process
+and must never source, persist, default, or log them.* That is ownership and borrowing, stated for
+code. A shell launcher cannot pass parameters to a child process — it has only the global
+environment — so the discipline §2 achieves by signature must be achieved by rule one layer down.
+Nothing here contradicts an existing clause; §5.9 gives §4 the enforcement semantics it lacked.
+
+**The route, stated so it can be challenged.** §10 says *disputes* about this contract return to the
+þing. This was taken as a clarification rather than a dispute, and it passes the contract's own
+admission test (§1): it governs something crossing the Appwrite seam, it holds unchanged for a seat
+that does not exist yet, and honouring it requires importing no shared implementation. **That
+judgment is the contestable part**, not the clause. It ships with an objection window instead of an
+assembly because þing-02 closed five days ago and reconvening for a clause that follows from §4
+would be disproportionate — but proportionality is an argument, not a permission.
+
+**The objection window, stated so it is a mechanism and not a claim.**
+
+| | |
+|---|---|
+| **Who may object** | any of the six þing-02 seats, or the operator |
+| **How** | a comment on views-appwrite#27, or an issue in any seated repo referencing it |
+| **Closes** | when the operator declares it closed, or on the first consumer pinning v1.4.0 — whichever comes first |
+| **If an objection is filed** | **v1.4.0 is withdrawn to a þing.** It is not defended here, and §5.9 does not bind in the interim |
+| **If none is filed** | v1.4.0 stands as amended, and this entry is the record of how |
+
+A window with no close condition is not a window — it is an unfalsifiable claim that someone could
+have objected. þing-02 ran an explicit abbreviated window on its amendments; this is the same
+mechanism at smaller scale, and it is stated here because otherwise the route above would rest on
+nothing.
+
+**Implementation.** Tracked as views-appwrite#27, story S1 of epic #26. Consumers implementing it:
+views-models#309 (`platform_env.sh`), views-faoapi#349 (coordinates from the registry).
+
+---
 
 ### v1.3.0 — 2026-07-31 — renamed; no clause changed
 
