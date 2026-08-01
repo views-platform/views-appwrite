@@ -45,7 +45,9 @@ from __future__ import annotations
 import hashlib
 from typing import Optional
 
-import pytest
+# No pytest import is needed: every check below is a plain `assert`, and the two
+# fixtures come from your conftest.py. Keeping the file import-light means a
+# consumer can read it without a test runner installed.
 
 VECTOR_VERSION = "1.0.0"
 
