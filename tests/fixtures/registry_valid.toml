@@ -1,0 +1,37 @@
+# Fixture for the reader-agreement test. NOT the live registry.
+# Deliberately small, deliberately fake values: the test asserts the three
+# readers AGREE, not that they emit any particular coordinate.
+[meta]
+contract = "fixture"
+version = "0.0.0"
+
+[connection.FIXTURE_ENDPOINT]
+class = "connection"
+value = "https://example.invalid/v1"
+
+[connection.FIXTURE_PROJECT_ID]
+class = "connection"
+value = "fixture-project"
+
+[target.FIXTURE_BUCKET_ID]
+class = "target"
+value = "fixture_bucket"
+
+# The spaces are DELIBERATE. Unquoted *_NAME coordinates carrying spaces are
+# what `set -a` truncates at the first word (views-models #293) — the reason
+# un_fao/run.sh exports by name instead. Do not "tidy" this value.
+[target.FIXTURE_BUCKET_NAME]
+class = "target"
+value = "Fixture Bucket With Spaces"
+
+[secret.FIXTURE_API_KEY]
+class = "secret"
+scopes = "files.read"
+
+[planned.FIXTURE_PLANNED_ID]
+class = "target"
+status = "planned — no value yet"
+
+[excluded.FIXTURE_POLICY]
+class = "policy"
+owning_contract = "somewhere else"
