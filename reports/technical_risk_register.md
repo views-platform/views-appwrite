@@ -4,9 +4,9 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-07-28                           |
-| Total Concerns    | 28                                   |
-| Open Concerns     | 23                                   |
+| Last Updated      | 2026-08-02                           |
+| Total Concerns    | 30                                   |
+| Open Concerns     | 25                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 4 (3 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -555,6 +555,82 @@ repo. It bears directly on this repo's eventual design: the extracted client's `
 hierarchy (ADR-001 Category 6) is where a "authenticate the caller, act under our own credential"
 split would have to be expressible, so O2's resolution is an input to Phase 1, not merely adjacent
 to it. Cross-refs: C-27 (rotation, same absence), `PLATFORM-001` §2/§5/§9.
+
+---
+
+### C-29: A value-less slot in the registry's `[target]` table kills every reader — it did, platform-wide, for a day
+
+| Field | Value |
+|-------|-------|
+| ID | C-29 |
+| Tier | 1 |
+| Source | `incident` — self-inflicted in `2186d45`, found 2026-08-02 while preparing epic #26 story S6 |
+| Trigger | Adding any entry to `[connection]` or `[target]` without a `value` — most likely when declaring coordinates for a consumer that does not exist yet, which is exactly what caused it. Also: any change to what the three readers scan. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml`; readers at `views-models/tools/registry_to_env.py:28,39-40`, `views-faoapi/deployment/registry_to_env.py`, `views-crafdapi/deployment/registry_to_env.py`; consumers at `views-models/postprocessors/un_fao/run.sh:24-26,67,83`, `views-faoapi/deployment/bootstrap.sh:24` |
+
+Commit `2186d45` declared four `APPWRITE_CRAFD_*` slots in `[target]` with `status = "planned"` and
+no `value`, to give an incoming consumer somewhere to read a coordinate from on day one. **All three
+canonical readers scan exactly `connection` and `target`, and raise on any entry there lacking a
+value** — `ValueError: registry coordinate 'X' (class 'target') has no value`. The registry was
+therefore unreadable by every consumer on the seam from `2186d45` until PR #31.
+
+**Why it was silent, which is what makes it Tier 1.** `un_fao/run.sh` sources `.env` but exports
+only `GITHUB_TOKEN` and `APPWRITE_DATASTORE_API_KEY`, so coordinates reach the delivery process
+**only** from the registry; `views-faoapi/deployment/bootstrap.sh` provisions the production server
+the same way. A crashed reader therefore means *no coordinates at all* — and `run.sh` prints a
+WARNING and continues (**C-47**, views-models#308). A total coordinate outage produced no error
+signal for roughly a day, on `main` and `development`, across the delivery path **and** the
+production provisioning path.
+
+**Two properties of this repo made it invisible here.** It has no runtime, so nothing local
+exercises the registry; and the readers live in three other repositories, so no test in any single
+repo covered the contract between them. The registry is a *data file with consumers* and was being
+edited as though it were prose.
+
+**Fix and guard.** Planned slots move to `[planned]`, a table no reader scans; a slot with no value
+is a declaration of intent, not a coordinate. `tests/test_registry_reader_contract.py` asserts the
+invariant and was **proven to bite** — re-introducing the exact break turns it red. That test also
+caught a defect in itself on first run: it *skipped*, because `tomllib` needs 3.11 and this suite
+runs 3.10, so it now falls back to `tomli` and fails loud if no parser exists.
+
+Closes when PR #31 reaches **`main`**, not merely `development` — both were broken. Cross-refs:
+C-47 (the warn-and-continue that hid it, views-models#308), C-21 (same hazard family: registry
+content reachable without a deliberate check), epic #26.
+
+---
+
+### C-30: `secret_scanning_non_provider_patterns` is off on the public consumer repos — the one flag þing-02 made load-bearing
+
+| Field | Value |
+|-------|-------|
+| ID | C-30 |
+| Tier | 3 |
+| Source | `manual` — prudence sweep of epic #26, 2026-08-02; premise corrected the same day |
+| Trigger | Cutting `views-productionapi`, the second clone, which will inherit whatever default the org carries. Also: any decision to treat a clean scan as evidence, since this flag governs what "clean" covers. |
+| Location | `views-platform/views-crafdapi` (public); org-wide setting; þing-02 **G2(d)**, tracked at views-appwrite#12 |
+
+**Corrected premise.** This entry was first registered as *"crafdapi went public before its scanning
+controls, so prevention became retrofit."* **That was wrong.** Verified against the GitHub API rather
+than the claim: `secret_scanning` **enabled**, `secret_scanning_push_protection` **enabled** — both on
+before the first push, exactly as `orð_dómr §III(3)` requires. The clone's own epic
+(views-crafdapi#1) states it, and the statement is true.
+
+**The real gap is narrower and more specific.** `secret_scanning_non_provider_patterns` is
+**disabled**, as are `dependabot_security_updates` and `secret_scanning_validity_checks`.
+
+That first flag is not incidental. þing-02 **S32** recorded that *both* seats defending §5.7 withdrew
+their objection on a **falsifiable condition**: that **G2(d) must include
+`secret_scanning_non_provider_patterns` and `.ipynb`-cell scanning**, because those are the two that
+catch the classes this platform's own history actually contained — views-datafactory's English-prose
+password and views-models' notebook-cell material. Provider-pattern scanning alone misses both.
+
+So a clean scan on these repos is a **narrower guarantee than the record assumes**, and the withdrawal
+that struck §5.7 was conditioned on a flag that is not set.
+
+**Not crafdapi's defect.** It is an org-level default, and the clone did more than the precondition
+asked. It is recorded here because this repo hosts the contract whose §5.7 strike depends on it.
+
+Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32.
 
 ---
 
