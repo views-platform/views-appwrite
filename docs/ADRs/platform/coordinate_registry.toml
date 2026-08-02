@@ -74,6 +74,25 @@ class = "target"
 value = "UNFAO File Metadata"
 
 # ------------------------------------------- INCOMING CONSUMERS (values pending)
+#
+# ⚠ THESE LIVE IN [planned.*], NOT [target.*], AND THAT IS LOAD-BEARING.
+#
+# Both canonical readers (views-models/tools/registry_to_env.py:28,39-40 and
+# views-faoapi/deployment/registry_to_env.py) scan exactly two tables —
+# `connection` and `target` — and RAISE on any entry in them without a `value`:
+#
+#     ValueError: registry coordinate 'X' (class 'target') has no value
+#
+# A value-less slot in [target] therefore does not degrade the reader, it KILLS
+# it — and un_fao/run.sh exports only GITHUB_TOKEN and APPWRITE_DATASTORE_API_KEY
+# from .env, so coordinates reach the child process ONLY from the registry. One
+# unreadable registry means the delivery runs with NO coordinates at all.
+#
+# That happened: commit 2186d45 put these four in [target] and every registry
+# read across the platform failed from then until this fix. A planned slot is a
+# DECLARATION OF INTENT, not a coordinate; it becomes a coordinate the day it has
+# a value, and only then does it move to [target].
+#
 # Two consumer APIs are about to be cloned from views-faoapi. Their slots are
 # declared HERE, BEFORE the repos exist, because §5.3's credential floor is
 # "free at creation and a migration afterwards" — which only holds if there is
@@ -100,22 +119,22 @@ value = "UNFAO File Metadata"
 # reads an existing container, delete these rather than leaving them to look
 # canonical.
 
-[target.APPWRITE_CRAFD_BUCKET_ID]
+[planned.APPWRITE_CRAFD_BUCKET_ID]
 class = "target"
 status = "planned — views-crafdapi (þing-02 record: 'un-crafdapi')"
 consumer = "views-crafdapi"
 
-[target.APPWRITE_CRAFD_BUCKET_NAME]
+[planned.APPWRITE_CRAFD_BUCKET_NAME]
 class = "target"
 status = "planned"
 consumer = "views-crafdapi"
 
-[target.APPWRITE_CRAFD_COLLECTION_ID]
+[planned.APPWRITE_CRAFD_COLLECTION_ID]
 class = "target"
 status = "planned"
 consumer = "views-crafdapi"
 
-[target.APPWRITE_CRAFD_COLLECTION_NAME]
+[planned.APPWRITE_CRAFD_COLLECTION_NAME]
 class = "target"
 status = "planned"
 consumer = "views-crafdapi"
