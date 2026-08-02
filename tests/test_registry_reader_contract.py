@@ -1,13 +1,21 @@
 """The registry's contract with its readers.
 
-Every consumer on the seam reads `coordinate_registry.toml` through one of two
-near-identical stdlib readers (views-models/tools/registry_to_env.py,
-views-faoapi/deployment/registry_to_env.py). Both scan exactly two tables --
-`connection` and `target` -- and both RAISE on any entry there without a `value`:
+Every consumer on the seam reads `coordinate_registry.toml` through one of three
+near-identical stdlib readers (views-models/tools/credentials/registry_to_env.py,
+views-faoapi/deployment/registry_to_env.py,
+views-crafdapi/deployment/registry_to_env.py). All three scan exactly two tables
+-- `connection` and `target` -- and all three RAISE on an entry there that has
+neither a `value` nor a reservation marker:
 
     ValueError: registry coordinate 'X' (class 'target') has no value
 
 So a value-less entry in either table does not degrade a reader. It kills it.
+
+One caveat, added 2026-08-02: if such an entry carries `status = "planned …"`,
+the readers no longer agree -- views-models skips it and emits a PARTIAL set
+where the other two still raise (C-51 / D-05). This file asserts the registry's
+own shape, which is unaffected; the cross-reader question lives in
+`test_registry_readers_agree.py`.
 
 WHY THIS FILE EXISTS
 --------------------
@@ -98,8 +106,6 @@ def test_planned_slots_are_outside_the_scanned_tables():
     """
     registry = _load()
     planned = registry.get("planned", {})
-    if not planned:
-        pytest.skip("no planned slots declared right now — nothing to check")
     for name, entry in planned.items():
         assert "value" not in entry, (
             f"[planned.{name}] has a value, so it is no longer planned. "
@@ -109,6 +115,43 @@ def test_planned_slots_are_outside_the_scanned_tables():
             f"[planned.{name}] must say what it is waiting for; §3 requires the "
             "class and status be declared, never inferred."
         )
+
+
+def test_the_reservation_rule_is_still_written_down():
+    """C-55: what the test above cannot check when there is nothing to check.
+
+    That test used to `pytest.skip` when no `[planned]` slots existed. On
+    2026-08-02 the last four graduated to `[target]`, so it began skipping on
+    every run -- switching itself off during the ONE window where its guidance
+    matters: after the last reservation is gone, and before the next author
+    writes one. A guard that stands down whenever it is not already satisfied
+    protects nobody.
+
+    So the invariant is restated as one that always has something to assert. The
+    reservation rule is prose -- prose is what decayed in C-54, where the warning
+    stayed byte-identical while the data beneath it inverted -- and this pins the
+    load-bearing parts of it to the file that must carry them.
+    """
+    text = REGISTRY.read_text(encoding="utf-8")
+    # Deliberately the shortest token that carries each fact, not the sentence
+    # around it. A phrase-level check fires on innocent rewording, and a guard
+    # that cries wolf at prose edits gets deleted by the third person who hits
+    # it. These four are the things that cannot be rephrased away: the table
+    # name, the readers, the incident, the open divergence.
+    required = {
+        "the reserved-slot table": "[planned.*]",
+        "the reader list": "registry_to_env.py",
+        "the incident": "2186d45",
+        "the divergence": "C-51",
+    }
+    missing = [label for label, needle in required.items() if needle not in text]
+    assert not missing, (
+        "the registry no longer explains how to reserve a value-less coordinate: "
+        f"missing {missing}. Someone deleted the standing rule, most likely while "
+        "tidying a section that had no entries left under it. Restore it -- that "
+        "block is the only thing standing between the next editor and a repeat of "
+        "2186d45, and it must survive the periods when no reservation exists."
+    )
 
 
 def test_no_secret_carries_a_value():

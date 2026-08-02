@@ -45,8 +45,14 @@ and pin something you intend to re-read.
 Your coordinates and your credential slot belong in
 [`coordinate_registry.toml`](coordinate_registry.toml), not in your repo.
 
-- **Coordinates** — bucket and collection ids and names. Declared with `status = "planned"` until the
-  operator sets the values in the console. Slots for `views-crafdapi` are already there.
+- **Coordinates** — bucket and collection ids and names. Reserve them in the **`[planned]`** table,
+  with `status = "planned — …"`, until the operator sets the values in the console; then they move to
+  `[target]`. **The table matters more than the marker**: readers scan `[connection]` and `[target]`
+  only, and they no longer agree on what a marker means (views-models skips such an entry and emits a
+  partial coordinate set; the other two raise — C-51/D-05). A reservation left in `[target]` is
+  therefore either a platform-wide outage or a silent partial delivery, depending on who reads it.
+  The registry's own header block spells this out; read it before adding anything.
+  `views-crafdapi`'s four slots were reserved this way and graduated to `[target]` on 2026-08-02.
 - **One credential slot, yours alone.** Contract §5.3's floor: *no key is held by two parties who
   could need revoking separately.* A new external party may not share FAO's key, and two new APIs may
   not share each other's.

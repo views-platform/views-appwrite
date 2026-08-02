@@ -1,0 +1,36 @@
+# THE DISPUTED SHAPE (D-05): a value-less [target] entry carrying a reservation
+# marker. This is byte-for-byte the shape commit 2186d45 introduced.
+#
+# The three canonical readers DISAGREE about it, and that disagreement is the
+# whole reason this fixture exists as a separate file:
+#
+#   views-models/tools/credentials/registry_to_env.py  -> SKIPS it (exit 0,
+#       emitting a PARTIAL coordinate set). Its `_is_planned()` matches any
+#       `status` beginning "planned", and its own ratified test
+#       `test_planned_reservation_is_skipped_not_fatal` pins that behaviour.
+#   views-faoapi/deployment/registry_to_env.py         -> RAISES ValueError.
+#   views-crafdapi/deployment/registry_to_env.py       -> RAISES ValueError.
+#
+# Why this matters more than the raw malformed case: `2186d45` used exactly this
+# shape. Under today's views-models reader that commit would NOT have produced
+# the loud platform-wide crash recorded in C-29 — it would have silently handed
+# the UN FAO delivery 12 of 16 coordinates. The incident that taught the platform
+# this lesson would, today, not announce itself at all.
+#
+# DO NOT "fix" a red test by deleting the `status` line below. That line is the
+# evidence. Removing it greens the suite and erases C-51.
+[meta]
+contract = "fixture"
+version = "0.0.0"
+
+[connection.FIXTURE_ENDPOINT]
+class = "connection"
+value = "https://example.invalid/v1"
+
+[target.FIXTURE_BUCKET_ID]
+class = "target"
+value = "fixture_bucket"
+
+[target.FIXTURE_RESERVED]
+class = "target"
+status = "planned — reserved for a consumer that does not exist yet"
