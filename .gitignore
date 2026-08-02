@@ -7,3 +7,8 @@ build/
 *.egg-info/
 .venv/
 .coverage
+
+# Local working instructions for agent sessions — not repo policy.
+# Untracked in every other views-platform repo; committed here by accident
+# via `git add -A` in 28c897d and removed from tracking in this commit.
+CLAUDE.md
