@@ -1,0 +1,18 @@
+# The C-29 shape: a value-less slot in [target]. Every canonical reader must
+# REJECT this. If a reader ever starts tolerating it, the platform loses the
+# fail-loud property that would have caught the 2026-08-02 outage.
+[meta]
+contract = "fixture"
+version = "0.0.0"
+
+[connection.FIXTURE_ENDPOINT]
+class = "connection"
+value = "https://example.invalid/v1"
+
+[target.FIXTURE_BUCKET_ID]
+class = "target"
+value = "fixture_bucket"
+
+[target.FIXTURE_NO_VALUE]
+class = "target"
+status = "planned — this is the defect the readers must reject"
