@@ -18,10 +18,14 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.3.0"                          # RATIFIED — þing-02. Versions in lockstep with the
-                                           # contract (§10); docs/validate_docs.sh enforces it.
-ratified = "2026-07-31"                    # þing-02; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-07-31"                     # secret slots corrected against operator console
+version = "1.4.0"                          # Versions in lockstep with the contract (§10);
+                                           # docs/validate_docs.sh checks 7 and 8 enforce it.
+ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
+amended = "2026-08-02"                     # v1.4.0: four CRAFD coordinates graduated [planned] -> [target];
+                                           # CRAFD caller key recorded as issued. OBSERVATION-DRIVEN — §10's
+                                           # distinction: this bump records state the operator created, it
+                                           # imposes no new obligation on any consumer.
+                                           # v1.3.0 (2026-07-31): secret slots corrected against operator console.
 
 # ---------------------------------------------------------------- connection
 [connection.APPWRITE_ENDPOINT]
@@ -73,38 +77,63 @@ value = "unfao"
 class = "target"
 value = "UNFAO File Metadata"
 
-# ------------------------------------------- INCOMING CONSUMERS (values pending)
+# ============================================================================
+# HOW TO RESERVE A COORDINATE THAT HAS NO VALUE YET — READ BEFORE ADDING ONE
+# ============================================================================
+# This is a STANDING RULE about the shape of this file. It is not about any
+# particular entry, and it stays here when no reservation exists — which is the
+# state right now: there are currently NO reserved slots. (Until 2026-08-02 this
+# block sat directly above four value-less CRAFD entries and said "THESE"; once
+# those graduated, the word pointed at nothing and the warning read as stale
+# prose contradicting the data below it. C-54.)
 #
-# ⚠ THESE LIVE IN [planned.*], NOT [target.*], AND THAT IS LOAD-BEARING.
+#     A value-less entry belongs in [planned.*]. Never in [target] or
+#     [connection], no matter what `status` you give it.
 #
-# Both canonical readers (views-models/tools/registry_to_env.py:28,39-40 and
-# views-faoapi/deployment/registry_to_env.py) scan exactly two tables —
-# `connection` and `target` — and RAISE on any entry in them without a `value`:
+# WHY. The canonical readers — views-models/tools/credentials/registry_to_env.py,
+# views-faoapi/deployment/registry_to_env.py, views-crafdapi/deployment/registry_to_env.py
+# — scan exactly two tables, `connection` and `target`. On an entry there with no
+# `value` they do NOT degrade; they do one of two things, and as of 2026-08-02
+# they no longer agree on which:
 #
-#     ValueError: registry coordinate 'X' (class 'target') has no value
+#     no value, no status         -> ALL THREE raise
+#                                    ValueError: registry coordinate 'X' … has no value
+#     no value, status="planned…" -> views-faoapi and views-crafdapi RAISE;
+#                                    views-models SKIPS IT and continues,
+#                                    emitting a partial coordinate set.
 #
-# A value-less slot in [target] therefore does not degrade the reader, it KILLS
-# it — and un_fao/run.sh exports only GITHUB_TOKEN and APPWRITE_DATASTORE_API_KEY
-# from .env, so coordinates reach the child process ONLY from the registry. One
-# unreadable registry means the delivery runs with NO coordinates at all.
+# That split is tracked as C-51 / D-05 and is NOT settled. Do not rely on either
+# behaviour. Both are dangerous here for different reasons:
 #
-# That happened: commit 2186d45 put these four in [target] and every registry
-# read across the platform failed from then until this fix. A planned slot is a
-# DECLARATION OF INTENT, not a coordinate; it becomes a coordinate the day it has
-# a value, and only then does it move to [target].
+#   - A raise means the delivery gets NO coordinates at all. `un_fao/run.sh`
+#     exports only GITHUB_TOKEN and APPWRITE_DATASTORE_API_KEY from `.env`, so
+#     coordinates reach the child process ONLY from this file.
+#   - A skip is worse, because it is silent. The delivery runs against a registry
+#     that is missing exactly the names nobody filled in, and nothing says so.
 #
-# Two consumer APIs are about to be cloned from views-faoapi. Their slots are
-# declared HERE, BEFORE the repos exist, because §5.3's credential floor is
-# "free at creation and a migration afterwards" — which only holds if there is
-# somewhere to read a coordinate from on day one. A repo that finds no slot
-# invents one locally, which is the pathology this registry exists to remove.
+# THIS ALREADY HAPPENED. Commit 2186d45 put four value-less slots in [target] and
+# every registry read on the platform failed for about a day, unnoticed (C-29).
+# Note what changed since: that commit used `status = "planned — …"`, so under
+# today's views-models reader it would no longer crash loudly — it would hand the
+# UN FAO delivery 12 of 16 coordinates in silence. The incident that taught the
+# platform this lesson can no longer reproduce itself the way it is written down.
 #
-# status = "planned" means: the SLOT is canonical, the VALUE is not yet decided.
-# Do NOT fill these with plausible-looking placeholders. A placeholder that later
-# gets used verbatim is the "production coordinates reachable without a
-# deliberate choice" hazard class (views-appwrite C-21). The operator sets the
-# values in the console; this file records them afterwards.
+# A planned slot is a DECLARATION OF INTENT, not a coordinate. It becomes a
+# coordinate the day it has a value, and only then does it move to [target].
+# Slots are declared BEFORE the consuming repo exists on purpose: §5.3's
+# credential floor is "free at creation and a migration afterwards", which only
+# holds if there is somewhere to read a coordinate from on day one. A repo that
+# finds no slot invents one locally — the pathology this registry exists to remove.
 #
+# Do NOT fill a reservation with a plausible-looking placeholder. A placeholder
+# that later gets used verbatim is the "production coordinates reachable without
+# a deliberate choice" hazard class (C-21). The operator sets values in the
+# console; this file records them afterwards.
+#
+# Guarded by tests/test_registry_reader_contract.py and
+# tests/test_registry_readers_agree.py in this repo.
+# ============================================================================
+
 # NAMING: the þing-02 record calls the CRAFD consumer "un-crafdapi" (28
 # occurrences). The operator has since named it "views-crafdapi", which also
 # matches the views-* convention every other repo on the platform follows. This
@@ -172,12 +201,25 @@ serves_identities = [
   "model/ensemble writer -> production_forecasts",
   "un_fao delivery -> sole writer of unfao_bucket",
   "preflights / validators",
+  "crafd delivery -> sole writer of crafd_bucket (ADDED v1.4.0 — see below)",
 ]
 observed = """2026-07-31, operator console: 20 scopes, expires ~2026-11-30.
-VIOLATES seam contract §5.3 — one key, three identities. Read by BOTH
+VIOLATES seam contract §5.3 — one key, FOUR identities (three until v1.4.0). Read by
 views-pipeline-core/views_pipeline_core/configs/prediction_store.py:16 and
 views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187, so the
-publisher into FAO's outbound bucket runs under a key named for another service."""
+publisher into FAO's outbound bucket runs under a key named for another service.
+
+THE FOURTH IDENTITY ARRIVED WITHOUT ANYONE DECIDING IT (C-57). While the four
+APPWRITE_CRAFD_* names sat in [planned], no reader emitted them, so
+views-postprocessing/views_postprocessing/crafd/managers/crafd.py could never get
+past its assert_env_declared() and the CRAFD writer path was unreachable. Granting
+those names values in v1.4.0 is what made it live — it builds its writer with
+credentials=os.getenv("APPWRITE_DATASTORE_API_KEY"), like the other three.
+
+This matters for the SPLIT, not for today's running system: the remediation
+(views-faoapi#338) is sized from THIS list. A split that cuts over three holders
+and then narrows or revokes this key stops the CRAFD delivery silently, because
+the fourth holder was never on anyone's inventory."""
 note = """RETIRED by reissuance under seam contract §5 — but NOT by console action alone:
 the incumbent client's ordinary upload path provisions transitively (§5.5 table), so
 narrowing scopes today breaks every upload. RATIFIED ORDER (þing-02 D4):
@@ -280,9 +322,49 @@ scopes = "databases.read, rows.read, documents.read, files.read — read tier on
 scopes_enumerated = """2026-08-02, ticked in the console at creation. The read tier, plus
 rows.read (the TablesDB-era twin of the now-deprecated documents.read, so the key reads via
 either the classic documents API or the new rows API). NO .write/.delete on any resource;
-zero scopes in every other category. A clean per-party read key — the model #338 moves the
-shared UN FAO key toward. The secret VALUE is not recorded here (operator holds it; it goes
-into the views-crafdapi deployment env at first deploy, S11)."""
+zero scopes in every other category. A clean per-party read key — the model views-faoapi#338
+moves the shared UN FAO key toward.
+
+The secret VALUE is not recorded here; the operator holds it."""
+scopes_insufficient = """⚠ AS ISSUED, THIS KEY CANNOT AUTHENTICATE A SINGLE REQUEST (C-56).
+Two scopes are missing, and the first is fatal:
+
+  buckets.read   — views-crafdapi validates EVERY key by calling list_buckets:
+                   `_validate_api_key` -> manager.list_buckets(limit=1) ->
+                   GET /v1/storage/buckets, at
+                   views-crafdapi/src/views_crafdapi/managers/api.py:297, raising
+                   HTTPException(401) when it fails. It is reached through
+                   Depends on every route, including /health. This file already
+                   proves the outcome: the operator's own probe (history_leak
+                   above) records that this exact endpoint answers
+                   `general_unauthorized_scope, "missing scopes ([buckets.read])"`.
+  tables.read    — or collections.read. This file's own read-only recipe
+                   (FAO_CALLER_API_KEY.scopes_finding) names four scopes a read
+                   consumer needs; the issued key satisfies two of them.
+
+FAO's key hides the requirement because it holds buckets.read, so the existing
+deployment gives no warning that a read-tier key needs it.
+
+RESOLUTION: operator console action — tick buckets.read and tables.read on
+`crafd-caller-read`. Blocks views-crafdapi S11 (#12), whose acceptance criterion
+is `smoke ALL PASS`. Not a code change; do NOT relax the validation to fit the key,
+because the validation is what makes an invalid key fail at the door."""
+destination = """The holder is CRAF'd, not this platform. Per `carrier` above, the key is
+presented BY the caller in the X-API-Key header and re-used by the API against Appwrite.
+
+There is NO env slot for it, and there must not be one until O2 is settled (C-58).
+Confirmed: `_REQUIRED_APPWRITE_ENV_VARS` in views-crafdapi lists no caller-key variable,
+the key arrives via Header(...) and goes straight to the SDK, and the name
+CRAFD_CALLER_API_KEY appears in NO code anywhere in the workspace — only here and in the
+risk register entry that tracks this (C-58). Nothing reads it because nothing is meant to.
+
+An earlier draft of this slot said the value "goes into the views-crafdapi deployment env
+at first deploy, S11". That contradicted `carrier` eight lines above and named a
+destination that does not exist. Following it literally installs the key on a host where
+nothing reads it and never sends it to the party who must present it: every request 401s
+while the checklist reads done. Adding an env var to make that sentence true would answer
+§9's confused-deputy question (O2) in the direction this slot's own `note` says it is not
+deciding. The sentence was wrong; the code is right."""
 note = """Second external party. Must NOT share FAO's key: §5.3's floor, and the
 UN FAO key is the worked example of what sharing costs (it serves FAO and this
 platform's dev/ops at once and cannot be revoked for one without the other).

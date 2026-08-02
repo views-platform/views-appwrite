@@ -157,6 +157,71 @@ else
 fi
 
 echo ""
+echo "--- Checking that a changed contract/registry bumped its version ---"
+# C-53. The check above compares the two versions TO EACH OTHER and to nothing
+# else, so "bump neither" satisfies it perfectly. That is how four coordinates
+# became canonical on 2026-08-02 while the registry still called itself v1.3.0 --
+# green gate, broken rule (§10: "every change bumps the version").
+#
+# Consumers pin by version, and three of them resolve this file through
+# /blob/main/, so an unbumped edit changes what they read with nothing to compare.
+# The version is the only handle they have; if it can stand still through a
+# content change, it carries no information.
+#
+# Compares against origin/main, the branch consumers actually resolve. Skipped
+# with a visible note when there is no git or no origin/main to compare against
+# -- a check that cannot run must say so rather than pass quietly.
+if ! command -v git >/dev/null 2>&1 || ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "  SKIP: not a git checkout — cannot diff against origin/main"
+elif ! git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
+    echo "  SKIP: no origin/main in this checkout — nothing to compare against"
+else
+    # Compares the version VALUE across the two revisions, not whether the line
+    # that carries it was touched. Two earlier drafts of this check were wrong in
+    # opposite directions, and both are worth not repeating:
+    #
+    #   "any changed line mentioning a semver"  -> passes when someone adds prose
+    #       like "byte-identical to v1.3.0" and never touches the declaration.
+    #   "the declaration line appears in the diff" -> passes when the declaration
+    #       line changes for an unrelated reason. Editing the trailing comment on
+    #       `version = "1.3.0"` satisfied it while the version stood still.
+    #
+    # Only the value answers the question consumers actually ask: is what I pinned
+    # still what I would get?
+    _version_of() {   # $1 = git revision or "" for the working tree, $2 = file
+        if [ -z "$1" ]; then cat "$2" 2>/dev/null; else git show "$1:docs/$2" 2>/dev/null; fi \
+        | if [ "$2" = "$REGISTRY" ]; then grep -oP '^version = "\K[0-9.]+'
+          else grep -P '^\| Version \|' | grep -oP '[0-9]+\.[0-9]+\.[0-9]+'; fi \
+        | head -1
+    }
+    for f in "$CONTRACT" "$REGISTRY"; do
+        [ -f "$f" ] || continue
+        git diff --quiet origin/main -- ":/docs/$f" 2>/dev/null && continue
+        was=$(_version_of origin/main "$f")
+        now=$(_version_of "" "$f")
+        if [ -z "$now" ]; then
+            echo "  ERROR: cannot parse a version from $(basename "$f")"
+            errors=$((errors + 1))
+        elif [ -z "$was" ] && git cat-file -e "origin/main:docs/$f" 2>/dev/null; then
+            # The file exists on origin/main but no version parsed out of it. An
+            # empty `was` would otherwise differ from `now` and report OK -- a
+            # false pass on exactly the comparison this check exists to make.
+            echo "  ERROR: $(basename "$f") exists on origin/main but no version could be parsed there."
+            echo "         Cannot prove the version moved, so this is not a pass."
+            errors=$((errors + 1))
+        elif [ "$was" = "$now" ]; then
+            echo "  ERROR: $(basename "$f") differs from origin/main but its version is still v${now}."
+            echo "         §10: 'every change bumps the version. The registry and this"
+            echo "         contract version together.' Consumers pin by version; an edit"
+            echo "         they cannot detect is the failure mode this rule exists to stop."
+            errors=$((errors + 1))
+        else
+            echo "  OK: $(basename "$f") changed and its version moved v${was} -> v${now}"
+        fi
+    done
+fi
+
+echo ""
 if [ "$errors" -gt 0 ]; then
     echo "=== FAILED: $errors issue(s) found ==="
     exit 1
