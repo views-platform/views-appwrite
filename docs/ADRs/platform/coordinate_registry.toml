@@ -111,32 +111,31 @@ value = "UNFAO File Metadata"
 # file uses views-crafdapi; the former name is recorded so the þing record stays
 # findable.
 
-# The four CRAFD slots below rest on an INFERENCE, declared here rather than left
-# silent (ADR-003: declarations over inference). views-crafdapi is a direct clone
-# of views-faoapi serving a second external party, and faoapi's shape is
-# "external party reads a curated outbound bucket" — so a bucket of its own is
-# the clone's shape, not a new decision. Confirm at creation; if CRAFD instead
-# reads an existing container, delete these rather than leaving them to look
-# canonical.
+# The four CRAFD slots below were RESERVED as an inference (views-crafdapi is a
+# direct clone of views-faoapi serving a second external party; faoapi's shape is
+# "external party reads a curated outbound bucket", so a bucket of its own was the
+# clone's shape, not a new decision). CONFIRMED 2026-08-02: the operator created a
+# dedicated bucket + metadata collection in the Appwrite console (views-crafdapi S9,
+# #10) — exactly the inferred shape — so they graduate from [planned] to [target].
 
-[planned.APPWRITE_CRAFD_BUCKET_ID]
+[target.APPWRITE_CRAFD_BUCKET_ID]
 class = "target"
-status = "planned — views-crafdapi (þing-02 record: 'un-crafdapi')"
+value = "crafd_bucket"
 consumer = "views-crafdapi"
 
-[planned.APPWRITE_CRAFD_BUCKET_NAME]
+[target.APPWRITE_CRAFD_BUCKET_NAME]
 class = "target"
-status = "planned"
+value = "CRAFD Bucket"
 consumer = "views-crafdapi"
 
-[planned.APPWRITE_CRAFD_COLLECTION_ID]
+[target.APPWRITE_CRAFD_COLLECTION_ID]
 class = "target"
-status = "planned"
+value = "crafd"
 consumer = "views-crafdapi"
 
-[planned.APPWRITE_CRAFD_COLLECTION_NAME]
+[target.APPWRITE_CRAFD_COLLECTION_NAME]
 class = "target"
-status = "planned"
+value = "CRAFD File Metadata"
 consumer = "views-crafdapi"
 
 # views-productionapi has NO target slots here, deliberately.
@@ -272,10 +271,18 @@ open_item = "O2 — confused-deputy half unresolved (seam contract §9)"
 
 [secret.CRAFD_CALLER_API_KEY]
 class = "secret"
-status = "planned — operator issues at views-crafdapi creation"
+status = "ISSUED 2026-08-02 — operator, via the Appwrite console (views-crafdapi S9, #10)"
+console_key_name = "crafd-caller-read"
 carrier = "X-API-Key request header (presented by the caller, re-used by the API)"
 consumer = "views-crafdapi"
-scopes = "files.read, documents.read, databases.read — read tier only (§5.2)"
+issued_by = "operator"
+scopes = "databases.read, rows.read, documents.read, files.read — read tier only, zero write (§5.2)"
+scopes_enumerated = """2026-08-02, ticked in the console at creation. The read tier, plus
+rows.read (the TablesDB-era twin of the now-deprecated documents.read, so the key reads via
+either the classic documents API or the new rows API). NO .write/.delete on any resource;
+zero scopes in every other category. A clean per-party read key — the model #338 moves the
+shared UN FAO key toward. The secret VALUE is not recorded here (operator holds it; it goes
+into the views-crafdapi deployment env at first deploy, S11)."""
 note = """Second external party. Must NOT share FAO's key: §5.3's floor, and the
 UN FAO key is the worked example of what sharing costs (it serves FAO and this
 platform's dev/ops at once and cannot be revoked for one without the other).
