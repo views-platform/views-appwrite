@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31 |
-| Version | **1.3.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-07-31 — **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0 is an observation-driven bump carrying **no clause change** |
+| Version | **1.4.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-02 — **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -433,6 +433,35 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.0 — 2026-08-02 — companion registry only; no clause changed
+
+**Status: ACCEPTED** — an **observation-driven** bump in the sense §10 defines. Every clause is
+byte-identical to v1.3.0. No consumer acquires an obligation by upgrading, and a consumer diffing
+v1.3.0 against v1.4.0 is entitled to see exactly that.
+
+**What changed** — all of it in `coordinate_registry.toml`:
+
+| | |
+|---|---|
+| **CRAFD coordinates** | The four `APPWRITE_CRAFD_*` slots graduate `[planned]` → `[target]` with values. The operator created the bucket and metadata collection on 2026-08-02 — the shape the reservation inferred |
+| **CRAFD caller key** | Recorded as issued (`crafd-caller-read`), with its console scopes enumerated — **and with the two missing scopes that stop it authenticating recorded alongside them** (C-56) |
+| **Standing reservation rule** | Rewritten as a rule about the file rather than a note about four particular entries, after it inverted against its own data (C-54) |
+| **Fourth identity** | `APPWRITE_DATASTORE_API_KEY.serves_identities` gains the CRAFD delivery — the graduation is what made that writer reachable (C-57) |
+
+**Why this needed a version at all, given nothing normative moved.** §10 says *"every change bumps
+the version"* and the registry's own header says changes come *"by PR to this file + a seam-contract
+version bump."* Four coordinates became canonical under v1.3.0's number. Three consumers
+(`views-pipeline-core`, `views-postprocessing`, `views-datafactory`) resolve this contract through
+`/blob/main/` rather than a pin, and `views-postprocessing` runs a drift test that compares the
+registry's `meta.version` against its own pinned `"1.3.0"` — so the merge would have changed what
+they read while every check stayed green. **A version that can stand still through a content change
+carries no information**, which is the whole property consumers pin for.
+
+`docs/validate_docs.sh` gains a check for this: the previous one compared the two version numbers to
+each other and to nothing else, so *bumping neither* satisfied it.
+
+**Nothing downstream breaks.** `platform-001-v1.2.0` and the v1.3.0 tag are not moved, per §10.
 
 ### v1.3.0 — 2026-07-31 — renamed; no clause changed
 

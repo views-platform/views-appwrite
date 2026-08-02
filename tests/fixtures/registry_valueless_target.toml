@@ -1,6 +1,14 @@
-# The C-29 shape: a value-less slot in [target]. Every canonical reader must
-# REJECT this. If a reader ever starts tolerating it, the platform loses the
-# fail-loud property that would have caught the 2026-08-02 outage.
+# MALFORMED: a [target] entry with no `value` and NO reservation marker.
+#
+# Every canonical reader must REJECT this, and as of 2026-08-02 all three do.
+# This is the unambiguous half of the C-29 shape: nothing here declares intent,
+# so a reader that continues would hand a consumer a silently partial set.
+#
+# The OTHER half — a value-less entry that DOES carry `status = "planned …"` —
+# lives in `registry_planned_reservation.toml`, because the readers disagree
+# about it (D-05). Keeping both shapes in one fixture hid that disagreement:
+# views-models was skipping on the marker while the test reported it as
+# "tolerating a value-less slot", which is a different and less alarming claim.
 [meta]
 contract = "fixture"
 version = "0.0.0"
@@ -15,4 +23,3 @@ value = "fixture_bucket"
 
 [target.FIXTURE_NO_VALUE]
 class = "target"
-status = "planned — this is the defect the readers must reject"

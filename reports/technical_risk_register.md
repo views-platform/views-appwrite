@@ -5,10 +5,10 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 30                                   |
-| Open Concerns     | 25                                   |
+| Total Concerns    | 40                                   |
+| Open Concerns     | 35                                   |
 | Resolved Concerns | 5                                    |
-| Disagreements     | 4 (3 open, 1 resolved — D-02)        |
+| Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
 ---
@@ -566,7 +566,7 @@ to it. Cross-refs: C-27 (rotation, same absence), `PLATFORM-001` §2/§5/§9.
 | Tier | 1 |
 | Source | `incident` — self-inflicted in `2186d45`, found 2026-08-02 while preparing epic #26 story S6 |
 | Trigger | Adding any entry to `[connection]` or `[target]` without a `value` — most likely when declaring coordinates for a consumer that does not exist yet, which is exactly what caused it. Also: any change to what the three readers scan. |
-| Location | `docs/ADRs/platform/coordinate_registry.toml`; readers at `views-models/tools/registry_to_env.py:28,39-40`, `views-faoapi/deployment/registry_to_env.py`, `views-crafdapi/deployment/registry_to_env.py`; consumers at `views-models/postprocessors/un_fao/run.sh:24-26,67,83`, `views-faoapi/deployment/bootstrap.sh:24` |
+| Location | `docs/ADRs/platform/coordinate_registry.toml`; readers at `views-models/tools/credentials/registry_to_env.py` (moved there by views-models#309 — this entry previously cited the pre-move path `tools/registry_to_env.py:28,39-40`, the same stale path that made C-52 vacuous), `views-faoapi/deployment/registry_to_env.py`, `views-crafdapi/deployment/registry_to_env.py`; consumers at `views-models/postprocessors/un_fao/run.sh:24-26,67,83`, `views-faoapi/deployment/bootstrap.sh:24` |
 
 Commit `2186d45` declared four `APPWRITE_CRAFD_*` slots in `[target]` with `status = "planned"` and
 no `value`, to give an incoming consumer somewhere to read a coordinate from on day one. **All three
@@ -593,9 +593,20 @@ invariant and was **proven to bite** — re-introducing the exact break turns it
 caught a defect in itself on first run: it *skipped*, because `tomllib` needs 3.11 and this suite
 runs 3.10, so it now falls back to `tomli` and fails loud if no parser exists.
 
-Closes when PR #31 reaches **`main`**, not merely `development` — both were broken. Cross-refs:
-C-47 (the warn-and-continue that hid it, views-models#308), C-21 (same hazard family: registry
-content reachable without a deliberate check), epic #26.
+Closes when PR #31 reaches **`main`**, not merely `development` — both were broken.
+
+> **Status update, 2026-08-02 — do not read the paragraph above as settled.** Two of the three claims
+> it makes are no longer true. **(a)** *"Planned slots move to `[planned]`"* — the `[planned]` table
+> now contains nothing and does not exist in the parsed file, so an auditor cannot tell "fixed" from
+> "reverted" (**C-54**), and the guard covering it skips permanently (**C-55**). **(b)** *"All three
+> canonical readers … raise"* — they no longer do. `views-models` exits 0 on that shape and emits a
+> partial coordinate set (**C-51**). The companion guard written to detect exactly that has been
+> pointing at a non-existent path since views-models#309 (**C-52**). The invariant test in this repo
+> still bites; the cross-repo agreement claim does not.
+
+Cross-refs: views-models C-47 (the warn-and-continue that hid it, views-models#308), C-21 (same
+hazard family: registry content reachable without a deliberate check), C-51, C-52, C-54, C-55,
+epic #26.
 
 ---
 
@@ -631,6 +642,305 @@ that struck §5.7 was conditioned on a flag that is not set.
 asked. It is recorded here because this repo hosts the contract whose §5.7 strike depends on it.
 
 Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32.
+
+---
+
+> **Numbering note.** The next ten entries start at **C-51**, not C-31. `C-31`–`C-41` were allocated
+> by the `/falsify` audit of 2026-07-31 (they name the stubs in
+> `tests/test_falsification_thing02_contract.py`) but were never written into this register, and
+> `C-47`/`C-50` appear here only as cross-references into **views-models'** register. Reusing any of
+> those numbers would make a citation ambiguous about which register it means. The gap is deliberate.
+> Registering C-31–C-41 properly is separate outstanding work.
+
+---
+
+### C-51: The three registry readers have diverged — views-models tolerates the exact shape the other two reject
+
+| Field | Value |
+|-------|-------|
+| ID | C-51 |
+| Tier | 1 |
+| Source | `code-review max` on `origin/main...development`, 2026-08-02; every claim re-executed independently before registering |
+| Trigger | Declaring `views-productionapi`'s slots, which this registry already plans for at `coordinate_registry.toml:157-160`. The moment any value-less entry lands in `[target]`, the three readers take two different actions. |
+| Location | `views-models/tools/credentials/registry_to_env.py`; `views-faoapi/deployment/registry_to_env.py`; `views-crafdapi/deployment/registry_to_env.py`; fixture at `tests/fixtures/registry_valueless_target.toml` |
+
+Executed against the value-less fixture under a 3.11 interpreter:
+
+| Reader | Exit | Behaviour |
+|---|---|---|
+| `views-models/tools/credentials/registry_to_env.py` | **0** | emits a **partial** coordinate set |
+| `views-faoapi/deployment/registry_to_env.py` | 1 | `ValueError: registry coordinate 'FIXTURE_NO_VALUE' (class 'target') has no value` |
+| `views-crafdapi/deployment/registry_to_env.py` | 1 | identical `ValueError` |
+
+**This is C-29 half-reintroduced, and made asymmetric — which is worse than the original.** In the
+original incident every consumer failed, so the blast radius was uniform. Now a value-less `[target]`
+entry makes the **UN FAO delivery run against a silently incomplete coordinate set** while both
+external APIs hard-fail at bootstrap. The loud failures are on the paths that can afford to fail; the
+silent one is on the path that writes data to an external partner.
+
+**It is not a bug to be unilaterally fixed — it is a contradiction between two ratified positions.**
+`views-models/tests/test_registry_to_env.py::test_planned_reservation_is_skipped_not_fatal` pins
+skip-don't-raise. `views-appwrite/tests/test_registry_reader_contract.py` pins raise-don't-skip. Both
+are ratified; both are green; they disagree. Whichever way it settles, one repo's test must change,
+and that is a cross-repo decision, not a patch.
+
+Cross-refs: C-29 (the original incident), C-52 (the guard that should have caught this and cannot),
+D-05 (the raise-vs-skip disagreement).
+
+---
+
+### C-52: The reader-agreement guard is vacuous — it points at a path that does not exist and grades two identical clones
+
+| Field | Value |
+|-------|-------|
+| ID | C-52 |
+| Tier | 1 |
+| Source | `code-review max`, 2026-08-02; confirmed by direct filesystem check |
+| Trigger | Any future reliance on a green `test_registry_readers_agree.py` as evidence that the readers agree — including the next `ship-it` in this repo. |
+| Location | `tests/test_registry_readers_agree.py:60`; also propagated into C-29's own Location field |
+
+`READER_PATHS` names `views-models/tools/registry_to_env.py`. **That file does not exist.** The real
+reader is at `views-models/tools/credentials/registry_to_env.py`, moved there by views-models#309.
+`_present()` filters on `is_file()` and drops missing readers **silently**, so all four tests grade
+only `views-faoapi` and `views-crafdapi` — which are byte-identical clones. They agree trivially.
+
+The file was written for epic story **S6**, whose entire purpose was to detect reader divergence.
+Divergence exists (**C-51**) and the guard is blind to it. `test_at_least_one_reader_is_present`
+does not fire either, because two of three are present.
+
+**Trap on repair, recorded so the next person does not fall into it.** Correcting the path turns two
+tests red, and the red message *misattributes the cause*: it reads *"these readers ACCEPTED a
+value-less `[target]` slot"*, when what views-models actually did was honour a reservation marker —
+`status = "planned — …"` at `tests/fixtures/registry_valueless_target.toml:18` is verbatim the token
+its `_is_planned()` matches. The tempting one-line fix is to delete that `status` line from the
+fixture, which greens the suite **and destroys the only artifact that exposes C-51**. Fix the path
+and settle raise-vs-skip in the same change, or not at all.
+
+Cross-refs: C-51, C-29, D-05, epic #26 story S6 (#28).
+
+---
+
+### C-53: Four coordinates were added with no version bump, defeating the one cross-repo drift detector
+
+| Field | Value |
+|-------|-------|
+| ID | C-53 |
+| Tier | 2 |
+| Source | `code-review max`, 2026-08-02 |
+| Trigger | Merging `development` to `main`. Three consumers resolve this file through `/blob/main/`, so the merge itself is what changes their meaning. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml:21,24`; `docs/validate_docs.sh` check 7; `views-postprocessing/views_postprocessing/{crafd,unfao}/appwrite_env.py` |
+
+Four `APPWRITE_CRAFD_*` coordinates became canonical. `[meta] version` stays `1.3.0` and `amended`
+stays `2026-07-31` for a 2026-08-02 change. This violates two rules stated in the artifacts
+themselves: the registry header line 15 (*"Changes: by PR to this file + a seam-contract version
+bump"*) and seam contract **§10:413** (*"every change bumps the version. The registry and this
+contract version together"*).
+
+**The guard is green because it asks the wrong question.** `validate_docs.sh` check 7 asserts the two
+version numbers are *equal*. Bumping neither satisfies it perfectly. A check that compares two mutable
+values to each other, and to nothing external, cannot detect that both stood still.
+
+**Concrete downstream cost.** `views-postprocessing` pins `SEAM_CONTRACT_VERSION = "1.3.0"` and built
+a drift test that compares the registry's `meta.version` against that pin — its own docstring calls it
+*"the check that catches everything the other one cannot"*. Four new targets landed; it stays green.
+Separately, `views-pipeline-core`, `views-postprocessing` and `views-datafactory` link to
+`/blob/main/` rather than a pin (confirmed red by
+`test_falsify_c40_every_consumer_pins_the_contract`), so **merging to `main` silently changes what
+those three resolve to, with no version change they could detect.**
+
+**Fixed in v1.4.0**, with a note on how hard the guard was to write. `validate_docs.sh` gains a check
+that the version *value* moved when the file changed. Three drafts, two of them wrong in opposite
+directions, both caught by `review-diff` before commit:
+
+| Draft | Test | How it failed |
+|---|---|---|
+| 1 | any changed line matching *version.*semver* | passes on prose like *"byte-identical to v1.3.0"* while the declaration stands still |
+| 2 | the declaration line appears in the diff | passes when that line changes for an unrelated reason — **editing the trailing comment on `version = "1.3.0"` satisfied it** |
+| 3 | compare the extracted value across revisions | correct; mutation-proven against both cases above |
+
+Draft 2 is the instructive one: it is *stricter* than draft 1 and still wrong, and it reported **OK**
+on the exact violation this entry describes. A guard that asks "was this line touched?" is not asking
+the question consumers ask, which is "is what I pinned still what I would get?" Recorded because this
+register already contains two entries (C-52, C-55) about guards that were green and blind.
+
+Cross-refs: C-29, C-52, C-55, seam contract §10, `test_falsify_c40_*`.
+
+---
+
+### C-54: The load-bearing C-29 warning now asserts the opposite of the data beneath it
+
+| Field | Value |
+|-------|-------|
+| ID | C-54 |
+| Tier | 2 |
+| Source | `code-review max`, 2026-08-02 |
+| Trigger | The next consumer needing a reserved slot — `views-productionapi`, which this file explicitly anticipates at lines 157-160. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml:76-112`; `reports/technical_risk_register.md` C-29 |
+
+Line 76 heads the section `INCOMING CONSUMERS (values pending)`. Line 78 reads
+`⚠ THESE LIVE IN [planned.*], NOT [target.*], AND THAT IS LOAD-BEARING`. Forty-three lines below it
+sit four `[target.*]` entries carrying values. **The `[planned]` table no longer exists at all.**
+Lines 102-106 warn *"Do NOT fill these with plausible-looking placeholders"*, where *"these"* now
+resolves to filled `[target]` entries.
+
+The prose that explains a Tier 1 incident is now contradicted by the file it lives in. A reader
+arriving to add `views-productionapi`'s slots meets a caps-lock warning the data visibly disobeys,
+concludes it is stale, and writes a value-less `[target]` entry — **commit `2186d45`, exactly.**
+
+**Compounding.** C-29 in this register states the fix as *"Planned slots move to `[planned]`, a table
+no reader scans."* An auditor opening the registry today finds no `[planned]` table and **cannot
+distinguish "fixed" from "reverted."**
+
+Cross-refs: C-29, C-55.
+
+---
+
+### C-55: The planned-slot guard skips itself into dormancy the moment there is nothing to guard
+
+| Field | Value |
+|-------|-------|
+| ID | C-55 |
+| Tier | 3 |
+| Source | `code-review max`, 2026-08-02; confirmed by test run |
+| Trigger | Writing the first new `[planned]` entry after this commit — the guard is off at exactly that moment. |
+| Location | `tests/test_registry_reader_contract.py:102` |
+
+`test_planned_slots_are_outside_the_scanned_tables` calls `pytest.skip` when no `[planned]` slots
+exist. With the table gone it skips on every run — confirmed:
+`SKIPPED [1] … no planned slots declared right now — nothing to check`.
+
+A guard that stands down whenever it is not already being satisfied is off during the only window
+that matters: after the last planned slot graduates and before the next author writes one. That
+author gets no feedback, which is the precise population the test exists to serve.
+
+Cross-refs: C-54, C-29.
+
+---
+
+### C-56: The CRAFD caller key as issued cannot authenticate a single request
+
+| Field | Value |
+|-------|-------|
+| ID | C-56 |
+| Tier | 2 |
+| Source | `code-review max`, 2026-08-02; call path and registry evidence both re-verified |
+| Trigger | views-crafdapi **S11** (#12) — the first deploy and smoke test. Its acceptance criterion is `smoke ALL PASS`, which cannot be met. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml:279`; `views-crafdapi/src/views_crafdapi/managers/api.py:297` |
+
+The registry records the issued scopes as `databases.read, rows.read, documents.read, files.read` —
+**no `buckets.read`**. But `_validate_api_key` validates every key by calling
+`manager.list_buckets(limit=1)` and raises `HTTPException(401)` if it fails, and it is reached through
+`Depends` on **every** route, including `/health`.
+
+**This registry proves the consequence itself.** Lines 249-250 record the operator's own live probe:
+`GET /v1/storage/buckets` without `buckets.read` returns
+`general_unauthorized_scope, "missing scopes ([buckets.read])"`. FAO's key masks the requirement
+because it holds `buckets.read` (line 214), so the existing deployment gives no warning.
+
+Also missing: `tables.read`/`collections.read`. This file's own read-only recipe at line 239 names
+four scopes a read consumer needs; the issued key satisfies two of them.
+
+**Operator console action, not a code change.** Tick `buckets.read` and `tables.read` on
+`crafd-caller-read`.
+
+Cross-refs: C-28 (external-caller credential unmodelled), C-58, views-crafdapi#12.
+
+---
+
+### C-57: Graduating the slots created a fourth holder of the over-scoped key, and the record still says three
+
+| Field | Value |
+|-------|-------|
+| ID | C-57 |
+| Tier | 3 |
+| Source | `code-review max`, 2026-08-02 |
+| Trigger | Executing the key split (views-faoapi#338), which is sized from the `serves_identities` list. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml:171-177`; `views-postprocessing/views_postprocessing/crafd/managers/crafd.py` |
+
+While the four CRAFD names sat in `[planned]`, no reader emitted them, so
+`assert_env_declared(CONNECTION_ENV + CRAFD_ENV)` could only raise and the CRAFD writer path was
+unreachable. **This diff is what makes it resolvable.** `_crafd_appwrite_config` builds the
+`crafd_bucket` writer with `credentials=os.getenv("APPWRITE_DATASTORE_API_KEY")`.
+
+`serves_identities` (lines 171-175) still lists three, and `observed` (line 177) still reads
+*"VIOLATES seam contract §5.3 — one key, three identities"*. Whoever executes the split cuts over the
+three named holders, narrows or revokes the old key, and the CRAFD delivery — now the sole writer of
+`crafd_bucket` under that key, on nobody's list — stops uploading.
+
+The same commit that gives CRAFD a clean per-party read key silently gives the platform's most
+over-scoped key a fourth holder.
+
+Cross-refs: C-27, C-28, views-faoapi#338.
+
+---
+
+### C-58: The secret's recorded destination contradicts its own carrier field
+
+| Field | Value |
+|-------|-------|
+| ID | C-58 |
+| Tier | 3 |
+| Source | `code-review max`, 2026-08-02 |
+| Trigger | An operator executing views-crafdapi S11 literally. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml:276,284` |
+
+Line 284 says the key *"goes into the views-crafdapi deployment env at first deploy, S11"*. Line 276
+declares `carrier = "X-API-Key request header (presented by the caller, re-used by the API)"` — the
+key belongs to **CRAFD**, not to the host.
+
+`_REQUIRED_APPWRITE_ENV_VARS` in views-crafdapi contains no caller-key variable; the key arrives via
+`Header(...)` and goes straight to the SDK; and `grep -rn CRAFD_CALLER_API_KEY` across the workspace
+returns **no code hits at all** — only the registry slot and this entry. **There is no env slot to
+fill.** Following S11
+literally installs the key where nothing reads it and never sends it to the party that must present
+it: every request 401s while the checklist reads done.
+
+**The obvious repair is the dangerous one.** Adding an env var to make the sentence true answers O2's
+confused-deputy question in the direction this slot's own `note` claims it is not deciding. Fix the
+sentence, not the code.
+
+Cross-refs: C-28 (O2), C-56, seam contract §9.
+
+---
+
+### C-59: Documents still describe the CRAFD slots as planned, and one issue reference cannot be resolved
+
+| Field | Value |
+|-------|-------|
+| ID | C-59 |
+| Tier | 4 |
+| Source | `code-review max`, 2026-08-02 |
+| Trigger | A new consumer following `joining_the_seam.md` as the onboarding checklist it is advertised to be. |
+| Location | `docs/ADRs/platform/joining_the_seam.md:47-49`; `docs/ADRs/platform/coordinate_registry.toml:283` |
+
+`joining_the_seam.md` still describes the four CRAFD slots as `status="planned"`, and views-crafdapi's
+own ADR-034 §7 does the same. Separately, the bare `#338` at registry line 283 resolves to nothing
+from this repo — its referent is **views-faoapi#338**. (The `#10` references at lines 118 and 274 are
+fine: the surrounding prose repo-qualifies them.)
+
+Cross-refs: C-54, ADR-011 (identifiers must be readable at the point of use).
+
+---
+
+### C-60: views-crafdapi tells developers to populate a `.env` the application never reads
+
+| Field | Value |
+|-------|-------|
+| ID | C-60 |
+| Tier | 3 |
+| Source | `code-review max`, 2026-08-02 — adjacent finding, outside this diff |
+| Trigger | The first developer onboarding to views-crafdapi by following its README. |
+| Location | `views-crafdapi/README.md:50` vs `views-crafdapi/src/views_crafdapi/managers/model.py:254`; same shape at `views-faoapi/README.md:42` |
+
+The README says the `.env` is *"located in `views-models`"*. `model.py:254` resolves it with
+`pyprojroot.here()`, which returns **the caller's own root** — `views-crafdapi/.env`. A developer
+following the README populates a file the app never reads, and views-models' single-writer gate then
+rejects those names as a second writer.
+
+Stale inheritance from when faoapi lived inside views-models. **Not this repo's to fix** — recorded
+here because this repo owns the seam these READMEs describe.
+
+Cross-refs: views-models ADR-018 (single writer), C-53.
 
 ---
 
@@ -677,6 +987,17 @@ Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32.
 | Source | expert-review (2026-06-12) |
 | Perspectives | Beck (a walking skeleton — scaffold + CI + one passing compat test — should precede ~3,100 lines of binding documentation; feedback loops beat doctrine), Governance corpus position (the source copies diverged precisely from under-documentation; the constitution is the product the roadmap says is most at risk — see README R5/C-02) |
 | Resolution | Unresolved tension, accepted: governance landed first as a deliberate choice. Revisit if CIC/register/ADR maintenance falls behind code reality (cross-ref C-09's stale-gate risk). **Update 2026-07-28 (þing-01):** briefly resolved in Beck's favour — the verdict approved a scaffold commit (walking skeleton: `pyproject` + CI + a reference validator + tests), which would have closed C-02 and C-18's open half. The adversarial re-weighing then **deferred it back** (`dómr_endurmat` E6): the scaffold's whole justification was hosting the validator, and the validator deferred behind *operator ∧ test project*, so the skeleton has nothing to walk toward yet. **D-04 therefore stays open**, with its resolution now trigger-tied rather than merely undecided — which is a better state than it was in, since the condition under which Beck wins is now written down (issue #8). |
+
+---
+
+### D-05: A reserved slot with no value — hard error, or skip and continue?
+
+| Field | Value |
+|-------|-------|
+| ID | D-05 |
+| Source | `code-review max` (2026-08-02), surfaced by C-51 |
+| Perspectives | **views-appwrite position (raise):** a value-less entry in a scanned table is malformed data; the reader's job is to refuse it, because the consumer that receives a partial coordinate set has no way to know it is partial. Pinned by `tests/test_registry_reader_contract.py` and by C-29's incident narrative — the *silence* is what made that outage Tier 1. **views-models position (skip):** a reservation is a legitimate, expected state; hard-failing every consumer because some *future* consumer's slot is not yet filled couples unrelated repos and makes the registry impossible to edit incrementally. Pinned by `tests/test_registry_to_env.py::test_planned_reservation_is_skipped_not_fatal`, and by views-models' role as the one reader on the FAO delivery path. |
+| Resolution | **Open, and currently decided by accident.** Both positions are ratified in their own repo and both suites are green, so the platform's actual behaviour depends on which reader a given process happens to invoke. Note the two positions are not symmetric in consequence: skipping is safe *only* if something else guarantees the skipped coordinate was genuinely unneeded, and nothing does. Equally, `views-appwrite` cannot settle this unilaterally — it owns the contract, not views-models' test. **This needs a þing or an explicit operator ruling**, and until it has one, C-51 stays Tier 1. |
 
 ---
 

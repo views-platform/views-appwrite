@@ -54,17 +54,53 @@ FIXTURES = REPO / "tests" / "fixtures"
 
 VALID_FIXTURE = FIXTURES / "registry_valid.toml"
 VALUELESS_FIXTURE = FIXTURES / "registry_valueless_target.toml"
+RESERVATION_FIXTURE = FIXTURES / "registry_planned_reservation.toml"
 
 # Every canonical reader on the platform, by the path consumers invoke.
+#
+# C-52: this dict named `views-models/tools/registry_to_env.py` from the day the
+# file was written. views-models#309 had already moved the reader to
+# `tools/credentials/`, so `_present()` dropped it silently and the whole file
+# graded views-faoapi against views-crafdapi -- byte-identical clones that agree
+# trivially. The one guard written to detect reader divergence could not see the
+# divergence that existed (C-51). A missing reader is now an ERROR, not a filter.
 READER_PATHS = {
-    "views-models": WORKSPACE / "views-models" / "tools" / "registry_to_env.py",
+    "views-models": WORKSPACE / "views-models" / "tools" / "credentials" / "registry_to_env.py",
     "views-faoapi": WORKSPACE / "views-faoapi" / "deployment" / "registry_to_env.py",
     "views-crafdapi": WORKSPACE / "views-crafdapi" / "deployment" / "registry_to_env.py",
 }
 
+# Why xfail rather than a plain assert on the two divergence tests below: the
+# readers genuinely disagree today, that disagreement is REGISTERED (D-05), and
+# it cannot be settled from this repo -- views-models' opposing behaviour is
+# pinned by its own ratified test. A red test would say "someone broke
+# something"; that is false, and a permanently-red suite trains people to ignore
+# it. `strict=True` is the load-bearing part: if the readers ever converge, the
+# XPASS FAILS the suite and forces this file and D-05 to be closed together.
+#
+# `raises=AssertionError` is not decoration. An unconstrained `xfail` absorbs
+# ANY exception as an expected failure -- a corrupt reader, a SyntaxError out of
+# `ast.parse`, a subprocess timeout -- and reports the suite green. That would
+# turn a marker meant to TRACK one known disagreement into a blanket amnesty for
+# this file. Constrained, only the deliberate `assert` below may fail; anything
+# else propagates and is seen.
+_D05 = pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason=(
+        "D-05 / C-51: views-models honours `status = \"planned …\"` and skips; "
+        "views-faoapi and views-crafdapi ignore the marker and raise. Ratified "
+        "both ways, in two repos. Settle D-05, then delete this marker."
+    ),
+)
+
 
 def _present() -> dict[str, pathlib.Path]:
-    """Readers that exist in this checkout. A sibling repo may not be cloned."""
+    """Readers that exist in this checkout. A sibling repo may not be cloned.
+
+    Absence is reported by `test_every_declared_reader_path_resolves`, which is
+    what stops a typo'd path from quietly shrinking the comparison set again.
+    """
     return {name: p for name, p in READER_PATHS.items() if p.is_file()}
 
 
@@ -124,6 +160,33 @@ def test_at_least_one_reader_is_present():
     )
 
 
+def test_every_declared_reader_path_resolves():
+    """A CLONED repo whose reader is missing means the path here is wrong (C-52).
+
+    `_present()` has to tolerate an uncloned sibling -- not everyone checks out
+    all five repos. But that tolerance is exactly what let a stale path hide: the
+    reader had MOVED, so its repo was present and its file was not, and the suite
+    read that as "not cloned" and carried on comparing the survivors.
+
+    Distinguishing the two cases is the whole fix. Repo absent -> fine. Repo
+    present, reader absent -> the map in this file is lying about where the
+    platform's readers live, and every comparison below is weaker than it looks.
+    """
+    stale = []
+    for name, path in READER_PATHS.items():
+        repo = WORKSPACE / name
+        if repo.is_dir() and not path.is_file():
+            stale.append(f"{name}: repo is checked out but {path} does not exist")
+    assert not stale, (
+        "READER_PATHS points at files that are not there, so those readers were "
+        "silently excluded from every comparison in this file:\n  "
+        + "\n  ".join(stale)
+        + "\n\nFind where the reader moved and update READER_PATHS. Do NOT delete "
+        "the entry -- that is how C-52 happened."
+    )
+
+
+@_D05
 def test_all_present_readers_are_structurally_identical():
     """The check the two-copies decision left out.
 
@@ -186,11 +249,12 @@ def test_all_present_readers_emit_identical_nonempty_output():
 
 
 def test_all_present_readers_reject_a_valueless_target_slot():
-    """The C-29 shape. Every reader must refuse it, loudly.
+    """The unambiguous half of the C-29 shape: no value, no marker, no excuse.
 
-    This is the property that makes the registry's own guard meaningful: if a
-    reader ever starts tolerating a value-less `[target]` entry, a consumer
-    silently receives an incomplete coordinate set instead of failing.
+    All three readers reject this today, so it is a real green test rather than
+    an aspiration. Keeping it separate from the reservation case below is what
+    makes each verdict readable: this one asks "is malformed data refused?", and
+    the answer is yes everywhere.
     """
     found = _present()
     exe = _interpreter_with_tomllib()
@@ -206,8 +270,45 @@ def test_all_present_readers_reject_a_valueless_target_slot():
         if _run(exe, p, VALUELESS_FIXTURE).returncode == 0
     ]
     assert not tolerant, (
-        f"these readers ACCEPTED a value-less [target] slot: {tolerant}. "
-        "They must reject it. A tolerated value-less coordinate is how a "
-        "consumer ends up running against a partial registry without knowing "
+        f"these readers ACCEPTED a [target] entry with no value and no "
+        f"reservation marker: {tolerant}. Nothing in that entry declares intent, "
+        "so continuing hands a consumer a partial coordinate set with no signal "
         "(C-29)."
+    )
+
+
+@_D05
+def test_all_present_readers_agree_on_a_planned_reservation():
+    """The disputed half (D-05) -- and the one that actually bit.
+
+    `2186d45` used THIS shape, not the bare one above. Under today's readers it
+    would no longer crash the platform loudly; views-models would skip the four
+    reserved names and hand the UN FAO delivery 12 of 16 coordinates in silence.
+    C-29 records a loud failure that the platform can no longer reproduce.
+
+    Asserting agreement (not a specific verdict) is deliberate: this repo owns
+    the contract, not views-models' behaviour, and D-05 has not been settled.
+    Either answer closes this test; disagreement is what may not stand.
+    """
+    found = _present()
+    exe = _interpreter_with_tomllib()
+    if exe is None:
+        pytest.skip(
+            "no interpreter with stdlib tomllib (3.11+) available; the readers "
+            "cannot be executed here. The structural test above still ran."
+        )
+    if len(found) < 2:
+        pytest.skip(f"only {list(found)} checked out — nothing to compare")
+
+    verdicts = {
+        name: ("skip" if _run(exe, p, RESERVATION_FIXTURE).returncode == 0 else "raise")
+        for name, p in found.items()
+    }
+    assert len(set(verdicts.values())) == 1, (
+        "the canonical readers disagree about a reserved (value-less, "
+        f"status=planned) [target] entry: {verdicts}.\n\n"
+        "This is NOT a reader bug to patch here — both behaviours are pinned by "
+        "ratified tests in their own repos (D-05). A registry edit that is "
+        "harmless to one consumer is fatal to another, and which one you get "
+        "depends on who reads the file. Settle D-05 first."
     )
