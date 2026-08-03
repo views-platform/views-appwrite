@@ -865,7 +865,10 @@ four scopes a read consumer needs; the issued key satisfies two of them.
 > *authenticates* by listing buckets. Nobody choosing scopes from the key's purpose would tick it,
 > and the next per-party key will hit this unless its issuer reads the registry slot first.
 
-Cross-refs: C-28 (external-caller credential unmodelled), C-58, views-crafdapi#12.
+Filed as **views-crafdapi#29** (the end-to-end verification that closes this) and raised on
+views-crafdapi#12 (the deploy story it sits inside).
+
+Cross-refs: C-28 (external-caller credential unmodelled), C-58, views-crafdapi#12, views-crafdapi#29.
 
 ---
 
@@ -891,6 +894,9 @@ three named holders, narrows or revokes the old key, and the CRAFD delivery — 
 
 The same commit that gives CRAFD a clean per-party read key silently gives the platform's most
 over-scoped key a fourth holder.
+
+Raised on **views-faoapi#338** — that issue is sized from `serves_identities`, and executing it
+against the stale three-entry list stops the CRAFD delivery silently.
 
 Cross-refs: C-27, C-28, views-faoapi#338.
 
@@ -993,7 +999,10 @@ platform's own **Cluster J**, in its own code.
 Resolved by the D-05 recommendation (delete the predicate). Registered separately because the
 stringly-typed predicate is a defect on its own terms even if D-05 somehow settles the other way.
 
-Cross-refs: C-51, D-05, views-models#327.
+Filed as **views-models#331** — standalone, because if D-05 settles the other way and reservations
+stay skippable, this defect survives the ruling and would otherwise be tracked nowhere.
+
+Cross-refs: C-51, D-05, views-models#327, views-models#330 (the validator that cannot catch it).
 
 ---
 
@@ -1054,6 +1063,8 @@ class, and settling it leaves the class open.
 
 Not folded into D-05 on purpose: a compatibility policy is a larger decision and should not ride on
 a specific dispute.
+
+Filed as **views-appwrite#45**.
 
 Cross-refs: C-51, D-05, seam contract §10 (versioning).
 
