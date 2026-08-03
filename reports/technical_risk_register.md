@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 40                                   |
-| Open Concerns     | 35                                   |
+| Total Concerns    | 44                                   |
+| Open Concerns     | 39                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -966,6 +966,129 @@ Cross-refs: views-models ADR-018 (single writer), C-53.
 
 ---
 
+### C-61: `_is_planned()` decides a coordinate's fate by prefix-matching prose
+
+| Field | Value |
+|-------|-------|
+| ID | C-61 |
+| Tier | 2 |
+| Source | `expert-code-review` of D-05, 2026-08-03 (Gang of Four + Hickey, independently) |
+| Trigger | Writing any `status` on a value-less entry that begins with the letters "plan" — `"planned-for-deletion"`, `"planning removal"`, `"plan: drop this"`. |
+| Location | `views-models/tools/credentials/registry_to_env.py:31-38` |
+
+```python
+return str(entry.get("status", "")).strip().lower().startswith("planned")
+```
+
+A coordinate is silently withheld from the emitted environment if a human wrote seven particular
+characters at the start of a prose field. `"planned-for-deletion"` — a plausible thing to write about
+a coordinate being retired — reads as a reservation and the name vanishes.
+
+The deeper problem is the one Hickey names: **the marker is not evidence.** A value-less entry with
+`status = "planned"` carries no more information than one without; it is the same absence with an
+excuse attached. Treating the excuse as authoritative is how views-models lost the ability to
+distinguish *"legitimately reserved"* from *"the registry is broken and I could not tell"* — the
+platform's own **Cluster J**, in its own code.
+
+Resolved by the D-05 recommendation (delete the predicate). Registered separately because the
+stringly-typed predicate is a defect on its own terms even if D-05 somehow settles the other way.
+
+Cross-refs: C-51, D-05, views-models#327.
+
+---
+
+### C-62: `platform_env_validate()` validates the reader against its own output
+
+| Field | Value |
+|-------|-------|
+| ID | C-62 |
+| Tier | 2 |
+| Source | `expert-code-review` of D-05, 2026-08-03 (Ousterhout + Martin, independently) |
+| Trigger | Relying on a green `platform_env_load` as evidence the delivery has every coordinate it needs — which `un_fao/run.sh:132` does on every run. |
+| Location | `views-models/tools/credentials/platform_env.sh:273-278`; consumed at `views-models/postprocessors/un_fao/run.sh:132` |
+
+```bash
+coords="$(platform_env_coordinates)"        # runs registry_to_env.py
+for name in $(echo "$coords" | cut -d= -f1) "$PLATFORM_ENV_SECRET_NAME"; do
+  platform_env_is_exported "$name" || missing="$missing $name"
+```
+
+The required-name list is derived from the reader's own output. A name the reader dropped is not in
+`$coords`, so it is not in the loop, so nothing notices. **The function structurally cannot detect a
+skip** — the one failure mode a validator on this path exists to catch.
+
+**Worse than a weak check, because of its name.** `platform_env_load` runs it as the final step of
+"the whole contract, in the one correct order", and the delivery gates on it. A reader emitting 12 of
+16 coordinates passes every gate and exits 0. A function whose name overstates its guarantee occupies
+the slot a real check would fill, and is *believed*.
+
+**Independent of D-05, deliberately.** The circularity remains whichever way the reader question
+settles — it cannot catch a missing name arising from a typo'd table, a future class-filter change,
+or a partially-written file either. views-faoapi and views-crafdapi each declare
+`_REQUIRED_APPWRITE_ENV_VARS` independently of the reader; views-models has no equivalent.
+
+Filed as **views-models#330**.
+
+Cross-refs: C-51, C-47 (views-models#308, the warn-and-continue this was meant to replace).
+
+---
+
+### C-63: No reader checks the registry's `[meta] version`
+
+| Field | Value |
+|-------|-------|
+| ID | C-63 |
+| Tier | 3 |
+| Source | `expert-code-review` of D-05, 2026-08-03 (Kleppmann — the only perspective to reframe D-05 this way, and uncontradicted) |
+| Trigger | Adding any construct to the registry that an existing reader does not understand — a new class, a new field with semantics, a new table. |
+| Location | all three `registry_to_env.py` copies; `coordinate_registry.toml` `[meta] version` |
+
+The registry is versioned and consumers pin by version and commit. **The readers ignore the version
+entirely.** A reader written against v1.x will silently mis-process a registry using a construct
+added later, exactly as the three readers now disagree about `status = "planned"`.
+
+This reframes D-05 as a **schema-evolution** problem rather than a failure-semantics one: can a
+reader written at time T correctly process a registry written at T+1? The standard answer — refuse a
+document you cannot fully interpret — is implemented by none of them. D-05 is one instance of the
+class, and settling it leaves the class open.
+
+Not folded into D-05 on purpose: a compatibility policy is a larger decision and should not ride on
+a specific dispute.
+
+Cross-refs: C-51, D-05, seam contract §10 (versioning).
+
+---
+
+### C-64: views-faoapi's reader cites a þing verdict that does not cover its case
+
+| Field | Value |
+|-------|-------|
+| ID | C-64 |
+| Tier | 3 |
+| Source | `expert-code-review` of D-05, 2026-08-03 — checked against the þing record rather than taken from the docstring |
+| Trigger | Weighing the D-05 dispute, where this line is the strongest-looking evidence on one side. |
+| Location | `views-faoapi/deployment/registry_to_env.py:29-30`; identical clone at `views-crafdapi/deployment/registry_to_env.py`; source text at `þingit/01_identity_secrets_config/orð_dómr.md:103` |
+
+The docstring reads *"fail loud rather than emit a half-built environment **(verdict D5)**."* D5's
+actual text: *"**A wrong coordinate must RAISE**, naming the offending coordinate… **A
+half-succeeded write must raise.**"*
+
+D5 governs a coordinate whose value is **wrong**, and a **half-succeeded write**. An entry with **no
+value at all** is a third case — absence, not incorrectness. The extension may well be right; it was
+not ratified.
+
+**The concrete cost, which is why this is not cosmetic.** In an open cross-repo dispute, one side
+appears backed by a ratified þing verdict and the other does not. That asymmetry is an artifact of
+this docstring, not of the record — and it nearly weighted this review before the source was checked.
+An unsupported citation is how a rule decays into folklore, which is the failure ADR-011 exists to
+name.
+
+Filed as **views-faoapi#358**.
+
+Cross-refs: D-05, ADR-011, C-51.
+
+---
+
 ## Disagreements
 
 ### D-01: Decomposition granularity — eight modules vs depth-driven boundaries
@@ -1019,7 +1142,49 @@ Cross-refs: views-models ADR-018 (single writer), C-53.
 | ID | D-05 |
 | Source | `code-review max` (2026-08-02), surfaced by C-51 |
 | Perspectives | **views-appwrite position (raise):** a value-less entry in a scanned table is malformed data; the reader's job is to refuse it, because the consumer that receives a partial coordinate set has no way to know it is partial. Pinned by `tests/test_registry_reader_contract.py` and by C-29's incident narrative — the *silence* is what made that outage Tier 1. **views-models position (skip):** a reservation is a legitimate, expected state; hard-failing every consumer because some *future* consumer's slot is not yet filled couples unrelated repos and makes the registry impossible to edit incrementally. Pinned by `tests/test_registry_to_env.py::test_planned_reservation_is_skipped_not_fatal`, and by views-models' role as the one reader on the FAO delivery path. |
-| Resolution | **Open, and currently decided by accident.** Both positions are ratified in their own repo and both suites are green, so the platform's actual behaviour depends on which reader a given process happens to invoke. Note the two positions are not symmetric in consequence: skipping is safe *only* if something else guarantees the skipped coordinate was genuinely unneeded, and nothing does. Equally, `views-appwrite` cannot settle this unilaterally — it owns the contract, not views-models' test. **This needs a þing or an explicit operator ruling**, and until it has one, C-51 stays Tier 1. |
+| Resolution | **Open — but the framing above is withdrawn. See the update.** |
+
+> **UPDATE 2026-08-03 — after `expert-code-review`. This was posed as a two-sided dispute; on the
+> evidence it is not one.**
+>
+> **The original framing, now withdrawn.** Both positions ratified, both suites green, needs a þing.
+> An intermediate proposal was drafted — *"readers skip reservations and report what they withheld;
+> consumers fail loudly on names they declare and did not receive"* — and **it is also withdrawn.**
+> Three perspectives killed it independently: Nygard (a stderr announce has **already failed at this
+> exact boundary** — C-29 was silent because of a warn-and-continue, C-47), Ousterhout (pushing the
+> assertion to consumers distributes the same omission N ways), Beck (a three-repo change plus a
+> permanent consumer obligation, to fix a shape the source-side gate already blocks).
+>
+> **Recommended ruling.** *Reservations live in `[planned]`. A value-less entry in `[connection]` or
+> `[target]` is malformed regardless of any `status` it carries, and every reader raises on it.
+> `status` is documentation and carries no semantics.*
+>
+> **Why it dissolves rather than settles the dispute.** The registry's own standing rule already says
+> this, and `test_every_reader_scanned_entry_has_a_value` **passes and mutation-bites**, so the
+> tolerated shape cannot be committed. `_is_planned()` therefore defends against an input the gate
+> rejects — and by defending, converts a gate failure into silent data loss. It is defence-in-depth
+> inverted: the second layer absorbs the first layer's failure instead of reporting it.
+>
+> **The coupling objection, stated fairly, and why it fails.** Raising couples unrelated repos: a
+> reservation for `views-productionapi` would break the FAO delivery, which does not need that
+> coordinate. This is what persuaded the original framing. It fails only because a correctly-filed
+> reservation lives in `[planned]`, which no reader scans — so it is invisible and breaks nobody. The
+> coupling exists only if reservations in scanned tables are accepted, which is the premise rejected.
+>
+> **Cost:** one deletion in one repo (`_is_planned()` + its test, views-models). faoapi and crafdapi
+> already comply; views-postprocessing has no reader. Compare the withdrawn proposal: additions to
+> three readers plus every future consumer. **With three WET copies, prefer the change that shrinks
+> them.**
+>
+> **Governance.** May need less than a þing — it codifies text already in the registry rather than
+> adding an obligation, which plausibly makes it clarification, not amendment. **That is the
+> lawspeaker's call, not this repo's**, and views-appwrite has been wrong about exactly this before
+> (PR #30, withdrawn).
+>
+> Posted for argument at **views-models#327**. Until the readers converge, C-51 stays Tier 1 and the
+> two `xfail(strict=True)` markers stay — they fail on the unexpected pass, so the decision cannot
+> quietly rot. Split out and filed separately: **C-62** (views-models#330) and **C-63**, both of
+> which outlive this ruling either way.
 
 ---
 
