@@ -10,7 +10,7 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0 is an observation-driven bump carrying **no clause change** |
-| Version | **1.4.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Version | **1.4.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
 | Amended | 2026-08-02 — **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
@@ -433,6 +433,27 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.1 — 2026-08-03 — companion registry only; no clause changed
+
+**Status: ACCEPTED** — observation-driven, per §10. Byte-identical to v1.4.0 in every clause.
+
+The CRAFD caller key's recorded scopes gain `buckets.read` and `tables.read`, ticked by the operator
+in the console. As first issued the key held four read scopes and **could not authenticate a single
+request** — views-crafdapi proves a key is real by listing buckets, so `buckets.read` is an
+*authentication* requirement rather than a data-access one, and nothing about the key's purpose
+suggests ticking it (C-56).
+
+**Remediated at source; not yet verified end-to-end.** The console is authoritative for what a key
+carries, and the operator confirms both boxes. Whether CRAFD's requests actually succeed is a
+different question, answered by S11's smoke test (views-crafdapi#12) once the API is deployed — which
+it is not yet.
+
+**A probe was drafted and discarded**, recorded here because the reasoning generalises. It would have
+had the operator paste a live secret into a shell to re-read something the console already displays.
+The platform has spent real effort removing credential-handling steps; adding a ceremonial one back
+for a test that answers nothing new is a bad trade, even when it is technically harmless. The console
+shows the scopes — that is the check.
 
 ### v1.4.0 — 2026-08-02 — companion registry only; no clause changed
 
