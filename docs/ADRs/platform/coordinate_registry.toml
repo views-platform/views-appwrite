@@ -18,13 +18,18 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.4.0"                          # Versions in lockstep with the contract (§10);
+version = "1.4.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-02"                     # v1.4.0: four CRAFD coordinates graduated [planned] -> [target];
-                                           # CRAFD caller key recorded as issued. OBSERVATION-DRIVEN — §10's
-                                           # distinction: this bump records state the operator created, it
-                                           # imposes no new obligation on any consumer.
+amended = "2026-08-03"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
+                                           # sense: they record state the operator created in the console and
+                                           # impose no new obligation on any consumer.
+                                           #
+                                           # v1.4.1 (2026-08-03): CRAFD caller key scopes corrected — buckets.read
+                                           #   and tables.read added. As first issued the key could not
+                                           #   authenticate any request at all (C-56).
+                                           # v1.4.0 (2026-08-02): four CRAFD coordinates graduated [planned] ->
+                                           #   [target]; CRAFD caller key recorded as issued.
                                            # v1.3.0 (2026-07-31): secret slots corrected against operator console.
 
 # ---------------------------------------------------------------- connection
@@ -318,7 +323,9 @@ console_key_name = "crafd-caller-read"
 carrier = "X-API-Key request header (presented by the caller, re-used by the API)"
 consumer = "views-crafdapi"
 issued_by = "operator"
-scopes = "databases.read, rows.read, documents.read, files.read — read tier only, zero write (§5.2)"
+scopes = """databases.read, tables.read, rows.read, documents.read, files.read, buckets.read
+— read tier only, zero write (§5.2). Six scopes as of 2026-08-03; the first four were
+ticked at creation, buckets.read and tables.read added after C-56 (see scopes_corrected)."""
 scopes_enumerated = """2026-08-02, ticked in the console at creation. The read tier, plus
 rows.read (the TablesDB-era twin of the now-deprecated documents.read, so the key reads via
 either the classic documents API or the new rows API). NO .write/.delete on any resource;
@@ -326,8 +333,24 @@ zero scopes in every other category. A clean per-party read key — the model vi
 moves the shared UN FAO key toward.
 
 The secret VALUE is not recorded here; the operator holds it."""
-scopes_insufficient = """⚠ AS ISSUED, THIS KEY CANNOT AUTHENTICATE A SINGLE REQUEST (C-56).
-Two scopes are missing, and the first is fatal:
+scopes_corrected = """CORRECTED 2026-08-03 — operator ticked buckets.read and tables.read in
+the console. Kept as a record rather than deleted: the reason those two are needed is not
+inferable from the key's purpose, and the next per-party read key will be issued by someone
+reading this slot as the worked example.
+
+STATUS OF THE VERIFICATION, STATED PLAINLY. The operator confirms the boxes are ticked. That
+is the source of truth for what the key CARRIES. It is not yet confirmed that CRAFD requests
+succeed end-to-end, because views-crafdapi is not deployed — the real check is S11's smoke
+test (views-crafdapi#12), against the live API with the key presented in the request header
+as CRAFD will present it. Recorded as remediated-at-source, verification pending deploy.
+
+No probe was run to confirm this. One was drafted and discarded: it would have had the
+operator paste a live secret into a shell to re-learn something the console already displays,
+which is a habit worth not building. The console shows the scopes; that is the check.
+
+THE ORIGINAL DEFECT, KEPT FOR THE NEXT PERSON:"""
+scopes_insufficient_history = """⚠ AS ISSUED 2026-08-02, THIS KEY COULD NOT AUTHENTICATE A
+SINGLE REQUEST (C-56). Two scopes were missing, and the first was fatal:
 
   buckets.read   — views-crafdapi validates EVERY key by calling list_buckets:
                    `_validate_api_key` -> manager.list_buckets(limit=1) ->
@@ -345,10 +368,16 @@ Two scopes are missing, and the first is fatal:
 FAO's key hides the requirement because it holds buckets.read, so the existing
 deployment gives no warning that a read-tier key needs it.
 
-RESOLUTION: operator console action — tick buckets.read and tables.read on
-`crafd-caller-read`. Blocks views-crafdapi S11 (#12), whose acceptance criterion
-is `smoke ALL PASS`. Not a code change; do NOT relax the validation to fit the key,
-because the validation is what makes an invalid key fail at the door."""
+RESOLVED 2026-08-03 by operator console action — both scopes ticked. It was NOT a code
+change, and the standing instruction remains: do NOT relax the validation to fit a key,
+because that validation is what makes an invalid key fail at the door rather than deep
+inside a request.
+
+THE GENERAL LESSON, which is why this is kept rather than deleted: a read-only key needs
+one permission that has nothing to do with reading the data. views-crafdapi proves a key
+is real by listing buckets, so `buckets.read` is an AUTHENTICATION requirement, not a
+data-access one. Nobody choosing scopes from the key's purpose would tick it. The next
+per-party key will hit this unless whoever issues it reads this slot first."""
 destination = """The holder is CRAF'd, not this platform. Per `carrier` above, the key is
 presented BY the caller in the X-API-Key header and re-used by the API against Appwrite.
 

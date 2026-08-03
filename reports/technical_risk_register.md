@@ -843,6 +843,28 @@ four scopes a read consumer needs; the issued key satisfies two of them.
 **Operator console action, not a code change.** Tick `buckets.read` and `tables.read` on
 `crafd-caller-read`.
 
+> **REMEDIATED AT SOURCE 2026-08-03 — verification pending deploy.** The operator ticked both
+> scopes; the key now carries six. Recorded in the registry at **v1.4.1**.
+>
+> **This entry stays open, deliberately.** The console is authoritative for what the key *carries*,
+> and that is fixed. It is not authoritative for whether CRAFD's requests *succeed* — that is S11's
+> smoke test (views-crafdapi#12), and views-crafdapi is not deployed yet. Closing on the console
+> alone would be recording a verification that was never performed, which is the habit this register
+> exists to break. **Closes when the smoke test passes.**
+>
+> **No probe was run, on purpose.** One was drafted: a `curl` against `GET /v1/storage/buckets` with
+> the key. It was discarded because it would have had the operator paste a live secret into a shell
+> to re-learn what the console already displays. The platform has spent weeks removing
+> credential-handling steps from humans (views-models ADR-018, seam contract §2); reintroducing one
+> as ceremony — for a check that answers nothing the console does not — is a bad trade even when
+> technically harmless. Worth recording because the pull toward "verify it with a probe" was strong
+> and wrong, and it will recur at the next key.
+>
+> **The generalisable finding**, which is why this is not merely a config slip: a read-only key
+> needed a permission unrelated to reading data. `buckets.read` is required because the API
+> *authenticates* by listing buckets. Nobody choosing scopes from the key's purpose would tick it,
+> and the next per-party key will hit this unless its issuer reads the registry slot first.
+
 Cross-refs: C-28 (external-caller credential unmodelled), C-58, views-crafdapi#12.
 
 ---
