@@ -1,7 +1,13 @@
 # views-appwrite
 
-**Home of the VIEWS platform's Appwrite seam contract** — the rules and shared coordinates every
-repo uses to reach the common Appwrite store. Five repositories read from here.
+**Home of the VIEWS platform's cross-repo contracts** — the Appwrite seam (identity, secrets and
+shared coordinates) and the consumer-API strategy that governs how those repos are built and
+deployed. Five repositories read from here.
+
+> **The name is narrower than the charter, deliberately for now.** Operator decision, 2026-08-05:
+> this repo owns platform contracts *and* consumer-API strategy, not the Appwrite seam alone — *"maybe
+> we'll shuffle around responsibilities in the future, but for now this seam is the lesser of a bunch
+> of evils."* Recorded as provisional so it does not harden into permanence by repetition.
 
 > **This repository ships no code today.**
 >
@@ -13,7 +19,8 @@ repo uses to reach the common Appwrite store. Five repositories read from here.
 | | |
 |---|---|
 | [The seam contract](docs/ADRs/platform/appwrite_seam_contract.md) | Identity, secrets and configuration on the Appwrite seam. Formerly `PLATFORM-001`, renamed by [ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md) |
-| **Pin against this tag** | **`platform-001-v1.2.0`** — the newest *published* tag. `main` currently carries **v1.3.0** (the rename; no clause changed), which is untagged until the operator cuts it — see [#21](https://github.com/views-platform/views-appwrite/issues/21). Consumers are **required** to pin; **most do not yet**, see [#20](https://github.com/views-platform/views-appwrite/issues/20) |
+| [The deployment pattern](docs/ADRs/platform/consumer_api_deployment_pattern.md) | How a consumer API reaches production: registry-sourced coordinates, operator-slot secret, **a box that records which registry version built it**, tag-gated deploys, fail-visible serving. Repo-agnostic; each consumer's concrete ADR references it by pinned tag |
+| **Pin against this tag** | **`appwrite-seam-v1.4.4`** — the newest published seam-contract tag, matching `main`. The deployment pattern is versioned **separately** at **v1.0.0**; pin it independently, because the two change for different reasons. `platform-001-v1.2.0` is retained and still resolves — §10 forbids moving a published tag |
 | [The coordinate registry](docs/ADRs/platform/coordinate_registry.toml) | The canonical source for every bucket, collection and database id on the seam, plus named secret slots — **never secret values** |
 
 **What is planned.** This repo is also the intended home of a **shared Appwrite client library**,
