@@ -18,13 +18,16 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.4.3"                          # Versions in lockstep with the contract (§10);
+version = "1.4.4"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-08-05"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
                                            # sense: they record state the operator created in the console and
                                            # impose no new obligation on any consumer.
                                            #
+                                           # v1.4.4 (2026-08-05): A3(h) answered — NO non-production project exists
+                                           #   (org holds exactly one). crafd-caller-read NEVER expires (C-66);
+                                           #   its 6 scopes console-verified, closing C-56 at source.
                                            # v1.4.3 (2026-08-05): that key's EXACT EXPIRY read — 2026-11-17 12:35.
                                            #   BOTH platform keys expire the same afternoon, 3h35m apart.
                                            #   The '~2026-11-30' figure was 13 days late. C-65.
@@ -421,8 +424,30 @@ zero scopes in every other category. A clean per-party read key — the model vi
 moves the shared UN FAO key toward.
 
 The secret VALUE is not recorded here; the operator holds it."""
+expiry = """NEVER. Read from the console 2026-08-05: the Expiration date column reads `never`,
+and Last accessed reads `never` (consistent with views-crafdapi not being deployed).
+
+⚠ THE ONLY KEY HELD BY AN EXTERNAL PARTY IS THE ONLY ONE THAT CANNOT BE FORCED TO ROTATE.
+The two platform keys expire 2026-11-17 (C-65). This one does not expire at all, so:
+
+  - a leak has no natural end. The UN FAO key's leaked value died because the key was
+    REISSUED on a 12-month term before anyone noticed the paste (see FAO_CALLER_API_KEY
+    .history_leak). That accident is not available here — this key would still be live.
+  - rotation depends entirely on somebody deciding to, and §5.1 has no propagation
+    mechanism for a secret VALUE (C-27). No expiry means no forcing function either.
+  - the asymmetry is backwards. The keys under this platform's sole control expire; the
+    key handed to a third party does not.
+
+NOT ARGUING FOR AN EXPIRY BY DEFAULT. A caller key that expires without coordinated
+handover breaks the partner's access on a date they did not choose, which is how §5.3's
+"free at creation, a migration afterwards" cost is actually paid. The point is that this
+was never decided — the field was left at its default and nobody looked until now.
+
+Tracked as C-66. Open question for the operator: expiry with a coordinated renewal, or a
+deliberate decision to run without one, recorded as such."""
 scopes_corrected = """CORRECTED 2026-08-03 — operator ticked buckets.read and tables.read in
-the console. Kept as a record rather than deleted: the reason those two are needed is not
+the console. CONSOLE-VERIFIED 2026-08-05: the key list shows `6 Scopes`, matching the four
+issued plus the two added. C-56's remediation is now confirmed at source rather than relayed. Kept as a record rather than deleted: the reason those two are needed is not
 inferable from the key's purpose, and the next per-party read key will be issued by someone
 reading this slot as the worked example.
 
