@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0 is an observation-driven bump carrying **no clause change** |
-| Version | **1.4.3** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-02 — **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 are observation-driven bumps carrying **no clause change** |
+| Version | **1.4.4** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-05 — **v1.4.4**: §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -64,18 +64,38 @@ identity section therefore describes **callers and processes**:
 | views-faoapi serving | validates the **caller's** presented key (`X-API-Key`) and re-uses it read-only. **Provisions nothing** — correction (ii) | the caller's key |
 | preflights/validators | read-only | `VIEWS Pipeline Core` |
 
-**Observed state, recorded so the contract is not read as describing reality.** The Appwrite
-console holds **two** keys — `VIEWS Pipeline Core` and `UN FAO` — each carrying 20 scopes, each
-expiring ~2026-11-30. Only one of them is a *platform* identity; it serves **three** of the four
-rows above. `UN FAO` is a *caller's* key, and it serves **two holders** — FAO **and** this
-platform's developers/operators (§5.3's floor requires that split). The four-identity model in this
-table is the **target**, not the present. §5.3 states the rule; §5.5 states why the gap cannot be
-closed by console action alone.
+**Observed state, recorded so the contract is not read as describing reality.** Read from the
+operator console 2026-08-05 (þing-02 **A3(i)**, now closed). The project holds **three** keys:
 
-> **Nothing in this section has been read from a console by any repository.** The scope counts, the
-> `~` on the expiry, and the key names are **operator testimony relayed by a seat** (þing-02 S2,
-> S36). No seat can grep a console, and the record must keep saying so rather than letting relay
-> harden into fact. Enumerating the 20 scopes and the exact expiry is an operator gate.
+| Console key | Scopes | Expires | Last used |
+|---|---|---|---|
+| `VIEWS Pipeline Core` | 20 | **2026-11-17 12:35** | a day ago |
+| `UN FAO` | 20 | **2026-11-17 16:10** | 5 days ago |
+| `crafd-caller-read` | 6 | **never** | never |
+
+Three facts in that table are load-bearing and none was known before it was read:
+
+- **The two 20-scope keys are identical, scope for scope**, both omissions included. So §5.3's
+  split buys **revocability, not privilege reduction** — both already hold everything, and narrowing
+  is a separate step (§5.5, D4's ordering).
+- **They expire on the same afternoon, 3h35m apart.** No stagger, no fallback (**C-65**). The
+  previously recorded `~2026-11-30` was **thirteen days late**.
+- **`crafd-caller-read` never expires** (**C-66**) — the only key held by an external party is the
+  only one that can never be forced to rotate.
+
+Only one of these is a *platform* identity; it serves **four** of the rows above (the fourth arrived
+with the CRAFD delivery — C-57). `UN FAO` is a *caller's* key serving **two holders**, FAO **and**
+this platform's developers/operators, which is the §5.3 violation. The four-identity model in this
+table is the **target**, not the present. §5.5 states why the gap cannot be closed by console action
+alone.
+
+> **Superseded 2026-08-05.** This paragraph previously read *"Nothing in this section has been read
+> from a console by any repository… the record must keep saying so rather than letting relay harden
+> into fact."* **It has now been read.** The warning is retained rather than deleted because it was
+> right: the relayed figure it hedged did harden, and was wrong by thirteen days when finally
+> checked. The standing rule survives its own gate closing — **anything here not carrying a console
+> read-date is still testimony.** The non-production project question (§þing-02 A3(h)) was answered
+> the same day: **there is none**; the organisation holds exactly one project, `Datastore`.
 
 **Four corrections, adopted 2026-07-31 (þing-02 D1).** Each was supplied by the seat it cost:
 
@@ -433,6 +453,27 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.4 — 2026-08-05 — companion registry + §2 observed state; no clause changed
+
+**Status: ACCEPTED** — observation-driven per §10. No clause changed.
+
+§2's observed-state paragraph is rewritten against a console read rather than relayed testimony, and
+its standing "nothing here has been read from a console" warning is **superseded rather than
+deleted** — it was right, and the figure it hedged proved thirteen days wrong.
+
+**Three things newly known:**
+
+| | |
+|---|---|
+| **A3(h) answered** | **There is no non-production Appwrite project.** The `VIEWS Platform` organisation holds exactly one project, `Datastore`. This blocks views-postprocessing#18 and the þing-01 provisioning drill outright — not "pending", *absent* |
+| **C-66** | `crafd-caller-read` **never expires**. The only key held by an external party is the only one that cannot be forced to rotate — while both keys under this platform's sole control expire on 2026-11-17 |
+| **C-56 closed at source** | the console shows `6 Scopes` on that key, confirming the correction rather than relaying it |
+
+**A3(b) also answered, by observation:** the project holds three independent keys, each with its own
+scopes and expiry, and new ones are self-service. So **two live keys for one identity is
+expressible**, and §5.1's overlap-rotation story is mechanically possible — it was not obvious that
+it was, and it is the precondition for rotating anything before 2026-11-17 without an outage.
 
 ### v1.4.3 — 2026-08-05 — companion registry only; no clause changed
 

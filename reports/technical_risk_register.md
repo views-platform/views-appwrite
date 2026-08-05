@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 45                                   |
-| Open Concerns     | 40                                   |
+| Total Concerns    | 46                                   |
+| Open Concerns     | 41                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -1145,6 +1145,51 @@ it cannot straddle the date, because there is no surviving key on the far side.
 Recorded in registry **v1.4.3** / `appwrite-seam-v1.4.3`. Cross-refs: C-27 (rotation has no
 propagation mechanism — that gap now has a date), C-28, views-appwrite#12 (e-caller), views-faoapi#338
 (the split, whose deadline this is).
+
+---
+
+### C-66: The one key held by an external party is the only one that never expires
+
+| Field | Value |
+|-------|-------|
+| ID | C-66 |
+| Tier | 3 |
+| Source | operator console read, 2026-08-05 — visible in the API-keys list the same sitting that closed A3(i) |
+| Trigger | A leak, a partner offboarding, or any decision to rotate `crafd-caller-read`. None of these has a date attached, which is the concern. Also: issuing `PRODUCTIONAPI_API_KEY` the same way, inheriting the default without deciding. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` — `CRAFD_CALLER_API_KEY.expiry`; Appwrite console, API keys list |
+
+| Key | Expires |
+|---|---|
+| `VIEWS Pipeline Core` | 2026-11-17 12:35 |
+| `UN FAO` | 2026-11-17 16:10 |
+| **`crafd-caller-read`** | **never** |
+
+**The asymmetry runs the wrong way.** The two keys under this platform's sole control expire. The
+key handed to a third party does not.
+
+Three consequences:
+
+1. **A leak has no natural end.** The UN FAO key's leaked value is dead today only because the key
+   was reissued on a 12-month term roughly three weeks after the paste, before anyone noticed —
+   recorded at `FAO_CALLER_API_KEY.history_leak`. **That accident is not available here.** An
+   equivalent paste of this key would still be live, indefinitely.
+2. **No forcing function for rotation.** §5.1 has no propagation mechanism for a secret *value*
+   (C-27). Expiry is the only thing that has ever forced the question on this platform, and this key
+   does not have one.
+3. **`never` was a default, not a decision.** Nothing in the record shows anyone choosing it. It is
+   the field's default and nobody looked until the key list was read.
+
+**This entry does not argue for an expiry.** A caller key that expires without coordinated handover
+breaks a partner's access on a date they did not pick — which is precisely the *"free at creation, a
+migration afterwards"* cost §5.3 describes, paid at the worst moment. Both answers are defensible.
+**Only the absence of a decision is not.**
+
+**Open question for the operator:** an expiry with a scheduled renewal, or a deliberate no-expiry
+recorded as such with a rotation trigger that is not a date. Whichever, decide it before
+`PRODUCTIONAPI_API_KEY` is issued, or the default propagates to a third external party by inheritance.
+
+Recorded in registry **v1.4.4**. Cross-refs: C-27 (rotation has no propagation mechanism), C-65 (the
+two keys that *do* expire, together), C-28, views-appwrite#12.
 
 ---
 
