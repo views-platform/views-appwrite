@@ -18,13 +18,16 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.4.1"                          # Versions in lockstep with the contract (§10);
+version = "1.4.2"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-03"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
+amended = "2026-08-05"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
                                            # sense: they record state the operator created in the console and
                                            # impose no new obligation on any consumer.
                                            #
+                                           # v1.4.2 (2026-08-05): `VIEWS Pipeline Core` key's 20 scopes read from the
+                                           #   console — the last unenumerated key, þing-02 A3(i).
+                                           #   Identical to the UN FAO key, scope for scope.
                                            # v1.4.1 (2026-08-03): CRAFD caller key scopes corrected — buckets.read
                                            #   and tables.read added. As first issued the key could not
                                            #   authenticate any request at all (C-56).
@@ -202,6 +205,64 @@ class = "secret"
 carrier = "env var"
 issued_by = "operator"
 console_key_name = "VIEWS Pipeline Core"
+scopes_enumerated = """2026-08-05, read from the operator console at last — the þing-02 A3(i) gate,
+open since 2026-07-31. Twenty scopes:
+
+DATABASES (16 of 17 ticked):
+  databases.read   databases.write
+  tables.read      tables.write
+  columns.read     columns.write
+  indexes.read     indexes.write
+  rows.read        rows.write
+  collections.read collections.write     [DEPRECATED]
+  attributes.read  attributes.write      [DEPRECATED]
+  documents.read   documents.write       [DEPRECATED]
+  NOT ticked: dedicatedDatabases.execute
+
+STORAGE (4 of 6 ticked):
+  buckets.read     buckets.write
+  files.read       files.write
+  NOT ticked: tokens.read, tokens.write
+
+ZERO scopes in: Project, Auth, Backups, Functions, Sites, Messaging, Proxy,
+Other, Advisor, Presences, Domains, Apps.
+
+TWO CAVEATS ON THIS RECORD, both deliberate:
+  - The screenshot did not show the key's NAME. Identity is inferred from the operator
+    answering the "VIEWS Pipeline Core" question with it. If that inference is wrong, this
+    block belongs on a different slot.
+  - The EXACT EXPIRY was not read. This slot still says "~2026-11-30", which remains an
+    unconfirmed relay. The FAO key's equivalent guess turned out to be 13 days late
+    (actual 2026-11-17 16:10), so this figure should not be planned against."""
+scopes_finding = """THIS KEY AND THE UN FAO CALLER KEY CARRY IDENTICAL PERMISSIONS. Scope for
+scope, including both omissions (dedicatedDatabases.execute, tokens.*). Twenty each.
+
+That was suspected — seam contract §2 records "two keys, each carrying 20 scopes" — but it had
+never been checked, and the equality is the finding. Consequences:
+
+1. THE KEY SPLIT BUYS NO PERMISSION REDUCTION TODAY. §5.3's floor is about REVOCABILITY —
+   being able to revoke one holder without the other — and that reason still holds entirely.
+   But nobody should expect least privilege from the split as currently designed: both keys
+   already hold everything, so separating them changes who you can cut off, not what a
+   compromised key can do. Both must ALSO be narrowed (D4's "narrow scopes" step), and that
+   is a separate action from issuing tier keys.
+
+2. `.write` INCLUDES DELETE — the console says so on every line. So the key running every
+   model, every ensemble, the un_fao delivery, the CRAFD delivery and all preflights can
+   delete every database, table, column, index, row, bucket and file in the project. There
+   is no separate destructive scope to withhold.
+
+3. `buckets.write` IS THE PHANTOM-BUCKET SCOPE (§5.5, C-13). With it, a typo'd bucket id is
+   CREATED rather than raising. Removing it is the substrate-level fix that makes that class
+   of failure impossible regardless of what the code does — but it cannot be removed until
+   views-pipeline-core stops provisioning transitively on the ordinary upload path.
+
+4. Both generations of the database API are ticked — tables/columns/rows AND the deprecated
+   collections/attributes/documents. Consumers pin appwrite==19.2.0 and may still call the
+   deprecated surface, so verify which generation is in use before removing either. Sixteen
+   is not sixteen distinct capabilities; it is roughly ten, twice.
+
+A read-only consumer needs about four of these twenty."""
 serves_identities = [
   "model/ensemble writer -> production_forecasts",
   "un_fao delivery -> sole writer of unfao_bucket",
