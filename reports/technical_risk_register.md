@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 44                                   |
-| Open Concerns     | 39                                   |
+| Total Concerns    | 45                                   |
+| Open Concerns     | 40                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -1097,6 +1097,54 @@ name.
 Filed as **views-faoapi#358**.
 
 Cross-refs: D-05, ADR-011, C-51.
+
+---
+
+### C-65: Both platform keys expire on the same afternoon, and the recorded date was 13 days late
+
+| Field | Value |
+|-------|-------|
+| ID | C-65 |
+| Tier | 2 |
+| Source | operator console read, 2026-08-05 — þing-02 A3(i), the gate that had been open since 2026-07-31 |
+| Trigger | **2026-11-17 12:35.** Not a hypothetical — a scheduled, certain, dated total loss of Appwrite access. Also triggered earlier by any rotation plan sized against the old `~2026-11-30` figure. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` — `APPWRITE_DATASTORE_API_KEY.expiry`, `FAO_CALLER_API_KEY.observed` |
+
+| Key | Expires |
+|---|---|
+| `VIEWS Pipeline Core` | 2026-11-17 **12:35** |
+| `UN FAO` | 2026-11-17 **16:10** |
+
+Three hours thirty-five minutes apart. **104 days from this entry.**
+
+**There is no stagger and no fallback.** At 16:10 that day every identity on the seam is dead at
+once: every model and ensemble write, the un_fao delivery, the CRAFD delivery, all preflights, and
+FAO's own read access. The two keys cannot cover for each other — a rotation plan that leans on one
+while replacing the other has no ground to stand on. Consistent with the earlier inference that both
+were issued together on a 12-month term (~2025-11-17).
+
+**Why this is a register entry and not just a calendar note.** For four months the record said
+`~2026-11-30`, relayed and unverified, and §2 carried a standing warning that its figures were
+*"operator testimony relayed by a seat"*. **The real date is thirteen days earlier.** Anyone sizing
+the rotation against the record believed in slack that does not exist — and the FAO half needs
+**external coordination**, which is precisely the part that cannot be compressed at the end. The
+approximation was never wrong in a way any check could detect; it hardened into a planning figure by
+being repeated.
+
+That is the same failure shape as C-64 (a docstring citing a verdict that did not say what it
+claimed) and C-53 (a version that could stand still through a content change): **a soft fact quoted
+until it reads as a hard one.**
+
+**What this does not change.** No clause, no obligation. §5 already requires the key split and the
+narrowing; D4 already fixes their order. This fixes the *deadline* for work that was already owed,
+and removes thirteen days from it.
+
+**Ordering consequence for D4.** Whatever sequence is chosen must **complete** before 2026-11-17 —
+it cannot straddle the date, because there is no surviving key on the far side.
+
+Recorded in registry **v1.4.3** / `appwrite-seam-v1.4.3`. Cross-refs: C-27 (rotation has no
+propagation mechanism — that gap now has a date), C-28, views-appwrite#12 (e-caller), views-faoapi#338
+(the split, whose deadline this is).
 
 ---
 
