@@ -135,6 +135,7 @@ fi
 echo "--- Checking contract/registry version coherence ---"
 CONTRACT="$SEAM"
 REGISTRY="ADRs/platform/coordinate_registry.toml"
+PATTERN="ADRs/platform/consumer_api_deployment_pattern.md"
 if [ -f "$CONTRACT" ] && [ -f "$REGISTRY" ]; then
     contract_ver=$(grep -P '^\| Version \|' "$CONTRACT" | grep -oP '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     registry_ver=$(grep -oP '^version = "\K[0-9.]+' "$REGISTRY" | head -1)
@@ -194,7 +195,11 @@ else
           else grep -P '^\| Version \|' | grep -oP '[0-9]+\.[0-9]+\.[0-9]+'; fi \
         | head -1
     }
-    for f in "$CONTRACT" "$REGISTRY"; do
+    # PATTERN is checked here but deliberately NOT in check 7's lockstep: it is
+    # versioned independently of the seam contract, because they govern different
+    # things and change for different reasons (its §7). It still may not change
+    # content without moving its version — that rule is universal.
+    for f in "$CONTRACT" "$REGISTRY" "$PATTERN"; do
         [ -f "$f" ] || continue
         git diff --quiet origin/main -- ":/docs/$f" 2>/dev/null && continue
         was=$(_version_of origin/main "$f")
