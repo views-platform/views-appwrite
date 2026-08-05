@@ -10,7 +10,7 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0 is an observation-driven bump carrying **no clause change** |
-| Version | **1.4.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Version | **1.4.3** (changes by supersession + version bump; **never silent edit** — consumers pin) |
 | Amended | 2026-08-02 — **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
@@ -433,6 +433,33 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.3 — 2026-08-05 — companion registry only; no clause changed
+
+**Status: ACCEPTED** — observation-driven per §10. Byte-identical to v1.4.2 in every clause.
+
+The `VIEWS Pipeline Core` key's exact expiry is read: **2026-11-17 12:35**. þing-02 **A3(i)** is now
+closed on both counts for every key on the seam, and §2's standing warning that its figures were
+*"operator testimony relayed by a seat"* no longer applies to any of them.
+
+**The finding is the coincidence.** Both platform keys expire on the same afternoon:
+
+| Key | Expires |
+|---|---|
+| `VIEWS Pipeline Core` | 2026-11-17 **12:35** |
+| `UN FAO` | 2026-11-17 **16:10** |
+
+Three hours thirty-five minutes apart. **There is no stagger and no fallback** — at 16:10 that day
+every identity on this seam is dead: every model and ensemble write, the un_fao delivery, the CRAFD
+delivery, all preflights, and FAO's own read access.
+
+**Both were previously recorded as `~2026-11-30`.** That relayed approximation stood for four months
+and was **thirteen days late**. Anyone sizing the rotation against it believed in slack that does not
+exist — and the FAO half needs external coordination, the one part that cannot be compressed at the
+end. Registered as **C-65**.
+
+This changes no obligation, which is why it is a patch rather than a minor bump. It changes the
+*deadline* for work §5 already requires.
 
 ### v1.4.2 — 2026-08-05 — companion registry only; no clause changed
 

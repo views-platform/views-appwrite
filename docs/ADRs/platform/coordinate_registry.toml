@@ -18,13 +18,16 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.4.2"                          # Versions in lockstep with the contract (§10);
+version = "1.4.3"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-08-05"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
                                            # sense: they record state the operator created in the console and
                                            # impose no new obligation on any consumer.
                                            #
+                                           # v1.4.3 (2026-08-05): that key's EXACT EXPIRY read — 2026-11-17 12:35.
+                                           #   BOTH platform keys expire the same afternoon, 3h35m apart.
+                                           #   The '~2026-11-30' figure was 13 days late. C-65.
                                            # v1.4.2 (2026-08-05): `VIEWS Pipeline Core` key's 20 scopes read from the
                                            #   console — the last unenumerated key, þing-02 A3(i).
                                            #   Identical to the UN FAO key, scope for scope.
@@ -231,9 +234,32 @@ TWO CAVEATS ON THIS RECORD, both deliberate:
   - The screenshot did not show the key's NAME. Identity is inferred from the operator
     answering the "VIEWS Pipeline Core" question with it. If that inference is wrong, this
     block belongs on a different slot.
-  - The EXACT EXPIRY was not read. This slot still says "~2026-11-30", which remains an
-    unconfirmed relay. The FAO key's equivalent guess turned out to be 13 days late
-    (actual 2026-11-17 16:10), so this figure should not be planned against."""
+  - EXPIRY read 2026-08-05, one day later: EXACT EXPIRY 2026-11-17 12:35. See `expiry`
+    below. A3(i) is now closed for this key on both counts."""
+expiry = """EXACT: 2026-11-17 12:35 (read from the console 2026-08-05, supersedes the
+"~2026-11-30" relay carried since 2026-07-31 — that guess was THIRTEEN DAYS LATE).
+
+⚠ BOTH PLATFORM KEYS EXPIRE ON THE SAME AFTERNOON.
+
+  VIEWS Pipeline Core   2026-11-17 12:35
+  UN FAO                2026-11-17 16:10
+  ------------------------------------------
+  gap                   3 hours 35 minutes
+
+There is no stagger and no fallback. At 16:10 on 2026-11-17 every Appwrite identity on
+this seam is dead: every model and ensemble write, the un_fao delivery, the CRAFD
+delivery, all preflights, and FAO's own read access. Consistent with the earlier
+inference that both were issued together on a 12-month term (~2025-11-17).
+
+WHY THIS IS WORSE THAN A DATE IN A CALENDAR. The record said "~2026-11-30" for four
+months. Anyone sizing the rotation against it believed they had thirteen days that do not
+exist — and the FAO half needs EXTERNAL coordination, which is the one part that cannot
+be compressed at the end. The estimate was never wrong in a way anything could detect;
+it was a relayed approximation that hardened into a planning figure.
+
+CONSEQUENCE FOR ROTATION ORDER: the two keys cannot cover for each other, because they
+die together. Whatever D4's sequencing produces, it must complete before 2026-11-17,
+not straddle it. Tracked as C-65."""
 scopes_finding = """THIS KEY AND THE UN FAO CALLER KEY CARRY IDENTICAL PERMISSIONS. Scope for
 scope, including both omissions (dedicatedDatabases.execute, tokens.*). Twenty each.
 
@@ -269,7 +295,8 @@ serves_identities = [
   "preflights / validators",
   "crafd delivery -> sole writer of crafd_bucket (ADDED v1.4.0 — see below)",
 ]
-observed = """2026-07-31, operator console: 20 scopes, expires ~2026-11-30.
+observed = """2026-07-31, operator console: 20 scopes. Expiry read 2026-08-05 —
+EXACT 2026-11-17 12:35, see `expiry` below (the "~2026-11-30" relay was 13 days late).
 VIOLATES seam contract §5.3 — one key, FOUR identities (three until v1.4.0). Read by
 views-pipeline-core/views_pipeline_core/configs/prediction_store.py:16 and
 views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187, so the
