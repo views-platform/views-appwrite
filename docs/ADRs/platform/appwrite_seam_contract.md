@@ -10,7 +10,7 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0 is an observation-driven bump carrying **no clause change** |
-| Version | **1.4.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Version | **1.4.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
 | Amended | 2026-08-02 — **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
@@ -433,6 +433,23 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.4.2 — 2026-08-05 — companion registry only; no clause changed
+
+**Status: ACCEPTED** — observation-driven per §10. Byte-identical to v1.4.1 in every clause.
+
+The `VIEWS Pipeline Core` key's twenty scopes are read from the console and recorded — the last
+unenumerated key on the seam, and the þing-02 **A3(i)** gate, open since 2026-07-31. §2 has carried
+a standing warning that its scope counts were *"operator testimony relayed by a seat"* and that
+enumerating them was an operator gate. **That gate is now closed for scopes.** It remains open for
+this key's exact expiry, still recorded as the unconfirmed `~2026-11-30`.
+
+**The finding, which §2 asserted but nobody had checked: this key and `UN FAO` carry identical
+permissions** — scope for scope, including both omissions. That does not weaken §5.3, whose floor is
+about *revocability*, not privilege. It does mean **the key split alone buys no privilege reduction**:
+both keys already hold everything, so separating them changes who can be cut off, not what a
+compromised key can do. Narrowing is a distinct step from issuing tier keys, and D4's ordering
+already says so.
 
 ### v1.4.1 — 2026-08-03 — companion registry only; no clause changed
 
