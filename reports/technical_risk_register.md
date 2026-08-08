@@ -641,7 +641,28 @@ that struck §5.7 was conditioned on a flag that is not set.
 **Not crafdapi's defect.** It is an org-level default, and the clone did more than the precondition
 asked. It is recorded here because this repo hosts the contract whose §5.7 strike depends on it.
 
-Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32.
+> **STATUS 2026-08-08 — the repository went public; this concern got *worse*, not better.**
+>
+> On going public, `secret_scanning` and `secret_scanning_push_protection` were enabled on this repo.
+> **`secret_scanning_non_provider_patterns` could not be enabled** — and the way it failed is the
+> point. `PATCH /repos/.../security_and_analysis` with that field returns **HTTP 200 and the full
+> repository object, with no error**, and the setting stays `disabled`. The API accepts the request
+> and does nothing. Re-reading the state is the only way to find out; a script that trusted the 200
+> would report the þing-02 condition satisfied when it is not.
+>
+> Same for `secret_scanning_validity_checks`. Org-level defaults are `secret_scanning: false`,
+> `push_protection: false`, and non-provider-patterns is not even a settable org field
+> (`npp: null`) — so C-30's original framing, that the gap is an org-level default, holds.
+>
+> **Operator action, in the GitHub UI** — Settings → Code security. Until then the §5.7 strike rests
+> on a condition that is still unmet, now on a **public** repository.
+>
+> Partially compensated in-repo by **C-67**: `.gitleaks.toml` widens the CI scan to catch this
+> platform's key shape in prose and notebook cells, which provider-pattern scanning misses. That
+> covers the *key* half of þing-02's condition. It does not cover a **prose password**, which is the
+> other half and the class views-datafactory actually leaked.
+
+Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32, C-67.
 
 ---
 
