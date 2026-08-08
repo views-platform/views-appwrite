@@ -1,0 +1,96 @@
+# gitleaks configuration — extends the default rules, does not replace them.
+#
+# Auto-detected: gitleaks reads `.gitleaks.toml` from the scan root, so
+# `.github/workflows/secret_scan.yml` needs no `--config` flag and is unmodified.
+#
+# ---------------------------------------------------------------------------
+# WHY THIS FILE EXISTS
+# ---------------------------------------------------------------------------
+# The workflow's purpose is to gate making this repository PUBLIC, which is
+# irreversible. Before relying on it, its default rules were measured against
+# the shapes this platform's history has ACTUALLY contained. Measured, with
+# controls, not assumed — the first attempt used `AKIAIOSFODNN7EXAMPLE` as the
+# control and it came back MISSED, because gitleaks allowlists the canonical AWS
+# example key. A null result from a probe that cannot find a known positive is
+# evidence about the probe, so the test was redone with a GitHub PAT and a PEM
+# private key as controls. Both CAUGHT. Only then did the misses mean anything.
+#
+# Result, gitleaks 8.30.1, DEFAULT rules, same 265-char fabricated key in each:
+#
+#   APPWRITE_DATASTORE_API_KEY=<key>        CAUGHT   generic-api-key
+#   "I ran it with <key> and it worked"     MISSED
+#   notebook cell containing <key>          MISSED
+#   "The prod server password is <phrase>"  MISSED
+#
+# The default rules recognise a long opaque token only when it sits in
+# `NAME=value` syntax. The identical value pasted into prose or a notebook cell
+# is invisible to them.
+#
+# THAT IS NOT A HYPOTHETICAL GAP. The two missed shapes are precisely the two
+# classes this platform's history already contained, and which þing-02 made
+# load-bearing when it conditioned §5.7's strike on non-provider-pattern and
+# `.ipynb`-cell coverage (views-appwrite C-30):
+#
+#   - views-models: credential material pasted into NOTEBOOK CELLS. The UN FAO
+#     key leak recorded at `FAO_CALLER_API_KEY.history_leak` in the coordinate
+#     registry is exactly this shape.
+#   - views-datafactory: a password written in ENGLISH PROSE.
+#
+# So without the rule below, the workflow would have reported "no leaks found"
+# on the very incident that gave this platform its leaked-key story.
+#
+# Note gitleaks DOES read `.ipynb` files — a GitHub PAT planted in a notebook
+# cell was caught by the default rules. The gap is rule coverage for this
+# platform's key SHAPE, not file-type coverage. Worth stating because it is a
+# narrower and more fixable problem than "notebooks are not scanned".
+#
+# ---------------------------------------------------------------------------
+# WHAT THIS FILE DOES NOT FIX
+# ---------------------------------------------------------------------------
+# A password written in prose is still MISSED, and no regex closes that
+# honestly. That is what GitHub's `secret_scanning_non_provider_patterns` is
+# for, and it is why enabling that flag is part of going public rather than a
+# follow-up (C-30). This file narrows the gap; it does not close it, and a green
+# run means "no findings under these rules", never "no secrets".
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "appwrite-long-opaque-key"
+description = "Long opaque token (Appwrite API key shape) in any context, including prose and notebook cells"
+
+# 100+ chars deliberately. The real key observed on this platform is 265
+# characters. The floor is set above the two fixed-width hex shapes this repo
+# legitimately contains so they can never trip it by length alone:
+#   - 40  git commit SHAs, cited throughout the ADRs and the risk register
+#   - 64  the pinned gitleaks SHA256 in the workflow itself
+# Those two are ALSO allowlisted below by exact shape, so the guard holds even
+# if the length floor is ever lowered.
+regex = '''[A-Za-z0-9_-]{100,}'''
+entropy = 3.0
+
+[rules.allowlist]
+regexTarget = "match"
+regexes = [
+  '''^[a-f0-9]{40}$''',   # git commit SHA
+  '''^[a-f0-9]{64}$''',   # SHA256 digest (e.g. GITLEAKS_SHA256)
+]
+
+# ---------------------------------------------------------------------------
+# VERIFIED BEFORE COMMITTING — both halves, because either alone is worthless
+# ---------------------------------------------------------------------------
+#   1. It BITES. Against a probe repo, the rule caught the fabricated key in all
+#      three placements (assignment, prose, notebook cell) that default rules
+#      missed two of.
+#   2. It does NOT cry wolf. Run against this repository's full history — 43
+#      non-merge commits, ~488 KB — it produced ZERO findings.
+#
+# The second number is the one that keeps this file alive. A rule that fires on
+# legitimate content gets disabled by the third person who hits it, and then the
+# repository has a config file that looks like protection and is not. This
+# register has three entries about exactly that failure (C-52, C-53, C-55).
+#
+# If you add an allowlist entry here, write the justification beside it. An
+# undocumented allowlist entry is indistinguishable from a hidden leak — the
+# workflow's own error message says so.
