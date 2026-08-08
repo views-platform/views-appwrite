@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 48                                   |
-| Open Concerns     | 43                                   |
+| Total Concerns    | 49                                   |
+| Open Concerns     | 44                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -654,8 +654,16 @@ asked. It is recorded here because this repo hosts the contract whose §5.7 stri
 > `push_protection: false`, and non-provider-patterns is not even a settable org field
 > (`npp: null`) — so C-30's original framing, that the gap is an org-level default, holds.
 >
-> **Operator action, in the GitHub UI** — Settings → Code security. Until then the §5.7 strike rests
-> on a condition that is still unmet, now on a **public** repository.
+> **CORRECTED 2026-08-08 — it is not an unflipped switch. It is not purchasable on this plan.**
+>
+> The organisation is on GitHub's **free** plan (`orgs/views-platform.plan.name = "free"`, 18 seats).
+> `secret_scanning_non_provider_patterns` is part of **GitHub Secret Protection**, a paid product.
+> Hence all three symptoms: the toggle is absent from the repo's Advanced Security page, the API
+> accepts a PATCH and silently ignores it, and the org-level field reads `null` rather than `false`.
+>
+> **This entry was previously written as an operator oversight. That framing was wrong**, and it sent
+> the operator hunting for a control that does not exist for them. The gap is a purchasing decision,
+> not a configuration one.
 >
 > Partially compensated in-repo by **C-67**: `.gitleaks.toml` widens the CI scan to catch this
 > platform's key shape in prose and notebook cells, which provider-pattern scanning misses. That
@@ -1303,6 +1311,61 @@ and belongs with the scaffold decision (**#8**, gated on *operator ∧ test proj
 into a secret-scan PR.
 
 Cross-refs: C-02, C-52, C-55, C-67, #8.
+
+---
+
+### C-69: þing-02 struck §5.7 in favour of a replacement that is not available on this plan
+
+| Field | Value |
+|-------|-------|
+| ID | C-69 |
+| Tier | 3 |
+| Source | discovered 2026-08-08 while enabling scanning on going public; the plan limitation is the new fact |
+| Trigger | Anyone relying on §5.7's strike as settled — or citing S32's withdrawals as unconditional. Also: the next repo made public, which inherits the same absent control. |
+| Location | `docs/ADRs/platform/appwrite_seam_contract.md` §5.7; þing-02 `sáttmál.md` S32, `dómr_endurmat.md:147`, `rýni_00.md:118` |
+
+**What §5.7 said**, before it was struck: *"Two mechanical checks, in every repo on the seam: a
+secret scan and a registry check."*
+
+**Why it was struck (D5),** in its own words: secret scanning does not cross the Appwrite seam, so
+it is not this contract's to impose — and *"an organisation-level setting reaches **all 16 public
+repos**; a seam contract reaches **6** … A clause covering a third of the problem while reading as
+coverage is worse than no clause."* The replacement is named explicitly: *"an **organisation-level
+default**, not a clause, and it is an operator action."*
+
+**The new fact.** Part of that replacement **cannot be bought on the current plan.** The org is on
+GitHub free. `secret_scanning` and `secret_scanning_push_protection` are available and are now on
+for this repo. `secret_scanning_non_provider_patterns` — the specific control both withdrawing seats
+named — belongs to the paid Secret Protection product.
+
+**Why this is smaller than it first sounds, stated so nobody over-reacts:**
+
+1. **The strike's core reasoning is untouched.** Secret scanning still does not cross the seam, and
+   an org default still reaches more repos than a clause could. D5's argument was never *"because
+   this specific flag is free"*.
+2. **What §5.7 would have mandated is happening anyway, voluntarily.** §5.7's own closing line —
+   *"Where a repo wants a mechanical check of its own, that is its own business"* — is exactly what
+   views-appwrite and views-models have each now done, with a full-history gitleaks gate.
+3. **The contract already refuses to treat a clean scan as proof.** The text surviving the strike
+   says *"A clean scanner run is a floor, not a proof"* and names **prose** as limit (i), citing a
+   working password that sat in an English sentence across three commits unflagged. The unmet
+   condition does not contradict that sentence — **it is that sentence.**
+
+**What is genuinely open:**
+
+- **S32's withdrawals were conditional and the condition is now unmeetable without spending money.**
+  Two seats gave up a clause on a promise that cannot be kept for free. They are entitled to know.
+- **Prose passwords remain uncovered platform-wide.** C-67's rule closes the *key* half in this
+  repo's CI; nothing free closes the prose half, and that is the class views-datafactory actually
+  leaked.
+- The gap is **org-wide, not this repo's** — 16 public repos, of which this is one.
+
+**Three honest options, none urgent:** buy Secret Protection; record the gap as knowingly accepted
+and let the per-repo CI gates carry it; or re-open D5 at a þing on the ground that its replacement
+did not materialise. **Nothing is exposed today** — this repository's full history scans clean under
+both the default rules and C-67's widened rule.
+
+Cross-refs: C-30 (the flag itself), C-67 (what covers the key half), þing-02 D5 and S32.
 
 ---
 
