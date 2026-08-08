@@ -4,10 +4,10 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-08-02                           |
-| Total Concerns    | 49                                   |
-| Open Concerns     | 44                                   |
-| Resolved Concerns | 5                                    |
+| Last Updated      | 2026-08-08                           |
+| Total Concerns    | 52                                   |
+| Open Concerns     | 48                                   |
+| Resolved Concerns | 4                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -26,7 +26,16 @@
 
 ## Causal Clusters
 
-Added by `review-rr` strategic review (2026-06-12). Clusters group open concerns by shared root cause; fixing the root cause resolves — or fully specifies the fix for — every member entry. Membership reflects open entries only.
+Clusters group open concerns by shared root cause; fixing the root cause resolves — or fully specifies the fix for — every member entry. Membership reflects open entries only.
+
+> **Recurated 2026-08-08.** The block below was written on 2026-06-12, when this repository was
+> pre-þing, pre-registry-incident and private. It covered 24 of 24 open entries then. By today it
+> covered **24 of 48** — every concern from C-29 onward, which is the entire credential, registry and
+> publication era, sat in no cluster at all. Clusters A–F are **kept unchanged** because their
+> analysis of the pre-þing corpus is still correct; **G–K are new** and cover the other half.
+>
+> Note what the gap itself demonstrates: the register grew by 24 entries in seven weeks and its
+> *organising layer* did not move once. A flat list of 48 is a write-only artifact.
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
@@ -36,6 +45,20 @@ Added by `review-rr` strategic review (2026-06-12). Clusters group open concerns
 | F. Platform seam contract — open items (new 2026-07-28) | The seam contract this repo now hosts names two hard problems it did not solve | C-27 (O1: secret-value rotation has no propagation mechanism), C-28 (O2: the FAO external-caller credential is unmodelled) | 2 | Not this repo's to fix: C-27 is an operator design task (issue #9), C-28 is views-faoapi + operator (faoapi #279). This repo tracks them because it hosts `PLATFORM-001` |
 | D. Extraction inputs unsecured | Phase 1 inputs (source SHAs, divergence audit, source governance) uncaptured | C-03, C-05, C-07, C-16 | 2 | Divergence-audit artifact as the first act of Phase 1, when upstream settles |
 | E. Scaffold mechanics unowned | No document owns sub-architectural setup decisions | C-02, C-18 (C-10 resolved 2026-07-28) | 3 | One scaffold session: `pyproject.toml`, CI workflow, ADR-numbering alignment. **Deferred by ratified decision** (`dómr_endurmat` E6, issue #8, trigger: operator ∧ test project) — the scaffold was priced against hosting the reference validator; the validator deferred, so the scaffold defers with it |
+
+### Clusters G–K — added 2026-08-08
+
+| Cluster | Root cause | Members | Highest tier | Fix strategy |
+|---------|-----------|---------|--------------|--------------|
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** Every entry here was found by mutation, not by reading. C-70 is the acute one — CI exists, is a *required* check, and runs none of the other guards. This is the largest cluster and the most preventable |
+| **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-54, C-59, C-64, C-65, C-71** (C-53 also, via G) | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
+| **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
+| **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
+
+**Reading the two halves together.** A–F are about *documents that were never written*. G–K are about
+*checks and facts that were written and then quietly stopped being true*. The repository's failure
+mode changed as it matured, and the register did not notice until this review.
 
 Standalone: C-01 (dissolves when the scaffold exists), C-21 (README instance closed 2026-07-28; pipeline-core's dataclass-defaults instance and the fixture guard remain), C-04's re-derived remainder, C-26 (external, operational).
 
@@ -1366,6 +1389,137 @@ did not materialise. **Nothing is exposed today** — this repository's full his
 both the default rules and C-67's widened rule.
 
 Cross-refs: C-30 (the flag itself), C-67 (what covers the key half), þing-02 D5 and S32.
+
+---
+
+### C-70: The repo now has CI, and it does not run any of the guards that protect the registry
+
+| Field | Value |
+|-------|-------|
+| ID | C-70 |
+| Tier | 2 |
+| Source | `repo-assimilation`, 2026-08-08 |
+| Trigger | The next PR that edits `coordinate_registry.toml` — including the one that declares `views-productionapi`'s slots, which this registry already anticipates. CI will show a green tick having checked nothing about the registry. |
+| Location | `.github/workflows/` (one workflow only); guards at `tests/test_registry_reader_contract.py`, `tests/test_registry_readers_agree.py`, `docs/validate_docs.sh` checks 7–8 |
+
+`secret_scan.yml` is the repository's only workflow. It scans git history for credentials. It does
+**not** run `pytest`, and it does **not** run `validate_docs.sh`.
+
+So every mechanical guard this repository has built runs **only on a laptop, or not at all**:
+
+| Guard | Protects | Runs in CI? |
+|---|---|---|
+| `test_every_reader_scanned_entry_has_a_value` | the C-29 invariant — a value-less `[target]` entry kills every reader | **no** |
+| `test_no_secret_carries_a_value` | secrets never appear as values | **no** |
+| `test_all_present_readers_*` | the three readers still agree | **no** |
+| `validate_docs.sh` checks 7–8 | contract/registry version lockstep; content cannot change without a version bump | **no** |
+| `secret_scan.yml` | no credentials in history | yes |
+
+**The specific failure this permits.** Commit `2186d45` put four value-less slots in `[target]` and
+made the registry unreadable platform-wide for a day (**C-29**). The guard written afterwards would
+catch it — but only if someone runs `pytest` locally before merging. Under the new ruleset, the
+required status check is the **secret scan**, so that exact commit would merge with a green tick
+today.
+
+**Why this is worse than having had no CI at all**, and why it is Tier 2 rather than 3: until
+2026-08-08 nobody could believe this repository was mechanically covered, because it visibly had no
+workflows. It now has one, a green tick on every PR, and a ruleset that makes that tick *required*.
+The appearance of coverage arrived without the coverage. That is the same shape as **C-68**, one
+level up — a check that reports success without establishing what a reader assumes it established.
+
+**Not proposing the fix here** (assimilation does not propose fixes), but noting the constraint that
+makes it non-trivial: `test_registry_readers_agree.py` reads sibling repositories from the
+filesystem and skips when they are absent, so a naive `pytest` step in CI would pass **vacuously** on
+a runner that has only this repo checked out. Adding CI without addressing that reproduces the
+problem in a new place.
+
+Cross-refs: C-02 (the broader "rules enforced by prose" concern this is a concrete instance of),
+C-29 (the outage the unenforced guard exists to prevent), C-52 and C-68 (guards green and blind),
+C-53.
+
+---
+
+### C-71: Two posture statements were falsified by the repo's own first workflow
+
+| Field | Value |
+|-------|-------|
+| ID | C-71 |
+| Tier | 3 |
+| Source | `repo-assimilation`, 2026-08-08 |
+| Trigger | Anyone quoting the README's posture section or the registry's minimalism claim — both are the passages people cite when asked "what is this repo?" |
+| Location | `README.md:672`; `docs/ADRs/platform/coordinate_registry.toml:10-12` |
+
+Two claims went stale the moment `secret_scan.yml` landed, and both sit in the sentences most likely
+to be quoted:
+
+**`README.md:672`** — *"**What is parked.** Everything else. No `src/`, no `pyproject.toml`, **no
+CI**, by recorded decision — not by neglect."* There is now CI. The rest of the sentence remains
+true and its reasoning is intact; only the two words are wrong, which is precisely what makes them
+survivable and therefore persistent.
+
+**`coordinate_registry.toml:10-12`** — *"Deliberately minimal (`dómr_endurmat` E3): **no tooling**,
+no generators, no CI attachment."* Four files in this repository read the registry today:
+`docs/validate_docs.sh`, `tests/test_registry_reader_contract.py`,
+`tests/test_registry_readers_agree.py`, `tests/test_falsification_thing02_contract.py`. **The "no
+tooling" half was already false before today** — the tests and the version checks are tooling — and
+today's workflow makes the "no CI attachment" half harder to read charitably.
+
+Registered as one entry rather than two: same defect (a posture statement outliving the state it
+described), same cause (a change that nobody thought of as touching prose), different files.
+
+This is the fourth instance in a fortnight of a claim hardening past its truth — after **C-53** (a
+version that could stand still through a content change), **C-64** (a docstring citing a verdict
+that did not say what it claimed), and **C-65** (a relayed key expiry that was thirteen days wrong).
+The pattern is not carelessness about prose; it is that **no check reads prose**, so only a human
+re-reading it can catch these.
+
+Cross-refs: C-53, C-64, C-65, C-54 (the same failure inside the registry's own warning block),
+C-70.
+
+---
+
+### C-72: Pin incoherence is platform-wide, and one repo has the only test for it
+
+| Field | Value |
+|-------|-------|
+| ID | C-72 |
+| Tier | 2 |
+| Source | `repo-assimilation`, 2026-08-08 — measured across all six consumer repos |
+| Trigger | Any consumer upgrading its pin, or any audit asking "which edition is this repo actually conformant to?" A partial repoint is the specific hazard, and it has already happened twice. |
+| Location | views-crafdapi (`README.md:17`, `docs/ADRs/README.md:156`, `docs/ADRs/active/035_*.md`); views-postprocessing (`docs/ADRs/013_*.md:735,738` vs `views_postprocessing/{crafd,unfao}/appwrite_env.py`); views-datafactory |
+
+Measured today, not inferred:
+
+| Repo | Pins found | State |
+|---|---|---|
+| views-pipeline-core | `appwrite-seam-v1.4.1` | **coherent** — one tag, everywhere |
+| views-models | `856d617` | coherent (= v1.3.0, now tag-resolvable) |
+| views-faoapi | `60674b2c…` | coherent, but **v1.0.0 — four versions stale** |
+| **views-crafdapi** | `60674b2c…`, `platform-001-v1.2.0`, `appwrite-seam-v1.4.4` | **three simultaneous pins** |
+| **views-postprocessing** | `90fc105`, `fcf32c9` | **two simultaneous pins** |
+| views-datafactory | `/blob/main/` | **not a pin** |
+
+**The partial-repoint hazard, demonstrated.** views-crafdapi updated `ADR-035` to
+`appwrite-seam-v1.4.4` — correctly, and in response to a review — but left `README.md` at
+`platform-001-v1.2.0` and `docs/ADRs/README.md` at a v1.0.0 commit. Each of the three is internally
+consistent and individually defensible; nothing in that repo is visibly wrong. views-postprocessing
+has the same shape: its code was repointed and its ADR was not.
+
+**views-pipeline-core is the only repo that can detect this.** It hit exactly this problem in #402,
+found its pin lived in **eleven** places, and built `tests/test_seam_contract_pin_is_coherent.py` —
+which scans for pins rather than listing them, asserts they name a single tag, and deliberately does
+**not** check freshness, because §10 reserves the upgrade decision to the consumer. Its own summary
+of why it went unnoticed for three versions: *"There was no state a reader could look at and call
+wrong."*
+
+**Why this is this repository's concern despite living in others.** Seam contract §10 already places
+the obligation on consumers and scolds them for pin decay — but this repo publishes the thing being
+pinned, cut the tags that made upgrading possible only on 2026-08-03, and is the only place that can
+see all six pin states at once. §10's own text records the decay without recording that the pins are
+also *internally inconsistent*, which is a distinct and more deceptive failure than being stale.
+
+Cross-refs: seam contract §10, C-53 (the version bump that makes a pin meaningful),
+views-pipeline-core#402 and its coherence test as the reference implementation.
 
 ---
 
