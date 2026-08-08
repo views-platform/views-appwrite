@@ -9,6 +9,13 @@ deployed. Five repositories read from here.
 > we'll shuffle around responsibilities in the future, but for now this seam is the lesser of a bunch
 > of evils."* Recorded as provisional so it does not harden into permanence by repetition.
 
+> **Public since 2026-08-08.** History was scanned before the flip, not after —
+> `.github/workflows/secret_scan.yml` walks every non-merge commit and the exit code is the
+> verdict. What "green" guarantees is written in [`.gitleaks.toml`](.gitleaks.toml), including
+> what it does **not** cover. `main` and `development` are protected by a ruleset requiring a PR
+> and a passing scan; branch protection was impossible while the repo was private, so going
+> public is what made it enforceable.
+
 > **This repository ships no code today.**
 >
 > There is no `src/`, no `pyproject.toml`, no package to install or import. That is a recorded
