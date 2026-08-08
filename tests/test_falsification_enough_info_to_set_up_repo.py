@@ -86,6 +86,35 @@ def test_falsify_03_ci_gate_is_specified():
         "trigger presuppose CI that no document specifies"
     )
 
+    # Existence is not the finding. C-68: on 2026-08-08 a secret-scan workflow
+    # landed and turned this stub green while C-02 -- "package boundary
+    # invariants are prose contracts with no mechanical enforcement" -- was
+    # untouched. The assertion above was weaker than this test's own docstring,
+    # which names ruff, pytest and boundary enforcement. A stub that goes green
+    # without its finding being resolved is worse than one that stays red: it
+    # reports the concern as closed.
+    #
+    # Any workflow may carry these; they need not be in one file.
+    #
+    # Known limit, stated rather than over-engineered: this is a substring test,
+    # so a workflow that merely MENTIONS ruff -- "# TODO: add ruff" -- would
+    # satisfy it. That is the same shape of weakness this test was just fixed
+    # for, one level down. It is left as a substring check because the
+    # alternative (parsing YAML and inspecting `run:` steps) is brittle against
+    # every legitimate way a gate can be invoked, and a brittle stub gets
+    # deleted. If someone writes that TODO, this test stops meaning anything --
+    # which is worth knowing now rather than discovering later.
+    blob = "\n".join(w.read_text(encoding="utf-8", errors="ignore") for w in workflows)
+    missing = [gate for gate in ("ruff", "pytest") if gate not in blob]
+    assert not missing, (
+        f"CI exists but does not run {missing}. ADR-005 makes tests mandatory "
+        "infrastructure and C-02 is about rules that no machine enforces; a "
+        "workflow that runs neither leaves both exactly where they were.\n\n"
+        f"Present workflows: {[w.name for w in workflows]}\n\n"
+        "This is the correct state to be red in. Add the gates, or close C-02 "
+        "deliberately with a recorded reason -- do not weaken this assertion."
+    )
+
 
 def test_falsify_04_public_surface_internally_consistent():
     """

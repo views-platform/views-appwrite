@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-02                           |
-| Total Concerns    | 46                                   |
-| Open Concerns     | 41                                   |
+| Total Concerns    | 48                                   |
+| Open Concerns     | 43                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (4 open, 1 resolved — D-02)        |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -1190,6 +1190,98 @@ recorded as such with a rotation trigger that is not a date. Whichever, decide i
 
 Recorded in registry **v1.4.4**. Cross-refs: C-27 (rotation has no propagation mechanism), C-65 (the
 two keys that *do* expire, together), C-28, views-appwrite#12.
+
+---
+
+### C-67: The secret scan misses both leak shapes this platform's history actually contained
+
+| Field | Value |
+|-------|-------|
+| ID | C-67 |
+| Tier | 2 |
+| Source | `code-review` of PR #57, 2026-08-08 — measured against gitleaks 8.30.1 with controls, not inferred |
+| Trigger | Relying on a green Secret Scan as the gate for making this repository **public**, which is irreversible. |
+| Location | `.github/workflows/secret_scan.yml`; fixed by `.gitleaks.toml` in the same change |
+
+The workflow gates publication and its failure message says *"Do NOT make this repository public
+until this is green."* Before trusting it, its **default** rules were measured against the same
+fabricated 265-character key in four placements:
+
+| Placement | Default rules |
+|---|---|
+| `APPWRITE_DATASTORE_API_KEY=<key>` | **CAUGHT** (`generic-api-key`) |
+| the same key in prose — *"I ran it with `<key>`"* | **MISSED** |
+| the same key inside an `.ipynb` cell | **MISSED** |
+| an English-prose password | **MISSED** |
+
+**The two missed key shapes are exactly the two classes this platform has already leaked** — the
+classes þing-02 made load-bearing when it conditioned §5.7's strike on non-provider-pattern and
+`.ipynb`-cell coverage (**C-30**): views-models' notebook-cell material and views-datafactory's
+prose password. The UN FAO key recorded at `FAO_CALLER_API_KEY.history_leak` was **pasted into
+notebook history** — so as configured, the scan would have reported *"no leaks found"* on the very
+incident that gave this platform its leaked-key story.
+
+**On the method, because it nearly produced a false finding.** The first probe used
+`AKIAIOSFODNN7EXAMPLE` as its control and that came back MISSED — gitleaks allowlists the canonical
+AWS example key. A null result from a probe that cannot find a known positive is evidence about the
+probe. Redone with a GitHub PAT and a PEM private key as controls; both CAUGHT; only then were the
+misses interpretable.
+
+**Also established, and narrower than feared:** gitleaks *does* read `.ipynb` files — a PAT planted
+in a notebook cell was caught. The gap is rule coverage for this platform's key **shape**, not
+file-type coverage.
+
+**Fixed in this change.** `.gitleaks.toml` adds an entropy-gated rule for 100+ character opaque
+tokens in any context, with 40- and 64-hex shapes allowlisted so commit SHAs and the pinned
+`GITLEAKS_SHA256` cannot trip it. Verified both ways: it **catches** all three key placements, and
+it produces **zero findings** against this repository's real 43-commit history. The second number is
+what keeps it alive — a rule that cries wolf gets disabled, and then the repo has a config that looks
+like protection and is not.
+
+**Not closed by this fix.** A prose password is still missed and no regex closes that honestly. That
+is what `secret_scanning_non_provider_patterns` is for, which is why enabling it belongs to the act
+of going public rather than to a follow-up. **A green run means "no findings under these rules",
+never "no secrets".**
+
+Cross-refs: C-30 (the þing-02 condition), C-68, `FAO_CALLER_API_KEY.history_leak`.
+
+---
+
+### C-68: A falsification stub went green without its finding being resolved
+
+| Field | Value |
+|-------|-------|
+| ID | C-68 |
+| Tier | 3 |
+| Source | `code-review` of PR #57, 2026-08-08 — noticed because the pytest failure count moved from 10 to 9 |
+| Trigger | Reading C-02 as resolved because its stub is green. |
+| Location | `tests/test_falsification_enough_info_to_set_up_repo.py::test_falsify_03_ci_gate_is_specified` |
+
+Adding the secret-scan workflow turned this stub green. Its assertion was:
+
+```python
+assert workflows, "No CI workflow exists; ..."
+```
+
+**Existence of any workflow file.** But its own docstring states the expectation as *"A CI workflow
+exists … implementing the **ruff + pytest + boundary-enforcement** gates that ADR-005 and C-02
+demand."* The secret scan runs none of those. So the stub passed on a technicality while **C-02 —
+"package boundary invariants are prose contracts with no mechanical enforcement" — was untouched.**
+
+That is the failure mode this register already carries three entries about (**C-52**, **C-53**,
+**C-55**): a guard that reports success without establishing what it claims. Here the cost is
+specific — a genuinely open concern reads as closed, and the falsification suite's whole contract is
+that a stub turns green **only** when its finding is fixed.
+
+**Fixed** by tightening the assertion to match the docstring: a workflow must exist **and** the
+workflow set must run `ruff` and `pytest`. It is red again, which is the correct state, and it now
+names what is missing rather than merely failing. The failure set is back to the long-standing 10.
+
+**Deliberately not addressed here:** actually adding ruff/pytest CI. That is C-02's own resolution
+and belongs with the scaffold decision (**#8**, gated on *operator ∧ test project*), not smuggled
+into a secret-scan PR.
+
+Cross-refs: C-02, C-52, C-55, C-67, #8.
 
 ---
 
