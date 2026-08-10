@@ -1429,6 +1429,33 @@ Cross-refs: C-30 (the flag itself), C-67 (what covers the key half), þing-02 D5
 `secret_scan.yml` is the repository's only workflow. It scans git history for credentials. It does
 **not** run `pytest`, and it does **not** run `validate_docs.sh`.
 
+> **PARTIALLY ADDRESSED 2026-08-10 — `guards.yml` landed (S2, #68). This entry stays OPEN.**
+>
+> The paragraph above is no longer true as written and is kept for the record. There are now two
+> workflows: `guards (self-contained)` runs the 5 registry-shape guards, the 2 test-kind meta-guards,
+> and all 8 checks in `validate_docs.sh`.
+>
+> **What is now covered**, mutation-proven before merge: a value-less `[target]` entry — the
+> `2186d45` shape that caused C-29 — turns the job red; a registry change with no version bump turns
+> it red; `validate_docs.sh` check 8 **errors instead of skipping** when `origin/main` is unreachable
+> and `CI` is set, which is the default state after `actions/checkout` and would otherwise have been
+> a green tick with C-53's guard inert.
+>
+> **What is still open, and why the entry does not close here:**
+>
+> 1. **The new job is not a required check.** The ruleset still requires only
+>    `gitleaks (full history)`, so a red `guards` job does not block a merge. Until it does, the
+>    concern's own sentence — *"would merge with a green tick today"* — remains literally true.
+> 2. **The cross-repo guard still runs nowhere.** `test_registry_readers_agree.py` needs sibling
+>    checkouts; that is S3 (#69), and it may be **obsoleted rather than completed** — ADR-017's
+>    declare-the-semantics rule applied to reader *behaviour* is D-05, and settling that would remove
+>    the need for a cross-repo checkout at all.
+> 3. **The workflow has been proven at the step level, not on a runner.** A workflow only proves
+>    itself in CI, which is what this branch's PR is for.
+>
+> **Closes at S5 (#71)**, after each job is shown to bite in CI and the blocking ones are made
+> required. Marking it resolved now would be the thing this entry is about.
+
 So every mechanical guard this repository has built runs **only on a laptop, or not at all**:
 
 | Guard | Protects | Runs in CI? |

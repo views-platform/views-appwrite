@@ -1,0 +1,75 @@
+name: Guards
+
+# The gating job. Runs the checks that protect this repository's live invariants.
+#
+# WHY THIS EXISTS (C-70, epic #66). Until 2026-08-08 this repo had no workflows at
+# all, so nobody could believe it was mechanically covered. It then acquired a
+# full-history secret scan, the ruleset made that scan a REQUIRED check -- and the
+# scan verifies nothing about the coordinate registry. The appearance of coverage
+# arrived without the coverage.
+#
+# Concretely: commit 2186d45 put four value-less slots in [target] and made the
+# registry unreadable platform-wide for a day (C-29). The guard written afterwards
+# catches it, but ran only when a human remembered `pytest`. That commit would have
+# merged with a green tick.
+#
+# WHAT RUNS HERE, AND WHAT DOES NOT
+#   this job   `-m guard` over the SELF-CONTAINED guards + docs/validate_docs.sh.
+#              Needs nothing outside this repository.
+#   NOT here   tests/test_registry_readers_agree.py -- it needs sibling checkouts
+#              and gets its own job (story #69). Running it here would fail on a
+#              lone runner for the wrong reason: its anti-vacuity assertion
+#              `test_at_least_one_reader_is_present` correctly FAILS when no
+#              readers are present, which is right, and useless as a signal here.
+#   NOT here   the falsification stubs. Red by design; reporting-only job (#70).
+#
+# The `guard` / `falsification` split is DECLARED via markers in tests/conftest.py,
+# not inferred from filenames -- ADR-003, and the registry's own rule about itself.
+# tests/test_test_kinds.py fails if any module declares neither.
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  self-contained:
+    name: guards (self-contained)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # docs/validate_docs.sh check 8 compares the working tree against
+      # origin/main -- the ref consumers actually resolve. actions/checkout does
+      # NOT create it, and the script's skip path prints a note and exits 0. So
+      # without this fetch the job goes green with C-53's guard inert.
+      #
+      # The script ALSO errors rather than skips when CI is set, so if this step
+      # is ever removed the build fails loudly instead of quietly narrowing. Two
+      # mechanisms on purpose: this step is the one most likely to be tidied away.
+      - name: Fetch origin/main so the version check can run
+        run: git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # >=3.11 for stdlib tomllib; see below
+
+      - name: Install pytest
+        run: python -m pip install --quiet pytest
+
+      # No `tomli` install: 3.12 has stdlib tomllib. The tests fall back to tomli
+      # only below 3.11 and FAIL rather than skip if neither exists -- that
+      # fallback exists because these tests once skipped silently on 3.10, on the
+      # exact registry break they were written to catch.
+      - name: Registry-shape guards
+        run: python -m pytest -q -m guard tests/test_registry_reader_contract.py tests/test_test_kinds.py
+
+      - name: Documentation and version checks
+        run: bash docs/validate_docs.sh

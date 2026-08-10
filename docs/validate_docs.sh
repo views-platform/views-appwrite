@@ -169,13 +169,40 @@ echo "--- Checking that a changed contract/registry bumped its version ---"
 # The version is the only handle they have; if it can stand still through a
 # content change, it carries no information.
 #
-# Compares against origin/main, the branch consumers actually resolve. Skipped
-# with a visible note when there is no git or no origin/main to compare against
-# -- a check that cannot run must say so rather than pass quietly.
+# Compares against origin/main, the branch consumers actually resolve.
+#
+# LOCAL vs CI ARE DELIBERATELY ASYMMETRIC (C-70 / epic #66, story #68).
+#
+# Locally this SKIPs with a visible note: a developer working in a checkout with
+# no `origin/main` should not be blocked by a check about what consumers resolve.
+#
+# In CI it is an ERROR. `actions/checkout` does not reliably create `origin/main`,
+# so the skip path is the DEFAULT there, not the exception -- and it prints a note
+# and exits 0. A gating job would go green with this check silently not running:
+# the fix for C-53 present, and inert. That is the exact shape this repo keeps
+# finding (C-52, C-55, C-68) and the reason the epic exists, so the workflow
+# fetches the ref AND this refuses to pass without it. Belt and braces, because
+# the workflow step is the thing most likely to be "simplified" later.
+_vd_ci="${CI:-}"
 if ! command -v git >/dev/null 2>&1 || ! git rev-parse --git-dir >/dev/null 2>&1; then
-    echo "  SKIP: not a git checkout — cannot diff against origin/main"
+    if [ -n "$_vd_ci" ]; then
+        echo "  ERROR: CI is set but this is not a git checkout, so the version"
+        echo "         check cannot run. A gate that cannot run must not pass."
+        errors=$((errors + 1))
+    else
+        echo "  SKIP: not a git checkout — cannot diff against origin/main"
+    fi
 elif ! git rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
-    echo "  SKIP: no origin/main in this checkout — nothing to compare against"
+    if [ -n "$_vd_ci" ]; then
+        echo "  ERROR: CI is set but origin/main is unreachable, so the version"
+        echo "         check cannot run — and this is the DEFAULT state after"
+        echo "         actions/checkout, not an edge case. Fetch it in the workflow:"
+        echo "             git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main"
+        echo "         Passing here would be a green tick with C-53's guard inert."
+        errors=$((errors + 1))
+    else
+        echo "  SKIP: no origin/main in this checkout — nothing to compare against"
+    fi
 else
     # Compares the version VALUE across the two revisions, not whether the line
     # that carries it was touched. Two earlier drafts of this check were wrong in
