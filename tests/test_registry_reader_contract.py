@@ -39,6 +39,10 @@ import pathlib
 
 import pytest
 
+# GREEN AND BLOCKING. These protect a live invariant, so they run in the gating
+# CI job -- see tests/conftest.py for why the kind is declared, not inferred.
+pytestmark = pytest.mark.guard
+
 # The READERS require Python >= 3.11 for stdlib tomllib. These tests must run on
 # whatever interpreter this repo's suite uses, so they fall back to `tomli` --
 # the same parser, vendored for 3.10. Skipping instead would make the file a
@@ -151,6 +155,97 @@ def test_the_reservation_rule_is_still_written_down():
         "tidying a section that had no entries left under it. Restore it -- that "
         "block is the only thing standing between the next editor and a repeat of "
         "2186d45, and it must survive the periods when no reservation exists."
+    )
+
+
+def test_the_contract_table_is_not_empty_while_the_clause_declares_it():
+    """The always-runs companion to the two `[contract]` guards below.
+
+    Both of those `pytest.skip` when no facts are declared -- which is C-55's shape
+    exactly, and C-55 is registered in this repository for it: a guard that stands
+    down when there is nothing to check is off during the one window that matters.
+    Caught reviewing this file's own diff, one story after registering it.
+
+    The skips are kept, because an empty `[contract]` table is a legitimate state
+    and asserting over nothing is not a check. What makes them safe is this: while
+    the seam contract declares §4.1, the table must have at least one row. Deleting
+    the last fact then fails HERE rather than quietly switching two guards off.
+    """
+    registry = _load()
+    facts = registry.get("contract", {})
+    if facts:
+        return  # the guards below have something to check; nothing to prove here
+
+    contract = REGISTRY.parent / "appwrite_seam_contract.md"
+    declares = "[contract.*]" in contract.read_text(encoding="utf-8")
+    assert not declares, (
+        "the seam contract declares §4.1 (`[contract.*]`) but the registry has no "
+        "facts in it. Either a row was deleted -- in which case the two guards "
+        "below have silently stopped checking anything -- or the clause was added "
+        "without its first row. Both are states someone should have to notice."
+    )
+
+
+def test_every_contract_fact_is_usable_as_an_authority():
+    """`[contract.*]` rows exist to be checked against. An empty one cannot be.
+
+    Added with the table itself (v1.5.0). No reader scans `[contract]`, so a
+    malformed row here cannot break a delivery the way a value-less `[target]`
+    entry does (C-29) -- it fails differently and more quietly. The producer's
+    check compares its copy against this row; if the row has no value, that
+    comparison has nothing on one side, and whether it then errors or silently
+    passes is the consuming repo's business, not something this file should leave
+    to chance.
+
+    `producer` and `consumer` are required because a fact with no named parties
+    is not checkable by anyone: the whole mechanism is that BOTH sides verify
+    themselves against the row, and a row that does not say who they are cannot
+    be audited for whether they did.
+    """
+    registry = _load()
+    facts = registry.get("contract", {})
+    if not facts:
+        pytest.skip("no [contract] facts declared yet — nothing to check")
+
+    required = ("value", "producer", "consumer")
+    offenders = [
+        f"[contract.{name}] is missing {sorted(set(required) - set(entry))}"
+        for name, entry in facts.items()
+        if not set(required).issubset(entry)
+    ]
+    assert not offenders, (
+        "a shared fact must carry a value and name both parties:\n  "
+        + "\n  ".join(offenders)
+        + "\n\nThese rows are the authority two repositories check themselves "
+        "against. One without a value is an authority with nothing in it; one "
+        "without named parties cannot be audited for whether they checked."
+    )
+
+
+def test_contract_facts_are_never_in_a_scanned_table():
+    """A shared fact must not leak into any consumer's process environment.
+
+    The readers scan `connection` and `target`. Putting a contract fact there
+    would push it into the environment of every consumer on the seam -- including
+    ones with no interest in it -- and turn a fact two parties agree on into a
+    variable everyone receives. It would also make it a coordinate, which is the
+    charter distinction v1.5.0 was careful to draw.
+    """
+    registry = _load()
+    fact_names = set(registry.get("contract", {}))
+    if not fact_names:
+        pytest.skip("no [contract] facts declared yet — nothing to check")
+
+    leaked = [
+        f"[{table}.{name}]"
+        for table in READER_SCANNED_TABLES
+        for name in registry.get(table, {})
+        if name in fact_names
+    ]
+    assert not leaked, (
+        f"these names are declared as contract facts AND sit in a scanned "
+        f"table: {leaked}. Every reader would emit them into the environment. "
+        "A contract fact belongs in [contract] only (seam contract §4.1)."
     )
 
 
