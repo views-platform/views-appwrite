@@ -8,7 +8,7 @@
 | Total Concerns    | 52                                   |
 | Open Concerns     | 48                                   |
 | Resolved Concerns | 4                                    |
-| Disagreements     | 5 (4 open, 1 resolved — D-02)        |
+| Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
 ---
@@ -1627,7 +1627,7 @@ views-pipeline-core#402 and its coherence test as the reference implementation.
 | ID | D-05 |
 | Source | `code-review max` (2026-08-02), surfaced by C-51 |
 | Perspectives | **views-appwrite position (raise):** a value-less entry in a scanned table is malformed data; the reader's job is to refuse it, because the consumer that receives a partial coordinate set has no way to know it is partial. Pinned by `tests/test_registry_reader_contract.py` and by C-29's incident narrative — the *silence* is what made that outage Tier 1. **views-models position (skip):** a reservation is a legitimate, expected state; hard-failing every consumer because some *future* consumer's slot is not yet filled couples unrelated repos and makes the registry impossible to edit incrementally. Pinned by `tests/test_registry_to_env.py::test_planned_reservation_is_skipped_not_fatal`, and by views-models' role as the one reader on the FAO delivery path. |
-| Resolution | **Open — but the framing above is withdrawn. See the update.** |
+| Resolution | **RULED 2026-08-10 by the operator. Reservations live in `[planned]`; a value-less entry in a scanned table is malformed and every reader raises. Execution is views-models#327.** |
 
 > **UPDATE 2026-08-03 — after `expert-code-review`. This was posed as a two-sided dispute; on the
 > evidence it is not one.**
@@ -1670,6 +1670,40 @@ views-pipeline-core#402 and its coherence test as the reference implementation.
 > two `xfail(strict=True)` markers stay — they fail on the unexpected pass, so the decision cannot
 > quietly rot. Split out and filed separately: **C-62** (views-models#330) and **C-63**, both of
 > which outlive this ruling either way.
+
+---
+
+### RULED — 2026-08-10, by the operator
+
+> **Reservations live in `[planned]`. A value-less entry in `[connection]` or `[target]` is malformed
+> regardless of any `status` it carries, and every reader raises on it. `status` is documentation and
+> carries no semantics.**
+>
+> **The decision cost one deletion in one repo.** views-models' reader carries an `_is_planned()`
+> predicate that skips a value-less entry when its `status` begins "planned". views-faoapi and
+> views-crafdapi already behave correctly. Deleting that predicate, and the ratified test that pins
+> it, makes all three agree. **Execution is views-models#327; nothing is required in this repo.**
+>
+> **Why this and not the two options actually tabled.** *Raise always* couples unrelated repos —
+> reserving a name for a future consumer would break the FAO delivery today. *Skip always* lets a
+> delivery run on partial coordinates in silence, which is the July incident (C-29). The ruling
+> avoids both by removing the ambiguous case: a reservation in `[planned]` is invisible to every
+> reader, so it breaks nobody, and a value-less entry in a scanned table is then unambiguously a
+> mistake that everyone should stop on.
+>
+> **The rule was already written down.** The registry's standing block says a value-less entry
+> belongs in `[planned]`, and `test_every_reader_scanned_entry_has_a_value` enforces it and passes
+> today. `_is_planned()` defends against a shape the source-side gate already rejects — and by
+> defending, converts a caught mistake into a silent partial delivery. That is why it is a deletion
+> rather than a new rule.
+>
+> **What stays open until views-models ships it:** C-51 remains Tier 1, and the two
+> `xfail(strict=True, raises=AssertionError)` markers in `tests/test_registry_readers_agree.py`
+> remain. When the readers converge those markers fail on the **unexpected pass**, which is the
+> signal to delete them and close C-51 — the decision cannot be quietly forgotten.
+>
+> **Not settled by this ruling:** **C-63** (no reader checks `[meta] version`) is the general form of
+> the same problem and needs its own decision — views-appwrite#45.
 
 ---
 
