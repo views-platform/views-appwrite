@@ -12,6 +12,12 @@ TDD-red contract of the falsification audit, not an accident.
 
 import re
 from pathlib import Path
+import pytest
+
+# RED BY DESIGN. Every test below encodes an unresolved risk-register finding
+# and turns green only when that finding is fixed (carbon protocol s1-2). This
+# marker is what keeps them OUT of the blocking CI gate -- see tests/conftest.py.
+pytestmark = pytest.mark.falsification
 
 REPO = Path(__file__).resolve().parent.parent
 README = (REPO / "README.md").read_text(encoding="utf-8")

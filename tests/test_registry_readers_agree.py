@@ -48,6 +48,10 @@ import sys
 
 import pytest
 
+# GREEN AND BLOCKING. These protect a live invariant, so they run in the gating
+# CI job -- see tests/conftest.py for why the kind is declared, not inferred.
+pytestmark = pytest.mark.guard
+
 REPO = pathlib.Path(__file__).resolve().parent.parent
 WORKSPACE = REPO.parent
 FIXTURES = REPO / "tests" / "fixtures"
