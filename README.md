@@ -15,6 +15,13 @@ deployed. Five repositories read from here.
 > what it does **not** cover. `main` and `development` are protected by a ruleset requiring a PR
 > and a passing scan; branch protection was impossible while the repo was private, so going
 > public is what made it enforceable.
+>
+> **Two workflows run on every pull request.** `secret_scan.yml` is the credential gate above.
+> `guards.yml` runs the checks that protect the coordinate registry — the invariant that a
+> value-less `[target]` entry kills every reader (C-29), that no secret carries a value, and that
+> the contract and registry cannot change without their versions moving (C-53). **Only the secret
+> scan is a *required* check so far**; making the guards required comes after each has been shown
+> to fail for the reason it exists (#71). A guard nobody has watched fail is decoration.
 
 > **This repository ships no code today.**
 >
@@ -669,8 +676,8 @@ version bump, never by silent edit (seam contract §10). Hosting a document crea
 edge on this repo's code maturity; that is precisely why the seam's contract lives in the platform's
 only leaf that depends on nothing.
 
-**What is parked.** Everything else. No `src/`, no `pyproject.toml`, no CI, by recorded decision —
-not by neglect. The scaffold and the reference validator were approved by the þing's verdict and
+**What is parked.** Everything else. No `src/` and no `pyproject.toml`, by recorded decision — not by
+neglect. The scaffold and the reference validator were approved by the þing's verdict and
 then **deferred again** on adversarial review (`dómr_endurmat` E5/E6): the scaffold's justification
 was hosting the validator, and the validator's distinctive jobs only become real at the credential
 cutover, so both wait behind one trigger. C-02, C-18's open half and D-04 stay open with them —
