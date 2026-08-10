@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 are observation-driven bumps carrying **no clause change** |
-| Version | **1.4.4** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-05 — **v1.4.4**: §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1** |
+| Version | **1.5.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-10 — **v1.5.0**: §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -162,6 +162,28 @@ coordinates. Consumers read/validate against it and pass values in explicitly. B
 - The registry is exhaustive over the seam's environment **including what it does not govern** —
   explicit exclusions with owning contracts, so nothing reads as unaccounted-for.
 - The registry stays minimal: a file, owned and versioned. No tooling (dómr_endurmat E3).
+
+### 4.1 `[contract.*]` — shared facts that are not coordinates (added v1.5.0)
+
+The registry also carries a small number of **non-secret facts two parties on the seam must
+agree on, which are not identifiers of a container.** They live in `[contract.*]`.
+
+- **No reader scans this table.** All canonical readers scan exactly `connection` and `target`,
+  so a `[contract.*]` entry is **never emitted into any process environment**. That is the point:
+  these are facts to be *agreed on*, not values a process needs at runtime.
+- **Both parties verify themselves against the row; neither reads the other's source.** This is
+  what lets a *private* consumer and a *public* producer check the same fact without either
+  granting the other access — the registry is public, so the asymmetry never has to be crossed.
+- **Changing one is an amendment**, not an edit: a version bump here, and both sides re-pin to
+  the same new edition. Re-pinning together is what prevents the two of them reading different
+  editions and both passing while disagreeing.
+- **Admission is deliberately narrow.** A fact belongs here only if the seam's parties must
+  agree on it *and* it is not a coordinate and not a secret. If it does not fit, that is
+  information about the fact, not a reason to widen this table.
+
+**This widened the registry's charter**, from *where the containers are* to *the non-secret facts
+the seam's parties must agree on*. Requested by views-postprocessing (views-appwrite#75) under its
+ADR-017, and accepted here rather than presumed — see the v1.5.0 amendment log entry.
 
 ## 5. Credentials — identity, tiers, one operator
 
@@ -453,6 +475,54 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.5.0 — 2026-08-10 — §4.1 added; the registry's charter widens
+
+**Status: ACCEPTED.** The first substantive clause change since v1.2.0 — every bump between was
+observation-driven. §4.1 admits a `[contract.*]` table to `coordinate_registry.toml`, for
+**non-secret facts two parties on the seam must agree on which are not identifiers of a container.**
+
+**What prompted it.** views-postprocessing uploads each delivery with a store-document `name`, and
+the consuming API filters every query on that name. If the two drift apart the upload **succeeds**,
+the file is stored and paid for, the consumer's endpoint returns **empty**, and nothing anywhere
+raises. Their ADR-013 §4.1a: *"invisible to the consumer, not merely degraded."*
+
+Verifying it required one side to read the other's source — impossible in CI when the consumer is
+private, so the check ran on a laptop and skipped where it mattered. Their **ADR-017** answers it
+with a rule worth adopting platform-wide:
+
+> A fact shared across a public/private boundary is declared in the public contract surface. Each
+> side verifies itself against that declaration. **Neither side reads the other's source code.**
+
+**Why this registry, and what it costs.** It is public, versioned, has a change process, and is
+already read by both parties — so a private consumer and a public producer can check the same fact
+without either granting the other access. The cost is honest: this file was *"NON-SECRET
+identifiers"*, and a document name is a term in a contract, not a container's address. **That is a
+widening, and it is stated as one** rather than folded in quietly.
+
+**Admission stays narrow** (§4.1): the parties must have to agree on it, and it must be neither a
+coordinate nor a secret. A fact that does not fit is information about the fact, not a reason to
+widen the table again.
+
+**Two properties that make it safe.** No reader scans `[contract.*]` — all three scan exactly
+`connection` and `target` — so an entry here **never reaches any process environment**; verified
+against all three readers, which emit 16 lines before and after. And changing a row is an
+**amendment**: both sides re-pin to the same new edition, which is what stops them reading different
+editions and both passing while disagreeing.
+
+**First and only row: `UNFAO_CONSUMER_DOCUMENT_NAME = "un_fao"`.** CRAF'd's label is deliberately
+**not** included — that partner's data contract is still open on the consumer side, and bundling it
+would stall the ready half behind the blocked one (views-crafdapi#39).
+
+**The row is not yet an authority, and says so.** Neither the producer-side nor the consumer-side
+check exists (views-faoapi#379). Until the consumer-side one lands, a producer check against this row
+would prove only that two values this platform authored agree with each other — so ADR-017 §5
+forbids removing the existing source-reading check until then. That constraint came out of this
+repo's review of ADR-017 (views-postprocessing#232, Finding 1) and is written into their ADR.
+
+**Requested, not presumed.** views-appwrite#75 asked; ADR-017 §5 now says the home is *"subject to
+views-appwrite accepting"* rather than asserting it. Recorded because a ratified ADR in one repo
+asserting a fact about another is how prose hardens on this platform — twice in the preceding week.
 
 ### v1.4.4 — 2026-08-05 — companion registry + §2 observed state; no clause changed
 

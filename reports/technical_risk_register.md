@@ -101,6 +101,13 @@ The package's defining constraints — exactly one runtime dependency (`appwrite
 
 **Falsification evidence (2026-06-12, probe P3):** CI is *presupposed* five times in the corpus ("run in CI", "skipped in CI" — `README.md:236,491,525`, ADR-005:93-94) but specified zero times — no CI system, workflow content, lint configuration, or Python version matrix exists in any document, so this concern's own trigger cannot be satisfied from the docs as written. The gate must be authored, not transcribed. Enforced by failing stub `tests/test_falsification_enough_info_to_set_up_repo.py::test_falsify_03_ci_gate_is_specified`.
 
+**What that stub asserts changed on 2026-08-09 (C-68), and the change matters to this entry.** It
+previously asserted only that *some* workflow file existed — which the secret scan satisfied, turning
+it green while C-02 was untouched. It now requires the workflow set to run **`ruff` and `pytest`**,
+matching its own docstring. So it is red again for the right reason, and **C-02's trigger is now
+carried by a stub that tests the thing C-02 is about** rather than the existence of a file. Closing
+C-02 still needs the gates themselves, which remain deferred with the scaffold (#8).
+
 ---
 
 ### C-03: SDK 13→14 compatibility layer exists in only one of the two source copies
@@ -865,7 +872,24 @@ A guard that stands down whenever it is not already being satisfied is off durin
 that matters: after the last planned slot graduates and before the next author writes one. That
 author gets no feedback, which is the precise population the test exists to serve.
 
-Cross-refs: C-54, C-29.
+> **RECURRED 2026-08-10, one story later, in code written by the author who registered this.**
+>
+> The `[contract.*]` guards added for #75 both `pytest.skip` when no facts are declared — the exact
+> shape of this entry, in the same file, three months of lessons later. Caught by `review-diff` on
+> its own branch and fixed before merge, so it never shipped.
+>
+> **The fix is the same as this entry's**, which is the useful part: an always-runs companion. While
+> the seam contract declares §4.1, the registry must hold at least one fact, so deleting the last row
+> fails loudly instead of silently switching two guards off. Mutation-proven.
+>
+> **Why this is recorded rather than quietly fixed.** The entry now has evidence about its own
+> stickiness: knowing the pattern, having written it up, and having built the companion-test remedy
+> once was **not** enough to stop it recurring in the next thing written. That is an argument for a
+> mechanical check rather than a documented habit — and the honest counter-argument is that a check
+> which verifies "every skip has a companion" would itself need proving, which is the regress S6
+> declines. For now the evidence is the entry.
+
+Cross-refs: C-54, C-29, C-68 (same family: a guard that reports without establishing).
 
 ---
 

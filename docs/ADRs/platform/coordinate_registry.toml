@@ -18,13 +18,18 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.4.4"                          # Versions in lockstep with the contract (§10);
+version = "1.5.0"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-05"                     # Newest first. All three below are OBSERVATION-DRIVEN in §10's
-                                           # sense: they record state the operator created in the console and
-                                           # impose no new obligation on any consumer.
+amended = "2026-08-10"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
+                                           # they record state the operator created in the console and impose
+                                           # no new obligation. v1.5.0 is NOT: it changes what this file may
+                                           # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.5.0 (2026-08-10): NEW [contract.*] table — non-secret facts the seam's
+                                           #   parties must agree on, unscanned by every reader. First
+                                           #   row: the UN FAO consumer document name. NOT observation-
+                                           #   driven: it widens this file's charter. views-appwrite#75.
                                            # v1.4.4 (2026-08-05): A3(h) answered — NO non-production project exists
                                            #   (org holds exactly one). crafd-caller-read NEVER expires (C-66);
                                            #   its 6 scopes console-verified, closing C-56 at source.
@@ -204,6 +209,81 @@ consumer = "views-crafdapi"
 #
 # Its CREDENTIAL slot is declared regardless (see PRODUCTIONAPI_API_KEY below):
 # §5.3's floor binds on the holder, not on which container it touches.
+
+# ============================================================================
+# [contract.*] — SHARED FACTS THAT ARE NOT COORDINATES
+# ============================================================================
+# ⚠ NO READER SCANS THIS TABLE, AND THAT IS THE POINT.
+#
+# All three canonical readers scan exactly `connection` and `target`
+# (`_COORDINATE_CLASSES`). An entry here is therefore NEVER emitted into any
+# consumer's process environment. That is deliberate: these are facts two repos
+# must agree on, not values a process needs at runtime. Putting one in [target]
+# would push it into every consumer's env for no reason and couple repos that
+# have nothing to do with it.
+#
+# WHY THIS TABLE EXISTS, AND WHAT IT WIDENS.
+# Until v1.5.0 this file held coordinates and secret slots only, and its own
+# header calls its contents "NON-SECRET identifiers". A store-document name is
+# not an identifier of a container — it is a term in a contract between a
+# producer and a consumer. Admitting it widens this registry's charter from
+# "where the containers are" to "the non-secret facts the seam's parties must
+# agree on".
+#
+# That widening was requested by views-postprocessing (views-appwrite#75) under
+# its ADR-017, and accepted here rather than presumed: ADR-017 §5 says so
+# explicitly. It is recorded in the seam contract's amendment log for v1.5.0.
+#
+# THE FAILURE IT PREVENTS, which is why a name earns a row.
+# views-postprocessing uploads each delivery with a store-document `name`; the
+# consuming API filters every query on that name. If they drift apart the upload
+# SUCCEEDS, the file is stored and paid for, the consumer's endpoint returns
+# EMPTY, and nothing anywhere raises. views-postprocessing ADR-013 §4.1a: a
+# document uploaded under the wrong name is "invisible to the consumer, not
+# merely degraded".
+#
+# HOW THIS IS NOT THE COPY-CHAIN THIS REGISTRY EXISTS TO REMOVE.
+# The producer necessarily keeps a copy — the value is written onto every upload,
+# so it must live in its code. What was missing is an authority to check that copy
+# against. A copy nobody verifies is the failure; a copy verified against a
+# declared authority is a value with a source. Both sides read THIS file; neither
+# reads the other's source, so a private consumer needs no access to a public
+# producer and vice versa.
+#
+# NOT SECRETS. A document name grants no access — access is controlled by the keys
+# in [secret.*]. These belong here and must never be moved there.
+#
+# ONE PARTNER ONLY, ON PURPOSE. CRAF'd's label is not a decided value yet: that
+# partner's targets, columns and entity model are still open on the consumer side.
+# Bundling it here would stall the ready half behind the blocked one. It follows
+# its data contract, tracked at views-crafdapi#39 (ADR-017 Appendix B).
+# ============================================================================
+
+[contract.UNFAO_CONSUMER_DOCUMENT_NAME]
+class = "contract"
+value = "un_fao"
+producer = "views-postprocessing"
+consumer = "views-faoapi"
+purpose = """The store-document `name` every Hop-B document is uploaded with, and the
+name the consumer filters every query on."""
+owner = """views-faoapi. views-postprocessing ADR-013 §4.1a: "Config-owned by
+views-faoapi; changing it is a contract amendment, not a deploy detail." The producer
+holds a mirror (`CONSUMER_DOCUMENT_NAME` in its unfao product module); this row is the
+authority that mirror is checked against."""
+verified_by = """Both sides check themselves against THIS row, and neither reads the
+other's source:
+  producer  views-postprocessing  — ADR-017 Appendix B step 2
+  consumer  views-faoapi          — views-faoapi#379
+
+⚠ NEITHER IS IN PLACE YET. Until the consumer-side check lands, this row is a string a
+human typed, and a producer-side check against it would prove only that two values this
+platform authored agree with each other. ADR-017 §5 therefore forbids removing the
+existing source-reading check until step 3 ships. Stated here because this row will look
+authoritative long before it is."""
+amendment = """Changing this value is a CONTRACT AMENDMENT, not an edit. It requires a
+version bump here (§10) and re-pinning by both sides. Both re-pin to the same new edition,
+which is what stops the two of them reading different editions and both passing while
+disagreeing."""
 
 # ------------------------------------------------------- secret SLOTS (no values!)
 [secret.APPWRITE_DATASTORE_API_KEY]
