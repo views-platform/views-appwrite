@@ -258,3 +258,53 @@ def test_no_secret_carries_a_value():
     registry = _load()
     leaked = [name for name, entry in registry.get("secret", {}).items() if "value" in entry]
     assert not leaked, f"secret slots carrying a value: {leaked}"
+
+
+# Every table the registry may contain, and what this repository does with it.
+#
+# C-75. Nothing here enumerated the tables, and a mutation proved it: a whole
+# `[shadow.*]` table carrying a connection-classed live URL passed every guard and
+# `validate_docs.sh`. Seven tables existed; the guards knew four between them, each
+# hard-coded at the point of use.
+#
+# views-postprocessing -- a CONSUMER -- shipped this check on THIS file before we did
+# (`test_every_table_in_the_registry_is_classified_here`, 2026-08-11). Their reason was
+# exact: `[contract]` arrived carrying an obligation for them and their edition check was
+# the only thing that noticed. The publisher should not learn the shape of its own file
+# from the people reading it.
+#
+# The value is a note to the next person, not a machine-readable class -- the registry
+# declares class per ENTRY (`class = "..."`), and a second vocabulary at table level would
+# be a fact that must agree with a fact, which is C-53's exact shape.
+KNOWN_TABLES = {
+    "meta": "the edition itself: version, ratification, the amendment summary",
+    "edition": "one row per published edition; `obliges_consumers` is the machine-readable half of §10",
+    "connection": "SCANNED by every reader -- how to reach Appwrite",
+    "target": "SCANNED by every reader -- what to read and write",
+    "planned": "reservations with no value yet; deliberately unscanned (D-05, C-29)",
+    "contract": "non-secret facts two seam parties must agree on; unscanned (§4.1)",
+    "secret": "slots only, never values",
+    "excluded": "named here so its absence is a decision rather than an oversight",
+    "test_environment": "the test-project question, recorded pending an operator decision",
+}
+
+
+def test_every_table_in_the_registry_is_classified_here():
+    """A table nobody classified is a change to this file's charter that nobody read.
+
+    Deliberately asymmetric, and the asymmetry is the point. An UNKNOWN table fails:
+    this file's scope grew and the growth must be a decision (§4.1 exists because that
+    had started happening silently). A table listed here but currently ABSENT does not
+    fail: `[planned]` is empty whenever there are no reservations, which is its normal
+    resting state, and C-55 is what happens when a guard treats "nothing to check" as a
+    problem.
+    """
+    registry = _load()
+    unknown = sorted(set(registry) - set(KNOWN_TABLES))
+    assert not unknown, (
+        f"these tables are in the registry and classified nowhere: {unknown}.\n\n"
+        "Adding a table widens what this file may contain, which is a charter change "
+        "and belongs in the seam contract, not in a commit nobody reads. Classify it "
+        "in KNOWN_TABLES above -- saying what this repository does with it -- and say "
+        "so in the contract's amendment log."
+    )
