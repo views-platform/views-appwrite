@@ -18,14 +18,25 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.5.2"                          # Versions in lockstep with the contract (§10);
+version = "1.6.0"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
+obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
+                                           # Derived: the newest [edition] row with
+                                           # obliges_consumers = true. A guard asserts the two
+                                           # agree, so this cannot drift from the table below.
+                                           # Conformant <=> your_pin >= this. An observation
+                                           # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
                                            # they record state the operator created in the console and impose
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.6.0 (2026-08-11): NEW [edition.*] table + `obliges_consumers_since` —
+                                           #   the machine-readable half of §10's observation/obligation distinction,
+                                           #   so a consumer can pin against what asks something of it rather than
+                                           #   against every edit. views-appwrite#76, filed by views-postprocessing.
+                                           #   Additive and opt-in; obliges nobody.
                                            # v1.5.2 (2026-08-11): NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME] — the second
                                            #   and last row views-appwrite#75 asked for. Declares a value ALREADY in force on
                                            #   both sides, so nothing changes behaviour; it moves an existing agreement into
@@ -53,6 +64,85 @@ amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATIO
                                            # v1.4.0 (2026-08-02): four CRAFD coordinates graduated [planned] ->
                                            #   [target]; CRAFD caller key recorded as issued.
                                            # v1.3.0 (2026-07-31): secret slots corrected against operator console.
+
+# ============================================================================
+# EDITIONS — which bumps oblige a consumer to act, and which do not
+# ============================================================================
+# Contract §10.1. One row per published edition. `obliges_consumers` is the
+# MACHINE-READABLE half of a distinction the amendment log has always drawn in
+# prose ("v1.4.x are OBSERVATION-DRIVEN ... impose no new obligation").
+#
+# WHY THIS EXISTS. views-appwrite#76, filed by the views-postprocessing seat with
+# the measurement that earns it: this registry moved FIVE times in FOUR days, and
+# FOUR of those recorded console facts that obliged nobody. Their CI compares its
+# pinned edition against this file, so each of those four would have reddened their
+# build and blocked a merge -- and merging to their `main` is the release to FAO.
+# Four delivery releases blocked by changes that asked nothing of them.
+#
+# HOW A CONSUMER USES IT. Compare your pinned version against
+# `[meta] obliges_consumers_since`, not against `[meta] version`:
+#
+#     conformant  <=>  your_pin >= obliges_consumers_since
+#
+# An observation bump moves `version` and leaves `obliges_consumers_since` still.
+# You stay green. When a row appears that asks something of you, the floor rises
+# and you go red with something to do.
+#
+# `obliges_consumers_since` is DERIVED -- the newest edition below with
+# obliges_consumers = true -- and `test_the_obligation_floor_matches_the_editions`
+# asserts the two agree. It is duplicated on purpose: without it every consumer
+# writes its own semver sort, and five copies of a comparison is how the readers
+# came to disagree in the first place (C-52). One copy, guarded, beats five unguarded.
+#
+# THE HONEST LIMIT. `obliges_consumers` is a judgement made by the author of the
+# bump. Nothing can check it mechanically -- whether a change asks something of a
+# consumer is a fact about the consumer. What IS checked: every edition has a row,
+# every row states the flag, and the floor matches. A wrong judgement is visible and
+# arguable here; before this table it was neither.
+
+[edition."1.3.0"]
+obliges_consumers = true
+summary = "Renamed from PLATFORM-001 (ADR-011); ratified by þing-02. Citations by the old name still resolve, but a consumer's own references should move."
+
+[edition."1.4.0"]
+obliges_consumers = false
+summary = "Four CRAFD coordinates graduated [planned] -> [target]; the CRAFD caller key recorded as issued. New coordinates become available; no existing consumer changes."
+
+[edition."1.4.1"]
+obliges_consumers = false
+summary = "CRAFD caller key scopes corrected (buckets.read, tables.read). Console observation."
+
+[edition."1.4.2"]
+obliges_consumers = false
+summary = "The VIEWS Pipeline Core key's 20 scopes read from the console. Console observation."
+
+[edition."1.4.3"]
+obliges_consumers = false
+summary = "Both platform keys' exact expiry read: 2026-11-17, 3h35m apart. Console observation."
+
+[edition."1.4.4"]
+obliges_consumers = false
+summary = "A3(h) answered (no non-production project); crafd-caller-read never expires. Console observation."
+
+[edition."1.5.0"]
+obliges_consumers = true
+summary = "NEW [contract.*] table (§4.1) and its first row, UNFAO_CONSUMER_DOCUMENT_NAME. Widens what this file may contain, and names two parties who must bind to the row."
+
+[edition."1.5.1"]
+obliges_consumers = false
+summary = "Removed the retired [unmodelled.session_auth_email_password] entry; closed contract §9 O3. This UNBLOCKED views-pipeline-core rather than asking anything of them."
+
+[edition."1.5.2"]
+obliges_consumers = true
+summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.6.0"]
+obliges_consumers = false
+summary = """This table and contract §10.1. Purely additive and opt-in: a consumer
+that ignores it behaves exactly as before. Marked false by the author of the change
+that introduced the flag, which is worth stating rather than glossing -- the reasoning
+is that nothing here changes what any consumer must do, and it is arguable in public
+precisely because the row exists."""
 
 # ---------------------------------------------------------------- connection
 [connection.APPWRITE_ENDPOINT]

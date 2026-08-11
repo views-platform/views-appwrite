@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1** |
-| Version | **1.5.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-11 — **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1** |
+| Version | **1.6.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer. `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -497,7 +497,98 @@ licence to edit this file freely.
 than obligation, that state is marked as such. A version bump driven only by an observation carries
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
+### 10.1 Editions declare whether they oblige a consumer (added v1.6.0)
+
+The sentence above promised that distinction and delivered it as **prose in an amendment log**. A
+consumer cannot pin against prose, so in practice every consumer pinned against `[meta] version` —
+which moves on every edit — and each of them therefore treated an observation exactly like an
+obligation.
+
+**The measurement that made this a defect rather than an inelegance**, contributed by
+views-postprocessing (views-appwrite#76): this registry moved **five times in four days**, and
+**four of those recorded console facts that obliged nobody**. Their CI compares its pinned edition
+against this file and blocks merges on a mismatch, and merging to their `main` *is the release to
+FAO*. Four deliveries would have been blocked by changes that asked nothing of them. A gate that
+fires mostly on nothing gets bumped reflexively, and that is how its one real firing goes unread.
+
+**The rule.** `coordinate_registry.toml` carries an `[edition."<version>"]` row for every published
+edition, and each row declares:
+
+```toml
+[edition."1.5.2"]
+obliges_consumers = true          # does a consumer have to DO something to stay conformant?
+summary = "..."                    # one line, in the consumer's terms
+```
+
+`[meta] obliges_consumers_since` names the newest obliging edition. **Consumers pin against that,
+not against `[meta] version`:**
+
+> **conformant ⟺ your_pin ≥ `obliges_consumers_since`**
+
+An observation bump moves `version` and leaves the floor still, so a conformant consumer stays
+green. A row that asks something of somebody raises the floor, and the consumer goes red **with
+something to do** — which is the only state a red build should ever mean.
+
+**What this repository guarantees, and what it does not.** Four guards hold the mechanical half:
+every published edition has a row, every row states the boolean, the current `version` is
+classified, and `obliges_consumers_since` matches the newest obliging row. All four were shown to
+fail before being trusted.
+
+**No guard can check the judgement itself.** Whether a change asks something of a consumer is a
+fact about the consumer, and this repository is not the authority on that. `obliges_consumers` is
+therefore the author's claim, stated where the affected party can read and dispute it. Before this
+table it was neither stated nor disputable. **A consumer that believes a `false` is wrong should say
+so on the edition's issue and we will re-cut** — that is cheaper than the alternative, which is
+every consumer conservatively treating every edit as an obligation, i.e. exactly where we started.
+
+**This does not replace `[meta] version`.** The version remains the edition's identity, tags remain
+immutable (above), and a consumer wanting strict lockstep may keep comparing against `version` —
+that is a legitimate, more conservative choice. §10.1 offers a floor; it does not impose one.
+
 ## 11. Amendment Log
+
+### v1.6.0 — 2026-08-11 — editions declare whether they oblige a consumer (§10.1)
+
+**Status: ACCEPTED.** One new clause, one new registry table, four new guards. **Obliges nobody** —
+and that claim is itself recorded as `[edition."1.6.0"].obliges_consumers = false`.
+
+**The defect it fixes was in this document, not in any consumer.** §10 has always said *"a consumer
+diffing two versions is entitled to that distinction"* — and then delivered the distinction as prose
+in an amendment log. Nothing can pin against prose. So every consumer pinned against `[meta]
+version`, which moves on every edit, and each of them treated an observation exactly like an
+obligation. **The rule was right and unusable, which is indistinguishable from wrong.**
+
+**What it costs a consumer today**, measured by views-postprocessing rather than by us: five
+editions in four days, four of them console observations, each of which would have reddened their
+build and blocked a merge — and their merge to `main` is the release to FAO.
+
+**Shape.** `[edition."<version>"]` rows with `obliges_consumers` and a one-line `summary`;
+`[meta] obliges_consumers_since` names the newest obliging edition. Consumers compare
+`your_pin >= obliges_consumers_since`.
+
+**Classification of every published edition, done here rather than left for later.** Three oblige:
+**v1.3.0** (the ADR-011 rename), **v1.5.0** (the `[contract.*]` table and its first row), **v1.5.2**
+(the CRAF'd row). Seven do not, including **v1.5.1**, which *unblocked* views-pipeline-core rather
+than asking anything of them.
+
+**Proven, not asserted.** Four guards, each shown to fail for its own reason before being trusted:
+bumping the version without classifying it; a row missing its boolean; the floor disagreeing with
+the table; and a newer obliging edition landing without the floor rising. Each failed the correct
+distinct test and each was reverted.
+
+**A process note worth keeping.** The first mutation run was *vacuous* and said so only because the
+baseline was checked afterwards: the edition table was still uncommitted, so `git checkout --` on
+the first revert deleted the work rather than the mutation, and the remaining three mutations
+"passed" against a registry with no edition table at all. Redone with the table committed first.
+This is the failure mode the whole of cluster G is about, produced while building a guard against
+it.
+
+**The limit, stated plainly.** `obliges_consumers` is a judgement, and no guard can check it —
+whether a change asks something of a consumer is a fact about the consumer, and this repository is
+not the authority on that. A consumer that thinks a `false` is wrong should say so and we re-cut.
+That is cheaper than every consumer conservatively treating every edit as an obligation, which is
+where we started.
+
 
 ### v1.5.2 — 2026-08-11 — the CRAF'd consumer document name; the FAO row's caveat narrowed
 
