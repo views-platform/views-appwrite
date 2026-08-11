@@ -104,9 +104,21 @@ jobs:
       # names every test, and screen-scraping `-v` output would break silently the
       # first time pytest changes a format string. A reporting job that misreports
       # is worse than no reporting job.
+      # `tests/` and `--ignore=_siblings` are BOTH load-bearing, and the first run
+      # without them proved it. The siblings are checked out INSIDE the workspace
+      # (actions/checkout cannot write above it), so a bare `pytest` walked into
+      # `_siblings/*/tests/` and collected THEIR suites. The report came back
+      # "2 red, 0 green", the two being collection errors from other repositories,
+      # and none of this repo's sixteen stubs ran at all.
+      #
+      # views-postprocessing hit the same shape from the other side -- a sibling
+      # placed outside their `_siblings/` dir made their linter report 745 findings
+      # in someone else's code (their ADR-016, rule G6). Fetching a sibling into the
+      # workspace is not free: every tool that walks the tree now sees it.
       - name: Run the falsification stubs
         run: |
           python -m pytest -m falsification -q --tb=no \
+            tests/ --ignore=_siblings \
             --junit-xml=falsification.xml || true
 
       - name: Report which stubs are red, and shout about any that are green
