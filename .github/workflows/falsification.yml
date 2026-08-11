@@ -1,0 +1,126 @@
+name: Falsification
+
+# REPORTING ONLY. This job NEVER blocks a merge, and that is deliberate.
+#
+# Sixteen tests in this repository are red BY DESIGN. Each encodes an unresolved
+# risk-register finding and turns green only when that finding is fixed.
+# docs/contributor_protocols/carbon_based_agents.md §1-2: a stub "is expected-red
+# until the register finding it encodes is resolved" and "must not be deleted to
+# make a gate pass". Blocking on them would make deleting one the fastest way to
+# ship, which is the single behaviour the protocol forbids.
+#
+# DO NOT ADD THIS JOB TO THE RULESET'S REQUIRED CHECKS. If a future reader thinks
+# a reporting job is a half-measure: the blocking half is `Guards`, which runs the
+# checks that protect live invariants. This job watches a different thing.
+#
+# WHAT IT IS ACTUALLY FOR: a stub that goes GREEN.
+#
+# A red stub is the normal state and needs no announcement. A stub that PASSES
+# means its finding may have been resolved -- good news -- or that its assertion
+# was quietly weakened until it stopped failing, which is C-68 and is not.
+# Either way somebody must look, and today nobody is told.
+#
+# C-68 was caught only because a human ran pytest and noticed the failure count
+# move 10 -> 9. That is the whole detection mechanism this job replaces.
+#
+# It is not hypothetical: at the time this job was written, SIX of the sixteen
+# stubs were already green and had been for an unknown length of time. Nothing
+# had reported them.
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: falsification (reporting only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: python -m pip install --quiet pytest
+
+      # `|| true` is the non-blocking half and belongs HERE rather than on the job:
+      # `continue-on-error` at job level marks the whole job neutral in the UI,
+      # which reads as "did not run". This runs, reports, and succeeds.
+      #
+      # JUnit XML rather than parsing pytest's console output: the summary below
+      # names every test, and screen-scraping `-v` output would break silently the
+      # first time pytest changes a format string. A reporting job that misreports
+      # is worse than no reporting job.
+      - name: Run the falsification stubs
+        run: |
+          python -m pytest -m falsification -q --tb=no \
+            --junit-xml=falsification.xml || true
+
+      - name: Report which stubs are red, and shout about any that are green
+        run: |
+          python - <<'PY'
+          import os, xml.etree.ElementTree as ET
+
+          root = ET.parse("falsification.xml").getroot()
+          red, green = [], []
+          for case in root.iter("testcase"):
+              name = f"{case.get('classname','').split('.')[-1]}::{case.get('name')}"
+              (red if any(k.tag in ("failure", "error") for k in case) else green).append(name)
+
+          lines = [
+              "## Falsification stubs",
+              "",
+              f"**{len(red)} red** (expected) · **{len(green)} green** (needs a look)",
+              "",
+          ]
+
+          if green:
+              lines += [
+                  "### :rotating_light: Green stubs — someone must look",
+                  "",
+                  "A passing stub means either its register finding is resolved -- in which case",
+                  "convert it to a plain assertion and close the entry -- or its assertion was",
+                  "weakened until it stopped failing, which is **C-68** and must be reverted.",
+                  "",
+              ]
+              for n in green:
+                  lines.append(f"- `{n}`")
+                  # A workflow annotation, so it is visible without opening the summary.
+                  print(f"::notice title=Falsification stub is GREEN::{n} — resolve and convert it, "
+                        f"or restore the assertion if it was weakened (C-68)")
+              lines.append("")
+
+          lines += ["### Red stubs — expected, no action", ""]
+          lines += [f"- `{n}`" for n in red]
+          lines += [
+              "",
+              "---",
+              "",
+              "_This job never blocks. Stubs are red by design; deleting one to make a gate",
+              "pass is forbidden by the carbon protocol §1-2. The blocking checks are in_ `Guards`.",
+          ]
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with open(summary, "a", encoding="utf-8") as fh:
+                  fh.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: falsification-junit
+          path: falsification.xml
+          if-no-files-found: ignore
