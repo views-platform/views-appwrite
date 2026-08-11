@@ -1,0 +1,192 @@
+name: Falsification
+
+# REPORTING ONLY. This job NEVER blocks a merge, and that is deliberate.
+#
+# Sixteen tests in this repository are red BY DESIGN. Each encodes an unresolved
+# risk-register finding and turns green only when that finding is fixed.
+# docs/contributor_protocols/carbon_based_agents.md §1-2: a stub "is expected-red
+# until the register finding it encodes is resolved" and "must not be deleted to
+# make a gate pass". Blocking on them would make deleting one the fastest way to
+# ship, which is the single behaviour the protocol forbids.
+#
+# DO NOT ADD THIS JOB TO THE RULESET'S REQUIRED CHECKS. If a future reader thinks
+# a reporting job is a half-measure: the blocking half is `Guards`, which runs the
+# checks that protect live invariants. This job watches a different thing.
+#
+# WHAT IT IS ACTUALLY FOR: a stub that goes GREEN.
+#
+# A red stub is the normal state and needs no announcement. A stub that PASSES
+# means its finding may have been resolved -- good news -- or that its assertion
+# was quietly weakened until it stopped failing, which is C-68 and is not.
+# Either way somebody must look, and today nobody is told.
+#
+# C-68 was caught only because a human ran pytest and noticed the failure count
+# move 10 -> 9. That is the whole detection mechanism this job replaces.
+#
+# It is not hypothetical: at the time this job was written, SIX of the sixteen
+# stubs were already green and had been for an unknown length of time. Nothing
+# had reported them.
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: falsification (reporting only)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # SIBLINGS, IN A REPORTING JOB, ON PURPOSE — AND THE LIST IS NOT ARBITRARY.
+      #
+      # Some stubs walk other repositories. `test_falsify_c40_every_consumer_pins_
+      # the_contract` iterates CONSUMERS looking for unpinned citations; on a lone
+      # runner every `root.exists()` is False, it finds no offenders, and it PASSES.
+      # Green because it could not look.
+      #
+      # This took two attempts and both failures are worth recording:
+      #   1. no siblings at all -> the job reported SEVEN green stubs where the same
+      #      suite reports six locally. The extra was c40, passing vacuously.
+      #   2. views-models + views-crafdapi -> STILL seven. c40's real offenders are
+      #      views-pipeline-core, views-postprocessing and views-datafactory, none of
+      #      which were fetched. A partial checkout is still a vacuous pass; it just
+      #      looks more diligent.
+      #
+      # So: every PUBLIC repo in CONSUMERS, which is four of the five.
+      # views-crafdapi is deliberately NOT here — no falsification stub reads it (the
+      # reader-agreement GUARD does, and that is a different job).
+      #
+      # Cloned in one step rather than four actions/checkout blocks: the list must be
+      # readable as a list, because the whole lesson above is that a silently short
+      # list produces a confidently wrong report.
+      - name: Clone the public consumer repos the stubs walk
+        run: |
+          set -euo pipefail
+          parent="$(dirname "$PWD")"
+          # views-faoapi is PRIVATE and deliberately absent: views-appwrite#73 was
+          # withdrawn on views-postprocessing ADR-017 §9 (a credential that lapses
+          # makes checks skip while the build stays green). The summary says so.
+          for repo in views-models views-pipeline-core views-postprocessing views-datafactory; do
+            git clone --depth 1 --quiet "https://github.com/views-platform/$repo.git" "$parent/$repo"
+            test -d "$parent/$repo" || { echo "::error::$repo failed to clone"; exit 1; }
+          done
+          echo "consumers visible to the stubs:"
+          ls -d "$parent"/views-* | sed 's/^/  /'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pytest
+        run: python -m pip install --quiet pytest
+
+      # `|| true` is the non-blocking half and belongs HERE rather than on the job:
+      # `continue-on-error` at job level marks the whole job neutral in the UI,
+      # which reads as "did not run". This runs, reports, and succeeds.
+      #
+      # JUnit XML rather than parsing pytest's console output: the summary below
+      # names every test, and screen-scraping `-v` output would break silently the
+      # first time pytest changes a format string. A reporting job that misreports
+      # is worse than no reporting job.
+      # `tests/` is explicit, and an earlier attempt is why.
+      #
+      # A first version used actions/checkout, which cannot write above the
+      # workspace, so the siblings landed in `_siblings/` INSIDE the repo. A bare
+      # `pytest` then walked into `_siblings/*/tests/` and collected OTHER
+      # REPOSITORIES' suites: the report came back "2 red, 0 green" -- the two being
+      # collection errors from views-models and views-crafdapi -- and not one of this
+      # repo's sixteen stubs ran. The job exited 0 and the summary rendered cleanly.
+      #
+      # Cloning to the parent directory (above) puts them outside pytest's rootdir,
+      # so that specific trap is gone. `tests/` stays anyway: it costs nothing and it
+      # means a future change to where siblings land cannot silently re-open it.
+      #
+      # views-postprocessing hit the same shape from the other side -- a sibling
+      # outside their `_siblings/` dir made their linter report 745 findings in
+      # someone else's code (their ADR-016, rule G6). Fetching a sibling is not free:
+      # every tool that walks the tree now sees it.
+      - name: Run the falsification stubs
+        run: |
+          python -m pytest -m falsification -q --tb=no \
+            tests/ \
+            --junit-xml=falsification.xml || true
+
+      - name: Report which stubs are red, and shout about any that are green
+        run: |
+          python - <<'PY'
+          import os, xml.etree.ElementTree as ET
+
+          root = ET.parse("falsification.xml").getroot()
+          red, green = [], []
+          for case in root.iter("testcase"):
+              name = f"{case.get('classname','').split('.')[-1]}::{case.get('name')}"
+              (red if any(k.tag in ("failure", "error") for k in case) else green).append(name)
+
+          lines = [
+              "## Falsification stubs",
+              "",
+              f"**{len(red)} red** (expected) · **{len(green)} green** (needs a look)",
+              "",
+          ]
+
+          if green:
+              lines += [
+                  "### :rotating_light: Green stubs — someone must look",
+                  "",
+                  "A passing stub means either its register finding is resolved -- in which case",
+                  "convert it to a plain assertion and close the entry -- or its assertion was",
+                  "weakened until it stopped failing, which is **C-68** and must be reverted.",
+                  "",
+              ]
+              for n in green:
+                  lines.append(f"- `{n}`")
+                  # A workflow annotation, so it is visible without opening the summary.
+                  print(f"::notice title=Falsification stub is GREEN::{n} — resolve and convert it, "
+                        f"or restore the assertion if it was weakened (C-68)")
+              lines.append("")
+
+          lines += ["### Red stubs — expected, no action", ""]
+          lines += [f"- `{n}`" for n in red]
+          lines += [
+              "",
+              "### What this run could not see",
+              "",
+              "Four of the five consumer repos are cloned — `views-models`,",
+              "`views-pipeline-core`, `views-postprocessing`, `views-datafactory` — because stubs",
+              "that walk consumers would otherwise pass by finding nothing to walk.",
+              "",
+              "**`views-faoapi` is private and is not fetched.** views-appwrite#73 proposed a",
+              "credential for exactly this and was withdrawn on views-postprocessing ADR-017 §9:",
+              "when a token lapses the checks skip and the build stays green. So any stub",
+              "iterating consumers sees **four of five**, and a green result from one of those is",
+              "weaker than it looks. Stated because an unstated absence reads as coverage.",
+              "",
+              "---",
+              "",
+              "_This job never blocks. Stubs are red by design; deleting one to make a gate",
+              "pass is forbidden by the carbon protocol §1-2. The blocking checks are in_ `Guards`.",
+          ]
+
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with open(summary, "a", encoding="utf-8") as fh:
+                  fh.write("\n".join(lines) + "\n")
+          print("\n".join(lines))
+          PY
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: falsification-junit
+          path: falsification.xml
+          if-no-files-found: ignore

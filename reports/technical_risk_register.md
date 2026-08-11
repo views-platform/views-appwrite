@@ -1357,7 +1357,37 @@ names what is missing rather than merely failing. The failure set is back to the
 and belongs with the scaffold decision (**#8**, gated on *operator ∧ test project*), not smuggled
 into a secret-scan PR.
 
-Cross-refs: C-02, C-52, C-55, C-67, #8.
+> **IT IS NOT ONE STUB. IT IS SEVEN — measured 2026-08-11 while building the reporting job (#70).**
+>
+> This entry was written about a single stub that went green when the secret-scan workflow landed.
+> Running the suite by marker to build that job produced the real figure: **of sixteen falsification
+> stubs, six are already green** — and had been, for an unknown length of time, with nothing
+> reporting it.
+>
+> | Green stub | Plausibly resolved by |
+> |---|---|
+> | `test_falsify_05_license_and_python_floor_decided` | the MIT `LICENSE` landing |
+> | `test_falsify_c41_readme_first_sentence_is_true` | epic #14 S3 rewriting the first sentence |
+> | `test_falsify_c38_conformance_vector_released_with_its_consumers` | the conformance vector shipping |
+> | `test_falsify_r2_04_first_commit_gate_sequencing_documented` | C-22, marked resolved |
+> | `test_falsify_r2_03_integration_test_isolation_specified` | unverified |
+> | `test_falsify_r2_01_roadmap_consumed_source_repo_sdk_decision` | unverified |
+>
+> **Each is one of two things and nobody has looked**: a finding genuinely resolved, in which case
+> the stub should have been converted to a plain assertion and its register entry closed — or an
+> assertion weakened until it stopped failing, which is this entry's defect. **The suite cannot tell
+> them apart, and neither can I without reading each one.**
+>
+> The `/falsify` protocol's contract is that a stub *"turns green only by fixing the finding it
+> encodes"*. Green is therefore a **signal**, and for six stubs that signal has been firing into an
+> empty room. The failure-count heuristic that caught the original C-68 only detects a *change*, so
+> anything already green before someone started counting is invisible to it.
+>
+> **#70 fixes the reporting, not the backlog.** From now on a green stub is named in the CI summary
+> and raises a workflow annotation. Auditing these six — resolve-and-convert, or restore the
+> assertion — is separate work and is not smuggled into a CI story.
+
+Cross-refs: C-02, C-52, C-55, C-67, #8, #70.
 
 ---
 
