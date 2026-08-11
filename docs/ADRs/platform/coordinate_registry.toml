@@ -684,6 +684,3 @@ status = "none"
 fact = """No non-production Appwrite project exists (þing-01 S23, five-seat testimony).
 Until the operator creates one: integration tests against the production project are
 FORBIDDEN by the seam contract; read-only preflight validation is the only permitted live check."""
-
-[target.EPIC_ACCEPTANCE_NO_VALUE]
-class = "target"
