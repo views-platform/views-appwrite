@@ -4,10 +4,10 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-08-08                           |
+| Last Updated      | 2026-08-11                           |
 | Total Concerns    | 52                                   |
-| Open Concerns     | 48                                   |
-| Resolved Concerns | 4                                    |
+| Open Concerns     | 47                                   |
+| Resolved Concerns | 5                                    |
 | Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -50,7 +50,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** Every entry here was found by mutation, not by reading. C-70 is the acute one — CI exists, is a *required* check, and runs none of the other guards. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard now runs on every PR and the blocking ones are required, each proven by mutation in CI. The rule itself is recorded in the contributor protocol (S6, #72). Every entry here was found by mutation, not by reading. C-70 is the acute one — CI exists, is a *required* check, and runs none of the other guards. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-54, C-59, C-64, C-65, C-71** (C-53 also, via G) | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
@@ -1446,7 +1446,7 @@ Cross-refs: C-30 (the flag itself), C-67 (what covers the key half), þing-02 D5
 
 ---
 
-### C-70: The repo now has CI, and it does not run any of the guards that protect the registry
+### C-70: The repo now has CI, and it does not run any of the guards that protect the registry — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -1486,6 +1486,49 @@ Cross-refs: C-30 (the flag itself), C-67 (what covers the key half), þing-02 D5
 > **Closes at S5 (#71)**, after each job is shown to bite in CI and the blocking ones are made
 > required. Marking it resolved now would be the thing this entry is about.
 
+---
+
+### RESOLVED 2026-08-11 (S5, #71) — proven by mutation, not by inspection
+
+**The required-checks list now reads:**
+
+```
+gitleaks (full history)
+guards (self-contained)
+guards (cross-repo)
+```
+
+`falsification (reporting only)` is deliberately **absent**: its stubs are red by design and a
+blocking job would make deleting one the fastest way to ship, which carbon protocol §1-2 forbids.
+
+**Every claim below was observed in CI, on a real pull request, and reverted.**
+
+| Mutation | Result |
+|---|---|
+| value-less `[target]` entry — the `2186d45` shape | `guards (self-contained)` **FAILED** on `test_every_reader_scanned_entry_has_a_value` |
+| clone one sibling instead of two | `guards (cross-repo)` **FAILED** — at the anti-vacuity gate, *before* pytest, naming the missing reader |
+| registry changed with no version bump | `guards (self-contained)` **FAILED** on check 8 (proven earlier, PR #80) |
+| `CI=1` with no `origin/main` | `validate_docs.sh` **exit 1** rather than SKIP |
+| a falsification stub turning green | job stays **green**, names the stub in the summary, raises a `::notice::` |
+
+**The acceptance test for the whole epic, which nothing but a real PR can demonstrate:**
+
+> A pull request carrying a value-less `[target]` entry reported
+> **`mergeStateStatus = BLOCKED`**. Reverting the entry returned it to **`CLEAN`**.
+
+So the concern's own sentence — *"commit `2186d45` would merge with a green tick today"* — is now
+false, and demonstrably so rather than by assertion.
+
+**What this does not close.** `views-faoapi` is still absent from the cross-repo comparison: it is
+private, and #73's credential was withdrawn on views-postprocessing ADR-017 §9 because a lapsed
+token makes checks skip while the build stays green. **Two of three readers are compared**, the job
+says so in its log, and **C-51** tracks the remainder. An accepted gap, stated; not a silent one.
+
+**Four traps surfaced while building this, none visible from the issue text.** Siblings inside the
+workspace made pytest collect *their* suites; a partial sibling set was still a vacuous pass that
+merely looked diligent; views-models' `main` carries no reader at all (407 commits behind); and
+views-crafdapi's git-LFS shapefiles failed the clone outright. Each was found by running it.
+
 So every mechanical guard this repository has built runs **only on a laptop, or not at all**:
 
 | Guard | Protects | Runs in CI? |
@@ -1517,6 +1560,8 @@ problem in a new place.
 Cross-refs: C-02 (the broader "rules enforced by prose" concern this is a concrete instance of),
 C-29 (the outage the unenforced guard exists to prevent), C-52 and C-68 (guards green and blind),
 C-53.
+
+---
 
 ---
 
@@ -1783,7 +1828,7 @@ views-pipeline-core#402 and its coherence test as the reference implementation.
 
 - **ID format:** `C-xx` for concerns, `D-xx` for disagreements. IDs are permanent — gaps in numbering indicate merged or resolved entries.
 - **Sources:** `repo-assimilation`, `expert-review`, `test-review`, `falsification-audit`, `clean-architecture-review`, `pr-review`, `tech-debt-audit`, `incident`, `manual`, **`þing-01`** (cross-repo assembly testimony — entries sourced here carry another seat's sworn account of its own code; treat the seat as the authority for its repo, and cite the `orð`/`sáttmál` item).
-- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. Two entries (C-10, D-02) are marked resolved **in place** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved.
+- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. Three entries (C-10, C-70, D-02) are marked resolved **in place** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved. C-70 additionally anchors Cluster G and is cross-referenced by C-52, C-53 and C-68 — moved to the bottom, the cluster stops reading as one story.
 - **Header counts:** Manually maintained — update whenever a concern is added or resolved.
 - **Note:** Many concerns reference locations in external repos (`views-pipeline-core`, `views-faoapi`) because this repository is a roadmap for a package not yet extracted. Confirm those locations when extraction (Phase 1) begins. **As of 2026-07-28 several are external by *ownership*, not merely by location** (C-13, C-26, C-27, C-28): this repo tracks them because it hosts `PLATFORM-001`, but cannot fix them — the fix belongs to a lineage owner or to the operator.
 - **Governed by:** ADR-010 (`docs/ADRs/010_technical_risk_register.md`).
