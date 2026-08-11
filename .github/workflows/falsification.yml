@@ -45,6 +45,49 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
+      # SIBLINGS, IN A REPORTING JOB, ON PURPOSE.
+      #
+      # Some stubs read other repositories -- `test_falsify_c40_every_consumer_pins_
+      # the_contract` walks each consumer looking for unpinned citations. On a lone
+      # runner `root.exists()` is False for every one, it finds no offenders, and it
+      # PASSES. Green because it could not look.
+      #
+      # This was not theory: the first run of this job reported SEVEN green stubs
+      # where the same suite reports six locally. The extra one was c40, passing
+      # vacuously. A job whose whole purpose is to say "this stub is green, go and
+      # check why" would have sent someone after a finding that was never resolved.
+      #
+      # Only the two PUBLIC siblings are fetched. views-faoapi is private and stays
+      # out (#73 withdrawn on views-postprocessing ADR-017 §9), so c40 still cannot
+      # see one of the five consumers -- stated in the summary rather than left to
+      # look like completeness.
+      - name: Check out the public siblings the stubs read
+        uses: actions/checkout@v4
+        with:
+          repository: views-platform/views-models
+          ref: main
+          path: _siblings/views-models
+
+      - name: Check out views-crafdapi
+        uses: actions/checkout@v4
+        with:
+          repository: views-platform/views-crafdapi
+          ref: main
+          path: _siblings/views-crafdapi
+
+      # The stubs resolve siblings as WORKSPACE/<repo>, where WORKSPACE is the
+      # parent of the repo root. actions/checkout cannot place a repo above the
+      # workspace, so they land in _siblings/ and are linked into place.
+      - name: Put the siblings where the stubs look for them
+        run: |
+          set -euo pipefail
+          for r in views-models views-crafdapi; do
+            ln -sfn "$PWD/_siblings/$r" "$(dirname "$PWD")/$r"
+            test -d "$(dirname "$PWD")/$r" || { echo "::error::$r did not land"; exit 1; }
+          done
+          echo "siblings visible to the stubs:"
+          ls -d "$(dirname "$PWD")"/views-* | sed 's/^/  /'
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -103,6 +146,14 @@ jobs:
           lines += ["### Red stubs — expected, no action", ""]
           lines += [f"- `{n}`" for n in red]
           lines += [
+              "",
+              "### What this run could not see",
+              "",
+              "Two public siblings are checked out — `views-models`, `views-crafdapi` — because",
+              "some stubs read other repositories and would otherwise pass by finding nothing.",
+              "**`views-faoapi` is private and is not fetched** (views-appwrite#73, withdrawn on",
+              "views-postprocessing ADR-017 §9), so any stub walking every consumer sees four of",
+              "five. Stated because an unstated absence reads as coverage.",
               "",
               "---",
               "",
