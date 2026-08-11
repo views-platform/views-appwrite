@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-11                           |
-| Total Concerns    | 52                                   |
-| Open Concerns     | 47                                   |
+| Total Concerns    | 53                                   |
+| Open Concerns     | 48                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -1646,6 +1646,84 @@ also *internally inconsistent*, which is a distinct and more deceptive failure t
 
 Cross-refs: seam contract §10, C-53 (the version bump that makes a pin meaningful),
 views-pipeline-core#402 and its coherence test as the reference implementation.
+**C-73** — the same subject from the publisher's side.
+
+---
+
+### C-73: We version this registry believing every consumer pins by immutable tag. One does not, and we broke it for a day without noticing
+
+| Field | Value |
+|-------|-------|
+| ID | C-73 |
+| Tier | **2** |
+| Source | `manual` — found 2026-08-11 while reviewing a work request from the views-faoapi seat; the request itself asserted the opposite and was also wrong |
+| Trigger | **Bumping `[meta] version` in `coordinate_registry.toml` for any reason, including a prose-only edit.** Not a future hazard — it has fired three times already (v1.5.0, v1.5.1, v1.5.2) and is latent right now |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` `[meta] version`; seam contract §10; the claim itself in PR #97 and PR #103 body text. The consumer: `views-postprocessing/tests/test_env_declaration.py::test_the_pinned_contract_edition_still_matches_the_registry` + `views_postprocessing/{unfao,crafd}/appwrite_env.py` |
+
+**The false belief, in our own words.** PRs #97 and #103 both state: *"Consumers pinned at earlier
+tags are unaffected because tags are immutable (§10). This is additive."* We shipped two editions on
+that sentence.
+
+**It is true of exactly one consumer.** views-faoapi reads the registry through
+`git show appwrite-seam-v1.5.0:<path>` — an immutable tag, genuinely immune. We checked *that*
+mechanism, found it sound, and generalised it to every consumer without looking at another one.
+
+**views-postprocessing does not pin in that sense at all.** Its `_load_registry` reads
+`(repo / _REGISTRY_RELPATH).read_text()` — the **working tree** of a sibling checkout — and its CI
+checks out our `main` with `ref: main`. It then asserts `[meta].version` equals a frozen constant,
+`SEAM_CONTRACT_VERSION = "1.4.4"`. So it compares **a moving branch against a fixed string**: every
+edition we publish reddens it until they re-pin.
+
+**Executed, not predicted** (their assertion replicated under Python 3.11, our `main` at v1.5.2):
+
+```
+[unfao] registry working tree = '1.5.2'  pinned = '1.4.4'  -> ASSERTION FAILURE
+[crafd] registry working tree = '1.5.2'  pinned = '1.4.4'  -> ASSERTION FAILURE
+```
+
+**It went unseen for a day because of a coincidence, not a control.** v1.5.0 landed on `main`
+2026-08-10 20:35; views-postprocessing's last CI run was 08:04 that morning. Nobody pushed in
+between. The failure fires on their next push. **We would not have found it at all** had a request
+from a third repo not sent us into their code.
+
+**This is not their defect.** Their docstring says the strictness is deliberate — *"the edition
+catches **any** other change... It fails loudly and tells you what to do rather than what broke"* —
+and as a ratchet that is defensible. The defect is ours: **we are the publisher, we cut the tags,
+and we asserted a compatibility property about consumers we had not read.**
+
+**Why Tier 2 rather than 3.** It is silent from our side by construction. Our gates are all green;
+nothing in this repository can go red when we break a consumer this way, because the failing
+assertion lives in their suite and runs on their schedule. That is the C-52/C-55 shape aimed
+outward: *a check that reports success without having looked at anything.* We have no
+publisher-side observation of consumer breakage at all.
+
+**The narrower fact worth keeping separate from the fix.** Three editions in, the *values* have
+never changed — v1.5.0/v1.5.1/v1.5.2 add two `[contract.*]` rows, remove one retired `[unmodelled.*]`
+entry, and edit prose. Every one of them was semantically additive for every consumer. It is the
+*edition number* that breaks them, not the content. That is precisely what **#76** exists to fix
+(let consumers pin an edition and mark observation-only bumps non-blocking), and this entry is the
+strongest evidence yet for it.
+
+**Fix strategy.** Not "stop bumping" — §10 requires the bump, and C-53 exists because a bump was
+skipped. Three candidates, in order of honesty:
+
+1. **Announce before merging.** The registry header already says *"Rotation of a coordinate is a
+   platform event — announce before merging"*; that obligation currently covers rotations only.
+   Cheapest, and entirely within this repo.
+2. **#76** — the version-pinning proposal, which makes an observation-only bump non-blocking so a
+   prose fix stops costing a consumer a PR.
+3. **A publisher-side check** that reads each consumer's declared pin and reports which are stale.
+   Tempting and dangerous: it would need every consumer checked out, and views-faoapi is private —
+   the exact shape #73 was withdrawn over (**C-51**). Do not build it without solving that first.
+
+**Told, on the day.** views-postprocessing#238 carries the failing assertion, the constants to
+change, and the commit (`b703cab`). views-faoapi#379 carries the correction to their request's
+claims. Neither was left to discover it.
+
+Cross-refs: **C-72** (the same subject from the consumer side — pins internally incoherent within a
+repo; this is the publisher not knowing what shape the pins are), C-53 (the bump that makes a pin
+meaningful), C-51 (why a publisher-side sweep cannot see every consumer), **#76** (the proposal this
+is evidence for), seam contract §10.
 
 ---
 
