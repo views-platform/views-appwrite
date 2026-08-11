@@ -73,3 +73,106 @@ jobs:
 
       - name: Documentation and version checks
         run: bash docs/validate_docs.sh
+
+  cross-repo:
+    name: guards (cross-repo)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # WHICH BRANCH, AND WHY IT IS NOT `main`.
+      #
+      # views-postprocessing's ADR-016 rule G7 says name a sibling's branch
+      # explicitly rather than accept whatever default it happens to carry. Agreed --
+      # and naming it forces the question of WHICH, which has a non-obvious answer:
+      #
+      #   views-models   reader exists ONLY on `development`. Their `main` is 407
+      #                  commits behind and does not contain the file at all.
+      #   views-crafdapi reader on both; `main` is 11 behind `development`.
+      #
+      # So `development` for both. Comparing views-models' `main` would compare
+      # against a reader that is not there, and comparing crafdapi's `main` would
+      # compare a current reader against a stale one and call any difference
+      # "divergence". The guard asks whether the readers agree TODAY; `development`
+      # is where each repo's reader actually is.
+      #
+      # The cost, stated: `development` moves, so this compares a moving target. For
+      # a drift detector that is the point, not a defect.
+      #
+      # Cloned to the PARENT directory because the tests resolve siblings as
+      # WORKSPACE/<repo> (WORKSPACE = the repo root's parent), and because a sibling
+      # inside the workspace gets collected by pytest -- that mistake cost two runs
+      # in the falsification job and 745 spurious linter findings in
+      # views-postprocessing (their ADR-016 G6).
+      - name: Clone the two public sibling readers
+        run: |
+          set -euo pipefail
+          parent="$(dirname "$PWD")"
+          # GIT_LFS_SKIP_SMUDGE: views-crafdapi stores GAUL shapefiles in LFS, and
+          # the smudge filter failed the first run outright -- exit 128, no clone.
+          # This job needs exactly one 40-line Python file from each sibling and has
+          # no use for their binary assets. Skipping smudge leaves LFS pointers in
+          # place, which is fine because nothing here reads them, and it removes a
+          # dependency on someone else's LFS quota and availability.
+          export GIT_LFS_SKIP_SMUDGE=1
+          for repo in views-models views-crafdapi; do
+            git clone --depth 1 --branch development --quiet \
+              "https://github.com/views-platform/$repo.git" "$parent/$repo"
+          done
+          ls -d "$parent"/views-* | sed 's/^/  cloned: /'
+
+      # THE ANTI-VACUITY GATE, and the reason this job exists at all.
+      #
+      # `_present()` in the test filters declared readers by is_file() and drops the
+      # missing ones SILENTLY. That tolerance is right on a laptop -- not everyone
+      # checks out five repos -- and it is exactly what made C-52 vacuous: the guard
+      # pointed at a path that had moved, dropped views-models without a word, and
+      # spent its whole life comparing views-faoapi against views-crafdapi, two
+      # byte-identical clones that agree trivially.
+      #
+      # In CI the tolerance must not apply. If this job says it cloned two readers
+      # then two readers must be there, and finding fewer is a failure rather than a
+      # smaller comparison. Checked BEFORE pytest so the failure names the cause
+      # instead of surfacing as a confusing skip.
+      - name: Refuse to run against fewer readers than we cloned
+        run: |
+          set -euo pipefail
+          parent="$(dirname "$PWD")"
+          missing=""
+          for p in "views-models/tools/credentials/registry_to_env.py" \
+                   "views-crafdapi/deployment/registry_to_env.py"; do
+            [ -f "$parent/$p" ] || missing="$missing $p"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::cloned the repos but these readers are absent:$missing"
+            echo "::error::A smaller comparison is not a smaller signal -- it is C-52."
+            exit 1
+          fi
+          echo "both declared readers present"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # >=3.11: the readers need stdlib tomllib
+
+      - name: Install pytest
+        run: python -m pip install --quiet pytest
+
+      # views-faoapi is PRIVATE and deliberately absent. views-appwrite#73 proposed a
+      # credential to reach it and was WITHDRAWN on views-postprocessing ADR-017 §9:
+      # a token is tied to a person, expires, and when it lapses the checks skip while
+      # the build stays green -- the exact failure this epic exists to end.
+      #
+      # So this compares TWO of the three canonical readers, and that is a real gap,
+      # not a rounding error. It is stated in the log rather than left to look like
+      # completeness. C-51 tracks it.
+      #
+      # Two is still meaningful: views-models and views-crafdapi genuinely differ
+      # today (`_is_planned()` vs raising), so the D-05 divergence is visible here
+      # without any credential.
+      - name: Reader agreement
+        run: |
+          echo "::notice title=Cross-repo coverage::Comparing 2 of 3 canonical readers. \
+          views-faoapi is private and not fetched (#73 withdrawn, ADR-017 §9). C-51 tracks the gap."
+          python -m pytest -q -m guard tests/test_registry_readers_agree.py -v
