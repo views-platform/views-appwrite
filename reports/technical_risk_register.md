@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-11                           |
-| Total Concerns    | 53                                   |
-| Open Concerns     | 48                                   |
+| Total Concerns    | 55                                   |
+| Open Concerns     | 50                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -396,6 +396,25 @@ See also C-03 (same SDK-version asymmetry in the source repos) and C-15 (SDK sem
 Zero mentions of a software license, a supported Python version range, or `.gitignore` content exist in the documentation, and none is explicitly scoped out. (**Update 2026-06-12:** the `.gitignore` half self-demonstrated — commit `1e54734` accidentally swept `tests/__pycache__/*.pyc` into history; a minimal `.gitignore` was added immediately after. License and `requires-python` remain open for the scaffold session.) The falsification dry-run (probe P1) built a wheel from documented values only: it succeeded, but the artifact was tagged `py2.py3-none-any` — with no Python floor specifiable, the package silently claims Python 2 compatibility, a wrong-by-default installability claim that surfaces as confusing downstream failures rather than a clean resolver error. For an org-distributed, pip-installable package (`README.md:326-328`), the missing license decision is reviewer-blocking. Tier 3: affects every consumer repo and contributor but fails loudly-ish at review/install time rather than corrupting data. Enforced by failing stubs `test_falsify_01_scaffold_buildable_without_invented_values` and `test_falsify_05_license_and_python_floor_decided`.
 
 ---
+
+**Update 2026-08-11 (`repo-assimilation`) — two of the three are now decided, the third is not, and
+the stub went green on the partial.**
+
+| Item | State |
+|---|---|
+| **License** | **DECIDED** — `LICENSE` (MIT) added when the repo went public 2026-08-08 |
+| **`.gitignore`** | **DECIDED** — present and tracked; it also carries the `CLAUDE.md` de-tracking note |
+| **Python floor** | **STILL UNDECIDED** — no `pyproject.toml`, `setup.py`, `setup.cfg` or `requirements*.txt` exists anywhere in the repo |
+
+The floor is not merely unstated, it is **contradicted in practice**: the guards need >= 3.11 for
+stdlib `tomllib` and fall back to `tomli` below it, CI pins 3.12 explicitly in both guard jobs, and
+the local interpreter is 3.10.14. Three different answers, none of them declared.
+
+**And this is a C-68 event on this entry's own stub.**
+`test_falsify_05_license_and_python_floor_decided` is **GREEN** today. Its name conjoins two
+conditions; only one of them became true. A stub that passes when half its subject is resolved is
+the exact shape C-68 registers — an assertion weaker than its own name — and it is one of the six
+green stubs C-68 asks someone to audit. **Audit this one by reading it, not by trusting the colour.**
 
 ### C-19: Public API surface contradiction — `_as_dict`/`_get` are simultaneously internal and a documented consumer import
 
@@ -1724,6 +1743,90 @@ Cross-refs: **C-72** (the same subject from the consumer side — pins internall
 repo; this is the publisher not knowing what shape the pins are), C-53 (the bump that makes a pin
 meaningful), C-51 (why a publisher-side sweep cannot see every consumer), **#76** (the proposal this
 is evidence for), seam contract §10.
+
+---
+
+### C-74: The "secrets are never values" rule is stated by class and enforced by table, and the two sets already differ
+
+| Field | Value |
+|-------|-------|
+| ID | C-74 |
+| Tier | **2** |
+| Source | `repo-assimilation`, 2026-08-11 — mutation-proven, mutation reverted |
+| Trigger | **Giving a `value` to any entry whose declared `class` is a secret but which does not live in the `[secret]` table** — most likely when someone records the netrc credential "just so it is written down", or files a future co-resident secret under `[excluded]` because it belongs to another contract |
+| Location | `tests/test_registry_reader_contract.py:259` (`test_no_secret_carries_a_value`, reads `registry.get("secret", {})`); `docs/ADRs/platform/coordinate_registry.toml` `[excluded.netrc_entry]`, `class = "secret (carrier: ~/.netrc)"` |
+
+**The registry states the rule by class.** Its own header, in the file's most emphatic sentence:
+
+> *"Coordinates are NON-SECRET identifiers. Secrets appear only as SLOTS (name + required scopes) — **NEVER as values. No exceptions, ever.**"*
+
+and two lines later:
+
+> *"class is DECLARED here, never inferred from a name's prefix or carrier."*
+
+**The guard enforces it by table.** `test_no_secret_carries_a_value` iterates `registry.get("secret", {})` and nothing else. A secret-classed entry in any other table is outside its field of view.
+
+**Those two sets are not equal today.** `[excluded.netrc_entry]` declares `class = "secret (carrier: ~/.netrc)"` and is the one entry the seam contract §1 calls *"the sole co-resident secret"* a full delivery runtime needs.
+
+**Proven, then reverted.** Adding `value = "machine example.org login bob password hunter2"` to that entry:
+
+| Gate | Result |
+|---|---|
+| `pytest -m guard` | **14 passed** — the baseline, unchanged |
+| `docs/validate_docs.sh` | failed **only** on the unbumped version; after bumping the version, as any author making a registry edit would, it **passed** |
+| full `pytest` | 10 red / 20 passed — the baseline, unchanged |
+
+The version bump is the important half. Check 8 catches *that the file changed*; it does not care *what* changed. So the one gate that reddened does so for a reason that disappears the moment the author does the correct thing.
+
+**The last net is gitleaks, and C-67 measured it against exactly these shapes.** A `.netrc` line and an English-prose password were the two placements gitleaks' default rules **MISSED** — they are the two classes this platform has actually leaked. The `.gitleaks.toml` rule added afterwards is entropy-gated at 100+ characters, which a netrc line does not reach.
+
+**Tier 2, not 1.** No corruption has occurred and the entry is value-less today. It is structural fragility with a realistic trigger: the registry invites exactly this edit by carrying a secret-classed row in a non-secret table, and the file's own instruction to declare class rather than infer it makes that row look correctly filed. It is Tier 2 rather than 3 because the failure is a **secret in a public repository**, and the guard that exists to prevent it reports success without having looked.
+
+**The enabling condition is separate and worth naming.** `class` has no controlled vocabulary. Six distinct values are in use and one is prose:
+
+```
+14 target · 7 secret · 2 connection · 2 contract · 2 policy · 1 "secret (carrier: ~/.netrc)"
+```
+
+So even a class-based guard would need to decide whether `"secret (carrier: ~/.netrc)"` is the class `secret`. Any fix must settle the vocabulary first, or it will be a guard that matches on a string nobody constrained.
+
+**Not a variant of C-29.** C-29 is a value-less entry in a *scanned* table breaking readers — absence where presence is required. This is presence where absence is required, in an *unscanned* table, and no reader is involved at all.
+
+Cross-refs: C-67 (the scan misses both these shapes), C-29 (the inverse defect in the scanned tables), C-30 (the paid scanning feature that is off), cluster G (a guard that reports success without having looked), seam contract §1 and §5.
+
+---
+
+### C-75: Nothing here notices a new table in the registry — and a consumer built that check on our file before we did
+
+| Field | Value |
+|-------|-------|
+| ID | C-75 |
+| Tier | 3 |
+| Source | `repo-assimilation`, 2026-08-11 — mutation-proven, mutation reverted |
+| Trigger | **Adding a table to `coordinate_registry.toml`** — which has happened twice in two days (`[contract]` in v1.5.0, and `[unmodelled]` removed in v1.5.1) — or a consumer asking "what tables does this file have, and which of them carry obligations for me?" |
+| Location | `docs/ADRs/platform/coordinate_registry.toml`; `tests/test_registry_reader_contract.py` (`READER_SCANNED_TABLES = ("connection", "target")`, and no test enumerates the rest) |
+
+**Proven, then reverted.** Appending a whole new table carrying a live connection-classed value:
+
+```toml
+[shadow.APPWRITE_BACKDOOR_ENDPOINT]
+class = "connection"
+value = "https://evil.example/v1"
+```
+
+`pytest -m guard` → **14 passed**. `validate_docs.sh` → **passed**. Nothing in this repository has an opinion about which tables exist.
+
+**The guards know four table names between them** — `connection`, `target`, `planned`, `contract` — each hard-coded at the point of use. The registry currently has seven. `[secret]`, `[excluded]` and `[test_environment]` are partially covered or not covered at all, and no test asserts the set.
+
+**The pointed part.** On 2026-08-11 **views-postprocessing** — a *consumer* — shipped `tests/test_env_declaration.py::test_every_table_in_the_registry_is_classified_here`, a check on **this repository's file** that fails when we add a table. Their stated reason is exact: the `[contract]` table arrived in v1.5.0 carrying an obligation for them, and their edition-equality check was *"the only mechanism here that noticed, because `_declared_classes` parses three tables and was silently ignoring four."*
+
+So the consumer has a shape-check on our registry that the publisher lacks. Their version is directional on purpose — a new table upstream must be classified, but an ignored table vanishing is silent — which is the right asymmetry for a consumer and the wrong one for us: **we should care about both.**
+
+**Why Tier 3 and not 2.** A new table cannot break a reader: all three canonical readers scan exactly `[connection]` and `[target]` and ignore everything else, which is why `[contract]` was safe to add. The risk is not breakage but **unnoticed charter growth** — this file's scope expanding without the expansion being a decision. §4.1 was added precisely because that had begun happening.
+
+**Interaction with C-74 worth stating.** These two compose badly. C-74 says a secret-classed entry outside `[secret]` is unguarded; C-75 says a new table is unguarded. Together, a `[staging.SOME_KEY]` table with `class = "secret"` and a real value passes every gate in this repository.
+
+Cross-refs: **C-74** (composes with it, above), **C-63** (the same subject one layer out — *readers* ignore constructs they do not understand; this is *our own guards* ignoring them), **C-73** (the same publisher/consumer asymmetry pointing the other way), seam contract §4.1, views-postprocessing `test_every_table_in_the_registry_is_classified_here` as the reference implementation.
 
 ---
 
