@@ -41,6 +41,7 @@ consumer repo.
 from __future__ import annotations
 
 import ast
+import os
 import pathlib
 import shutil
 import subprocess
@@ -144,6 +145,62 @@ def _interpreter_with_tomllib() -> str | None:
     return None
 
 
+def _require_interpreter() -> str:
+    """The interpreter, or SKIP locally and FAIL under CI.
+
+    Locally a skip is right: not every machine has 3.11+, and a developer should not
+    be blocked by that. **In CI it must not skip.** The `guards (cross-repo)` job pins
+    `python-version: "3.12"` and its comment says why -- but nothing connected that pin
+    to these tests, so lowering it turned the behavioural half of this guard off and
+    left the job green.
+
+    Proven before this helper existed: with no 3.11+ interpreter reachable and `CI`
+    set, three tests skipped and pytest exited **0**. The counts also moved from
+    `4 passed, 2 xfailed` to `2 passed, 3 skipped, 1 xfailed` -- so one of the two
+    `xfail(strict=True)` D-05 ratchets silently disarmed as well, and the signal that
+    tells us when views-models executes the ruling would simply stop arriving.
+
+    Same asymmetry, and the same reasoning, as `docs/validate_docs.sh` check 8: the
+    workflow step is the thing most likely to be simplified later, so the workflow
+    pins the version AND this refuses to pass without it. Belt and braces on purpose.
+    """
+    exe = _interpreter_with_tomllib()
+    if exe is not None:
+        return exe
+    message = (
+        "no interpreter with stdlib tomllib (3.11+) available; the readers cannot be "
+        "executed here"
+    )
+    if os.environ.get("CI"):
+        pytest.fail(
+            f"CI is set and {message}. A gate that cannot run must not pass: the "
+            'behavioural reader comparison would be silently absent. Check '
+            '`python-version` in .github/workflows/guards.yml — it must be >= 3.11.'
+        )
+    pytest.skip(f"{message}. The structural tests above still ran.")
+
+
+def _require_two_readers(found: dict) -> None:
+    """At least two readers, or SKIP locally and FAIL under CI.
+
+    C-52 is what this prevents: the guard spent its life comparing two byte-identical
+    clones and agreeing trivially, because the third had moved and was dropped without
+    a word. `guards (cross-repo)` now refuses to run against fewer readers than it
+    cloned -- but that check lives in the workflow, and this one lives with the test.
+    Either alone can be removed by someone tidying; both is the point.
+    """
+    if len(found) >= 2:
+        return
+    message = f"only {sorted(found)} checked out — agreement needs at least two readers"
+    if os.environ.get("CI"):
+        pytest.fail(
+            f"CI is set and {message}. A comparison of one is not a smaller signal, "
+            "it is C-52. The workflow clones the public siblings; if they are absent "
+            "here, that step failed or was removed."
+        )
+    pytest.skip(message)
+
+
 def _run(exe: str, reader: pathlib.Path, registry: pathlib.Path):
     return subprocess.run(
         [exe, str(reader), str(registry)], capture_output=True, text=True, timeout=60
@@ -197,10 +254,7 @@ def test_all_present_readers_are_structurally_identical():
     Prose may differ. Parsed syntax may not.
     """
     found = _present()
-    if len(found) < 2:
-        pytest.skip(
-            f"only {list(found)} checked out — agreement needs at least two readers"
-        )
+    _require_two_readers(found)
     structures = {name: _structure(p) for name, p in found.items()}
     reference_name, reference = next(iter(structures.items()))
     diverged = [name for name, s in structures.items() if s != reference]
@@ -223,14 +277,8 @@ def test_all_present_readers_emit_identical_nonempty_output():
     the C-29 outage; a bare equality check would have called that agreement.
     """
     found = _present()
-    exe = _interpreter_with_tomllib()
-    if exe is None:
-        pytest.skip(
-            "no interpreter with stdlib tomllib (3.11+) available; the readers "
-            "cannot be executed here. The structural test above still ran."
-        )
-    if len(found) < 2:
-        pytest.skip(f"only {list(found)} checked out — nothing to compare")
+    exe = _require_interpreter()
+    _require_two_readers(found)
 
     results = {name: _run(exe, p, VALID_FIXTURE) for name, p in found.items()}
 
@@ -261,12 +309,7 @@ def test_all_present_readers_reject_a_valueless_target_slot():
     the answer is yes everywhere.
     """
     found = _present()
-    exe = _interpreter_with_tomllib()
-    if exe is None:
-        pytest.skip(
-            "no interpreter with stdlib tomllib (3.11+) available; the readers "
-            "cannot be executed here. The structural test above still ran."
-        )
+    exe = _require_interpreter()
 
     tolerant = [
         name
@@ -295,14 +338,8 @@ def test_all_present_readers_agree_on_a_planned_reservation():
     Either answer closes this test; disagreement is what may not stand.
     """
     found = _present()
-    exe = _interpreter_with_tomllib()
-    if exe is None:
-        pytest.skip(
-            "no interpreter with stdlib tomllib (3.11+) available; the readers "
-            "cannot be executed here. The structural test above still ran."
-        )
-    if len(found) < 2:
-        pytest.skip(f"only {list(found)} checked out — nothing to compare")
+    exe = _require_interpreter()
+    _require_two_readers(found)
 
     verdicts = {
         name: ("skip" if _run(exe, p, RESERVATION_FIXTURE).returncode == 0 else "raise")
