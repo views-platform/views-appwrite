@@ -45,48 +45,41 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
-      # SIBLINGS, IN A REPORTING JOB, ON PURPOSE.
+      # SIBLINGS, IN A REPORTING JOB, ON PURPOSE — AND THE LIST IS NOT ARBITRARY.
       #
-      # Some stubs read other repositories -- `test_falsify_c40_every_consumer_pins_
-      # the_contract` walks each consumer looking for unpinned citations. On a lone
-      # runner `root.exists()` is False for every one, it finds no offenders, and it
-      # PASSES. Green because it could not look.
+      # Some stubs walk other repositories. `test_falsify_c40_every_consumer_pins_
+      # the_contract` iterates CONSUMERS looking for unpinned citations; on a lone
+      # runner every `root.exists()` is False, it finds no offenders, and it PASSES.
+      # Green because it could not look.
       #
-      # This was not theory: the first run of this job reported SEVEN green stubs
-      # where the same suite reports six locally. The extra one was c40, passing
-      # vacuously. A job whose whole purpose is to say "this stub is green, go and
-      # check why" would have sent someone after a finding that was never resolved.
+      # This took two attempts and both failures are worth recording:
+      #   1. no siblings at all -> the job reported SEVEN green stubs where the same
+      #      suite reports six locally. The extra was c40, passing vacuously.
+      #   2. views-models + views-crafdapi -> STILL seven. c40's real offenders are
+      #      views-pipeline-core, views-postprocessing and views-datafactory, none of
+      #      which were fetched. A partial checkout is still a vacuous pass; it just
+      #      looks more diligent.
       #
-      # Only the two PUBLIC siblings are fetched. views-faoapi is private and stays
-      # out (#73 withdrawn on views-postprocessing ADR-017 §9), so c40 still cannot
-      # see one of the five consumers -- stated in the summary rather than left to
-      # look like completeness.
-      - name: Check out the public siblings the stubs read
-        uses: actions/checkout@v4
-        with:
-          repository: views-platform/views-models
-          ref: main
-          path: _siblings/views-models
-
-      - name: Check out views-crafdapi
-        uses: actions/checkout@v4
-        with:
-          repository: views-platform/views-crafdapi
-          ref: main
-          path: _siblings/views-crafdapi
-
-      # The stubs resolve siblings as WORKSPACE/<repo>, where WORKSPACE is the
-      # parent of the repo root. actions/checkout cannot place a repo above the
-      # workspace, so they land in _siblings/ and are linked into place.
-      - name: Put the siblings where the stubs look for them
+      # So: every PUBLIC repo in CONSUMERS, which is four of the five.
+      # views-crafdapi is deliberately NOT here — no falsification stub reads it (the
+      # reader-agreement GUARD does, and that is a different job).
+      #
+      # Cloned in one step rather than four actions/checkout blocks: the list must be
+      # readable as a list, because the whole lesson above is that a silently short
+      # list produces a confidently wrong report.
+      - name: Clone the public consumer repos the stubs walk
         run: |
           set -euo pipefail
-          for r in views-models views-crafdapi; do
-            ln -sfn "$PWD/_siblings/$r" "$(dirname "$PWD")/$r"
-            test -d "$(dirname "$PWD")/$r" || { echo "::error::$r did not land"; exit 1; }
+          parent="$(dirname "$PWD")"
+          # views-faoapi is PRIVATE and deliberately absent: views-appwrite#73 was
+          # withdrawn on views-postprocessing ADR-017 §9 (a credential that lapses
+          # makes checks skip while the build stays green). The summary says so.
+          for repo in views-models views-pipeline-core views-postprocessing views-datafactory; do
+            git clone --depth 1 --quiet "https://github.com/views-platform/$repo.git" "$parent/$repo"
+            test -d "$parent/$repo" || { echo "::error::$repo failed to clone"; exit 1; }
           done
-          echo "siblings visible to the stubs:"
-          ls -d "$(dirname "$PWD")"/views-* | sed 's/^/  /'
+          echo "consumers visible to the stubs:"
+          ls -d "$parent"/views-* | sed 's/^/  /'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -104,21 +97,27 @@ jobs:
       # names every test, and screen-scraping `-v` output would break silently the
       # first time pytest changes a format string. A reporting job that misreports
       # is worse than no reporting job.
-      # `tests/` and `--ignore=_siblings` are BOTH load-bearing, and the first run
-      # without them proved it. The siblings are checked out INSIDE the workspace
-      # (actions/checkout cannot write above it), so a bare `pytest` walked into
-      # `_siblings/*/tests/` and collected THEIR suites. The report came back
-      # "2 red, 0 green", the two being collection errors from other repositories,
-      # and none of this repo's sixteen stubs ran at all.
+      # `tests/` is explicit, and an earlier attempt is why.
+      #
+      # A first version used actions/checkout, which cannot write above the
+      # workspace, so the siblings landed in `_siblings/` INSIDE the repo. A bare
+      # `pytest` then walked into `_siblings/*/tests/` and collected OTHER
+      # REPOSITORIES' suites: the report came back "2 red, 0 green" -- the two being
+      # collection errors from views-models and views-crafdapi -- and not one of this
+      # repo's sixteen stubs ran. The job exited 0 and the summary rendered cleanly.
+      #
+      # Cloning to the parent directory (above) puts them outside pytest's rootdir,
+      # so that specific trap is gone. `tests/` stays anyway: it costs nothing and it
+      # means a future change to where siblings land cannot silently re-open it.
       #
       # views-postprocessing hit the same shape from the other side -- a sibling
-      # placed outside their `_siblings/` dir made their linter report 745 findings
-      # in someone else's code (their ADR-016, rule G6). Fetching a sibling into the
-      # workspace is not free: every tool that walks the tree now sees it.
+      # outside their `_siblings/` dir made their linter report 745 findings in
+      # someone else's code (their ADR-016, rule G6). Fetching a sibling is not free:
+      # every tool that walks the tree now sees it.
       - name: Run the falsification stubs
         run: |
           python -m pytest -m falsification -q --tb=no \
-            tests/ --ignore=_siblings \
+            tests/ \
             --junit-xml=falsification.xml || true
 
       - name: Report which stubs are red, and shout about any that are green
@@ -161,11 +160,15 @@ jobs:
               "",
               "### What this run could not see",
               "",
-              "Two public siblings are checked out — `views-models`, `views-crafdapi` — because",
-              "some stubs read other repositories and would otherwise pass by finding nothing.",
-              "**`views-faoapi` is private and is not fetched** (views-appwrite#73, withdrawn on",
-              "views-postprocessing ADR-017 §9), so any stub walking every consumer sees four of",
-              "five. Stated because an unstated absence reads as coverage.",
+              "Four of the five consumer repos are cloned — `views-models`,",
+              "`views-pipeline-core`, `views-postprocessing`, `views-datafactory` — because stubs",
+              "that walk consumers would otherwise pass by finding nothing to walk.",
+              "",
+              "**`views-faoapi` is private and is not fetched.** views-appwrite#73 proposed a",
+              "credential for exactly this and was withdrawn on views-postprocessing ADR-017 §9:",
+              "when a token lapses the checks skip and the build stays green. So any stub",
+              "iterating consumers sees **four of five**, and a green result from one of those is",
+              "weaker than it looks. Stated because an unstated absence reads as coverage.",
               "",
               "---",
               "",
