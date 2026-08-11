@@ -109,6 +109,13 @@ jobs:
         run: |
           set -euo pipefail
           parent="$(dirname "$PWD")"
+          # GIT_LFS_SKIP_SMUDGE: views-crafdapi stores GAUL shapefiles in LFS, and
+          # the smudge filter failed the first run outright -- exit 128, no clone.
+          # This job needs exactly one 40-line Python file from each sibling and has
+          # no use for their binary assets. Skipping smudge leaves LFS pointers in
+          # place, which is fine because nothing here reads them, and it removes a
+          # dependency on someone else's LFS quota and availability.
+          export GIT_LFS_SKIP_SMUDGE=1
           for repo in views-models views-crafdapi; do
             git clone --depth 1 --branch development --quiet \
               "https://github.com/views-platform/$repo.git" "$parent/$repo"
