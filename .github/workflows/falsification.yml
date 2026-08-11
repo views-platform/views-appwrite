@@ -71,6 +71,9 @@ jobs:
         run: |
           set -euo pipefail
           parent="$(dirname "$PWD")"
+          # See guards.yml: a sibling that adopts git LFS would break this clone
+          # outright. Nothing here reads their binary assets.
+          export GIT_LFS_SKIP_SMUDGE=1
           # views-faoapi is PRIVATE and deliberately absent: views-appwrite#73 was
           # withdrawn on views-postprocessing ADR-017 §9 (a credential that lapses
           # makes checks skip while the build stays green). The summary says so.
