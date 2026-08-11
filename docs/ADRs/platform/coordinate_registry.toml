@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.5.1"                          # Versions in lockstep with the contract (§10);
+version = "1.5.2"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
@@ -26,6 +26,11 @@ amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATIO
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.5.2 (2026-08-11): NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME] — the second
+                                           #   and last row views-appwrite#75 asked for. Declares a value ALREADY in force on
+                                           #   both sides, so nothing changes behaviour; it moves an existing agreement into
+                                           #   the one place both parties can read without reading each other. Also narrows the
+                                           #   UNFAO row's caveat: views-faoapi#379 landed, so the CONSUMER half is live there.
                                            # v1.5.1 (2026-08-11): removed the unmodelled email+password carrier entry —
                                            #   views-pipeline-core deleted the class, closing contract §9 O3.
                                            #   Their cross-repo test was RED because of this file. #24.
@@ -285,18 +290,66 @@ holds a mirror (`CONSUMER_DOCUMENT_NAME` in its unfao product module); this row 
 authority that mirror is checked against."""
 verified_by = """Both sides check themselves against THIS row, and neither reads the
 other's source:
-  producer  views-postprocessing  — ADR-017 Appendix B step 2
-  consumer  views-faoapi          — views-faoapi#379
+  producer  views-postprocessing  — ADR-017 Appendix B step 2      OPEN (vpp#238)
+  consumer  views-faoapi          — views-faoapi#379               IN PLACE 2026-08-11
 
-⚠ NEITHER IS IN PLACE YET. Until the consumer-side check lands, this row is a string a
-human typed, and a producer-side check against it would prove only that two values this
-platform authored agree with each other. ADR-017 §5 therefore forbids removing the
-existing source-reading check until step 3 ships. Stated here because this row will look
-authoritative long before it is."""
+CONSUMER SIDE IS LIVE. views-faoapi/tests/test_seam_contract_binding.py reads this row
+through `git show appwrite-seam-v1.5.0:<path>` — an immutable tag, so the edition it
+grades against cannot shift under it — and it FAILS under CI rather than skipping when the
+sibling or tag is absent. That is the right shape and it is worth naming: a check that
+skips when it cannot run is the first of the two vacuity shapes this platform keeps
+producing (views-appwrite C-55, C-53).
+
+⚠ THE PRODUCER SIDE IS STILL OPEN, so this row is not yet a two-sided authority. Until
+vpp#238 lands, views-postprocessing verifies its mirror by reading the CONSUMER'S SOURCE —
+the mechanism this row exists to retire. ADR-017 §5 therefore forbids removing that
+source-reading check until step 3 ships. Stated here because one side landing makes a row
+look finished when it is half finished."""
 amendment = """Changing this value is a CONTRACT AMENDMENT, not an edit. It requires a
 version bump here (§10) and re-pinning by both sides. Both re-pin to the same new edition,
 which is what stops the two of them reading different editions and both passing while
 disagreeing."""
+
+[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]
+class = "contract"
+value = "un_crafd"
+producer = "views-postprocessing"
+consumer = "views-crafdapi"
+purpose = """The store-document `name` every CRAF'd delivery is uploaded with, and the
+name the consumer filters every query on. Same fact as the UNFAO row above, different
+partner — one mechanism for one job, which is the whole reason both are here."""
+owner = """views-crafdapi, by the same rule ADR-013 §4.1a states for FAO: the name is
+config-owned by the CONSUMER, and changing it is a contract amendment rather than a deploy
+detail. The producer holds a mirror (`CONSUMER_DOCUMENT_NAME` in its crafd product module);
+this row is the authority that mirror is checked against."""
+in_force = """Both sides already use this value in code today — this row DECLARES a
+standing fact, it does not decide a new one. Read 2026-08-11 at views-crafdapi
+d311e77 and views-postprocessing 2eb29f1:
+  producer  views-postprocessing  views_postprocessing/crafd/product.py:40
+                                  CONSUMER_DOCUMENT_NAME: str = "un_crafd"
+  consumer  views-crafdapi        src/views_crafdapi/managers/api.py:1273
+                                  APIPathManager("un_crafd", validate=False)
+                                  filtered at managers/prediction/manager.py:117
+                                  filters["name"] = self.model_path.model_name"""
+verified_by = """Both sides check themselves against THIS row, and neither reads the
+other's source:
+  producer  views-postprocessing  — ADR-017 Appendix B step 2      OPEN (vpp#238)
+  consumer  views-crafdapi        — views-crafdapi#53               OPEN
+
+⚠ NEITHER SIDE CHECKS ITSELF AGAINST THIS ROW YET, so it is a string a human typed. It is
+still worth writing down now: views-crafdapi is PUBLIC, so unlike the FAO case the producer
+*can* read the consumer's source and the seam is not currently blind. The reason to declare
+it anyway is uniformity — if only the private partner's name lives in the registry, the
+platform ends up with two mechanisms for one job, and the one used less often is the one
+that rots (views-appwrite#75).
+
+A note on why this row is NOT blocked by views-crafdapi#9, which was believed to block it
+and does not: #9 defines CRAF'd's DATA contract — targets, geography, summary statistic,
+bucket. The document name is a different fact, already decided and in force on both sides
+per `in_force` above. Recorded because the wrong reading cost this row several days."""
+amendment = """Changing this value is a CONTRACT AMENDMENT, not an edit. It requires a
+version bump here (§10) and re-pinning by both sides, to the SAME new edition — otherwise
+the two read different editions and both pass while disagreeing."""
 
 # ------------------------------------------------------- secret SLOTS (no values!)
 [secret.APPWRITE_DATASTORE_API_KEY]

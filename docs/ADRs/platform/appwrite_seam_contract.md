@@ -10,8 +10,8 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1** |
-| Version | **1.5.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-11 — **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Version | **1.5.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-11 — **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -498,6 +498,48 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.5.2 — 2026-08-11 — the CRAF'd consumer document name; the FAO row's caveat narrowed
+
+**Status: ACCEPTED.** No clause changed. One new `[contract.*]` row under the charter §4.1 already
+grants, plus a correction to a caveat that had gone stale.
+
+**The row.** `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME] = "un_crafd"` — the second and last row
+views-appwrite#75 asked for. It **declares a value already in force**, it does not decide a new one.
+Read in both repositories rather than taken from the issue: views-postprocessing writes it at
+`views_postprocessing/crafd/product.py:40`, and views-crafdapi filters on it via
+`APIPathManager("un_crafd")` at `src/views_crafdapi/managers/api.py:1273`, reaching the query at
+`managers/prediction/manager.py:117`. Nothing changes behaviour; the agreement moves into the one
+place both parties can read without reading each other.
+
+**This row was believed blocked, and was not.** views-crafdapi#9 was recorded as the blocker. #9
+defines CRAF'd's *data* contract — targets, geography, summary statistic, bucket. The document name
+is a different fact, decided long ago. The block was inferred from an issue title rather than read
+in the code, and the row waited days for a question that was never in front of it. Recorded because
+this is the second time a cross-repo block has dissolved on inspection (§9 O3 was the first).
+
+**Why declare it at all, when views-crafdapi is public and readable?** Uniformity. The FAO case
+*needs* the registry because views-faoapi is private and cannot be read from CI. If only the private
+partner's name lives here, the platform runs two mechanisms for one job — and the one exercised less
+often is the one that rots. One mechanism is the point (#75).
+
+**The FAO row's caveat is now wrong and has been narrowed.** It read "⚠ NEITHER IS IN PLACE YET".
+**views-faoapi#379 landed on 2026-08-11**: `tests/test_seam_contract_binding.py` reads the registry
+through `git show appwrite-seam-v1.5.0:<path>` — an immutable tag, so the edition cannot shift under
+it — and **fails under CI rather than skipping** when the sibling or tag is absent. That is the
+correct shape, and it is the same rule this platform wrote down the same day
+(`views-appwrite/docs/contributor_protocols/carbon_based_agents.md`).
+
+**The consumer half for CRAF'd is filed as views-crafdapi#53**, pointing at views-faoapi's
+implementation as the reference rather than asking them to re-derive it.
+
+**The producer side of both rows is still open** (views-postprocessing#238). Until it lands,
+views-postprocessing verifies its mirror by reading the consumer's source — the mechanism these rows
+exist to retire — and ADR-017 §5 rightly forbids removing that check first. **One side landing makes
+a row look finished when it is half finished**, so both rows say so in their own `verified_by`.
+
+**Consumers pinned at earlier tags are unaffected.** Tags are immutable (§10); `appwrite-seam-v1.5.0`
+still resolves to the edition views-faoapi grades against. This is additive.
 
 ### v1.5.1 — 2026-08-11 — §9 O3 closed; a dangling cross-repo citation removed
 
