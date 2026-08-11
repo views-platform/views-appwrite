@@ -11,7 +11,7 @@
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1** |
 | Version | **1.6.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer. `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Amended | 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -486,6 +486,29 @@ mutability the pinning rule exists to remove. A commit id cannot lie about its c
 The tag is therefore the readable handle **and** this sentence is what makes it trustworthy. To
 correct a published version, cut a new one — `platform-001-v1.2.1` — and supersede.
 
+**A tag cut in error may be deleted — before it is relied on, and only then (added v1.6.0).** The
+rule above protects a name consumers *believe is frozen*. A tag whose name and content disagree
+**from the moment it is pushed** protects nothing and misleads everything: it is not a frozen
+reference, it is a false one. Leaving it in place to honour the letter of the rule preserves a trap
+rather than a guarantee. Such a tag may be deleted and re-cut, subject to **all three** of:
+
+1. **The mismatch is between the tag's own name and its own content** — the tag names an edition it
+   does not contain. This is not available for a later change of mind about an edition that was
+   correct when cut; that case is what "cut a new one and supersede" is for, and it stays.
+2. **No repository pins it — verified by searching every consumer, and the search recorded.** Not
+   "probably nobody yet"; the actual result, written down. If anything pins it, the tag has been
+   relied on and this exception is closed.
+3. **The deletion and its reason go in the amendment log**, so the tag's brief existence is on
+   record. A silently deleted tag is a worse defect than a wrong one, because nothing marks it.
+
+Fail any of the three and the first rule governs: leave it, cut the next version, supersede.
+
+**Why this is stated rather than left to judgement.** It was written the day it was first needed —
+`appwrite-seam-v1.6.0` was cut against a `main` that had not yet received v1.6.0, so the tag named
+one edition and carried another. §10 as it stood had no answer for that, and the honest options were
+to invent an exception on the spot or to preserve a known trap. Writing the rule first, and using it
+second, is the only version of this that is not a precedent set by whoever needed it.
+
 **The pin is a rule, and rules on this platform decay unobserved unless something checks them.**
 As of 2026-07-31, of five consumer repositories: one pins to a commit and that pin is **stale**
 (it points at v1.0.0); one links to `/blob/main/`, which is not a pin at all and silently changed
@@ -582,6 +605,22 @@ the first revert deleted the work rather than the mutation, and the remaining th
 "passed" against a registry with no edition table at all. Redone with the table committed first.
 This is the failure mode the whole of cluster G is about, produced while building a guard against
 it.
+
+**§10 also gains "a tag cut in error may be deleted", and this edition is why.**
+
+`appwrite-seam-v1.6.0` was first pushed against a `main` that had **not yet received v1.6.0**. The
+tag named this edition and contained the previous one. The cause was reading a *summary* instead of
+the thing: a polling loop deduplicated the CI check list, collapsing a still-pending check against a
+passing one, so a `BLOCKED` pull request was read as merged and the tag went onto v1.5.2's commit.
+
+Before deleting it, condition (2) was verified rather than assumed — every consumer repository was
+searched for `appwrite-seam-v1.6.0` and **nothing pinned it**. What consumers actually pin today is
+`v1.4.1` (views-pipeline-core), `v1.4.4` (views-crafdapi) and `v1.5.0` (views-faoapi, read through
+`git show` at the tag). The rule was published on `main` **before** the deletion, not written
+afterwards to excuse it.
+
+The bad tag existed for roughly twenty minutes. It is recorded here rather than erased, which is
+condition (3) and the reason this paragraph exists.
 
 **The limit, stated plainly.** `obliges_consumers` is a judgement, and no guard can check it —
 whether a change asks something of a consumer is a fact about the consumer, and this repository is
