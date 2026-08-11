@@ -147,6 +147,111 @@ in the risk register and **must not be deleted to make a gate pass**.
 
 ---
 
+## A Guard Is Not Finished Until It Has Been Shown to Fail
+
+This is the repository's most expensively learned rule, and it was applied ad hoc for seven
+weeks before anyone wrote it down.
+
+> **A check may not be described as protecting anything until it has been observed failing
+> for the reason it exists.**
+
+Cluster G in `reports/technical_risk_register.md` is seven checks that were green and blind:
+C-52, C-53, C-55, C-62, C-67, C-68, C-70 — six here and one in views-models. **Not one was
+caught by the check failing.** Every one was caught by a person going and looking — at a
+count, at a clause, at a docstring. Two of the
+fixes were themselves wrong on the first attempt and only the mutation revealed it; the
+version-coherence fix took **three drafts**, and drafts 1 and 2 both looked correct.
+
+### What proof looks like
+
+Introduce the fault, observe red, revert, and **record what was mutated** — in the commit
+message or in the check's own comments, where the next reader will find it. Two worked
+examples already live in this repo rather than in prose:
+
+- `.gitleaks.toml` — its header records what was measured, against which controls, and what
+  the first attempt got wrong.
+- `.github/workflows/secret_scan.yml` — the steps *Assert the scan actually walked the
+  history* and *The exit code is the verdict* exist because a scan can succeed at scanning
+  nothing.
+- `.github/workflows/guards.yml` — the step *Refuse to run against fewer readers than we
+  cloned*, and the comment above it explaining that a smaller comparison is not a smaller
+  signal.
+
+### The two shapes that keep recurring
+
+These two are the most common, not the only two — learn to recognise them on sight.
+
+1. **A check that skips when it cannot run, and reports success.** It is off precisely in
+   the conditions that would matter. C-55 (`pytest.skip` when there was nothing to check),
+   C-53 (`validate_docs.sh` skipped its version comparison whenever `origin/main` was
+   unreachable — which is the *default* on a CI runner, not the exception).
+2. **A check that compares two things that move together, or a thing to itself.** It can
+   only pass. C-53 again (two mutable version numbers compared to each other, so "bump
+   neither" satisfied it perfectly), C-52 (a reader-agreement guard that spent its life
+   grading two byte-identical clones), and the purest instance, `platform_env_validate()` in
+   views-models — **C-62** — which derives the list of names it requires *from the reader's own
+   output*, so a coordinate the reader silently dropped is never in the list and nothing
+   notices. It structurally cannot detect the one failure it exists to catch.
+
+A useful question for either shape: *under what circumstance does this check report success
+without having looked at anything?* If there is one, it is not finished.
+
+**The remaining three in cluster G are neither shape**, which is why the question above is the
+rule and the shapes are only its common answers. C-67: the tool's default rules did not cover
+the two placements this platform's history actually contains. C-68: a stub asserted *existence*
+where its own docstring demanded *behaviour*. C-70: the CI existed, was a required check, and
+ran none of the guards. A check can be blind in a way nobody has named yet.
+
+### Controls
+
+**A negative result is not a finding until the probe has been shown to find a known
+positive.**
+
+C-67 is the near-miss that earns this its own rule. The gitleaks investigation used
+`AKIAIOSFODNN7EXAMPLE` as its control, got **MISSED**, and was one step from reporting a
+false all-clear — gitleaks *allowlists* the canonical AWS example key. Redone with a GitHub
+PAT and a PEM private key, both **CAUGHT**, and only then were the misses interpretable at
+all. An all-clear from an instrument that has not been shown to detect anything is not
+evidence of absence.
+
+---
+
+## Definition of Done
+
+**A change is done when nothing about it is still owed — to the repository, to the record,
+or to whoever was waiting.** All five gates must hold.
+
+1. **Proven, not asserted.** Every guard watched failing for the reason it exists (see the
+   section above). Claims about other repositories or about settings are checked *now*, in
+   their code, not recalled from an issue description. What could not be verified says so in
+   the artifact, not only in conversation.
+2. **Nothing the change just falsified is left standing.** Docs, register entries, comments
+   and READMEs corrected in the same change. A recurrence updates the existing register
+   entry rather than opening a duplicate.
+3. **Gates green, and the red is the expected red.** `ruff`, `docs/validate_docs.sh`,
+   `pytest`. The falsification failure set is identical to the baseline or the difference is
+   explained — a stub that turned green is either a resolved finding or C-68, and both need
+   someone to look. ADR-005 owns the test obligations; waivers are named in the commit message
+   (see §2 of the gate sequencing above).
+4. **Where people consume it.** Merged to `main`, not merely to `development`; tagged if
+   anyone pins; the contract and registry versions moved in lockstep; branches reconciled.
+5. **Whoever was waiting has been told**, with the tag, commit or shape they need in order to
+   act without asking. Anything left undone is stated with an owner. **An accepted gap is
+   done; a silent gap is not** — this is the whole difference between the cross-repo job
+   printing "2 of 3 readers" and it quietly comparing two.
+
+**Not done:** "written", "committed", "PR is open", "works locally", "I mentioned it", a
+guard only ever seen passing, or closing an issue while the thing it unblocks still cannot
+move.
+
+**Handoff counts as done** when the work genuinely needs the operator or a þing: the ask is
+filed where they will see it, it says what to do and what is blocked behind it, and
+everything on this side is finished.
+
+Each gate is here because it failed here, in this repository, and the register records where.
+
+---
+
 ## Final Note
 
 Carbon-based agents are the **last line of defense**. Tools can accelerate work;
