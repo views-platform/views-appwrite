@@ -258,3 +258,125 @@ def test_no_secret_carries_a_value():
     registry = _load()
     leaked = [name for name, entry in registry.get("secret", {}).items() if "value" in entry]
     assert not leaked, f"secret slots carrying a value: {leaked}"
+
+
+# Every table the registry may contain, and what this repository does with it.
+#
+# C-75. Nothing here enumerated the tables, and a mutation proved it: a whole
+# `[shadow.*]` table carrying a connection-classed live URL passed every guard and
+# `validate_docs.sh`. Seven tables existed; the guards knew four between them, each
+# hard-coded at the point of use.
+#
+# views-postprocessing -- a CONSUMER -- shipped this check on THIS file before we did
+# (`test_every_table_in_the_registry_is_classified_here`, 2026-08-11). Their reason was
+# exact: `[contract]` arrived carrying an obligation for them and their edition check was
+# the only thing that noticed. The publisher should not learn the shape of its own file
+# from the people reading it.
+#
+# The value is a note to the next person, not a machine-readable class -- the registry
+# declares class per ENTRY (`class = "..."`), and a second vocabulary at table level would
+# be a fact that must agree with a fact, which is C-53's exact shape.
+KNOWN_TABLES = {
+    "meta": "the edition itself: version, ratification, the amendment summary",
+    "edition": "one row per published edition; `obliges_consumers` is the machine-readable half of §10",
+    "connection": "SCANNED by every reader -- how to reach Appwrite",
+    "target": "SCANNED by every reader -- what to read and write",
+    "planned": "reservations with no value yet; deliberately unscanned (D-05, C-29)",
+    "contract": "non-secret facts two seam parties must agree on; unscanned (§4.1)",
+    "secret": "slots only, never values",
+    "excluded": "named here so its absence is a decision rather than an oversight",
+    "test_environment": "the test-project question, recorded pending an operator decision",
+}
+
+
+def test_every_table_in_the_registry_is_classified_here():
+    """A table nobody classified is a change to this file's charter that nobody read.
+
+    Deliberately asymmetric, and the asymmetry is the point. An UNKNOWN table fails:
+    this file's scope grew and the growth must be a decision (§4.1 exists because that
+    had started happening silently). A table listed here but currently ABSENT does not
+    fail: `[planned]` is empty whenever there are no reservations, which is its normal
+    resting state, and C-55 is what happens when a guard treats "nothing to check" as a
+    problem.
+    """
+    registry = _load()
+    unknown = sorted(set(registry) - set(KNOWN_TABLES))
+    assert not unknown, (
+        f"these tables are in the registry and classified nowhere: {unknown}.\n\n"
+        "Adding a table widens what this file may contain, which is a charter change "
+        "and belongs in the seam contract, not in a commit nobody reads. Classify it "
+        "in KNOWN_TABLES above -- saying what this repository does with it -- and say "
+        "so in the contract's amendment log."
+    )
+
+
+def _semver(text: str) -> tuple:
+    """`"1.5.2"` -> `(1, 5, 2)`. Deliberately strict: this file's versions are always
+    three numeric parts, and a lenient parse would silently order a malformed one."""
+    parts = text.split(".")
+    assert len(parts) == 3 and all(p.isdigit() for p in parts), (
+        f"version {text!r} is not three numeric parts; §10 versions always are"
+    )
+    return tuple(int(p) for p in parts)
+
+
+def test_the_current_edition_is_classified():
+    """Bumping the version without saying whether the bump obliges anyone is the
+    omission this table exists to prevent.
+
+    §10 requires every change to bump the version. §10.1 requires every bump to declare
+    whether a consumer must act. Without this, `[edition]` decays into a log that stops
+    a version or two behind the file it describes -- which is what happened to the
+    amendment log's prose and is why #76 was filed against us rather than by us.
+    """
+    registry = _load()
+    current = registry["meta"]["version"]
+    editions = registry.get("edition", {})
+    assert current in editions, (
+        f"[meta] version is {current!r} and no [edition.\"{current}\"] row classifies it. "
+        "Every bump must say whether it obliges a consumer to act (§10.1). If this bump "
+        "only records an observation, say so -- that is the answer #76 asked for, and "
+        "`false` is a real answer, not a default."
+    )
+
+
+def test_every_edition_states_whether_it_obliges_consumers():
+    """A row present but unclassified is worse than no row: it looks answered."""
+    registry = _load()
+    missing = sorted(
+        v for v, body in registry.get("edition", {}).items()
+        if not isinstance(body.get("obliges_consumers"), bool)
+    )
+    assert not missing, (
+        f"these editions have a row but no boolean `obliges_consumers`: {missing}. "
+        "A consumer reads this field to decide whether to act; absent or non-boolean, "
+        "it cannot."
+    )
+
+
+def test_the_obligation_floor_matches_the_editions():
+    """`[meta] obliges_consumers_since` is DERIVED, and this is what stops it drifting.
+
+    It is duplicated from the table on purpose -- without it every consumer writes its
+    own semver sort, and five copies of one comparison is how the three readers came to
+    disagree (C-52). One copy is fine; one copy nothing checks is C-53, where two numbers
+    that must agree were compared to each other and to nothing else.
+    """
+    registry = _load()
+    obliging = [
+        v for v, body in registry.get("edition", {}).items()
+        if body.get("obliges_consumers") is True
+    ]
+    assert obliging, (
+        "no edition is marked obliges_consumers = true. At least one must be: a floor "
+        "of 'nothing has ever obliged anyone' would make every consumer's check vacuous."
+    )
+    newest = max(obliging, key=_semver)
+    declared = registry["meta"].get("obliges_consumers_since")
+    assert declared == newest, (
+        f"[meta] obliges_consumers_since is {declared!r} but the newest edition marked "
+        f"obliges_consumers = true is {newest!r}. Consumers pin against the [meta] "
+        "field; if it disagrees with the table, a consumer that should have acted stays "
+        "green. Fix the field, or the row's classification -- not both to meet in the "
+        "middle."
+    )
