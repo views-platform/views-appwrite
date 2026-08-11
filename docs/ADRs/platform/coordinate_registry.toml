@@ -18,14 +18,17 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.5.0"                          # Versions in lockstep with the contract (§10);
+version = "1.5.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-10"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
+amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
                                            # they record state the operator created in the console and impose
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.5.1 (2026-08-11): removed the unmodelled email+password carrier entry —
+                                           #   views-pipeline-core deleted the class, closing contract §9 O3.
+                                           #   Their cross-repo test was RED because of this file. #24.
                                            # v1.5.0 (2026-08-10): NEW [contract.*] table — non-secret facts the seam's
                                            #   parties must agree on, unscanned by every reader. First
                                            #   row: the UN FAO consumer document name. NOT observation-
@@ -121,8 +124,18 @@ value = "UNFAO File Metadata"
 #                                    views-models SKIPS IT and continues,
 #                                    emitting a partial coordinate set.
 #
-# That split is tracked as C-51 / D-05 and is NOT settled. Do not rely on either
-# behaviour. Both are dangerous here for different reasons:
+# D-05 WAS RULED ON 2026-08-10 — the split above is a description of what still
+# ships, not an open question. The ruling: reservations live in [planned]; a
+# value-less entry in a scanned table is malformed regardless of any `status`, and
+# every reader raises on it. views-models' skip is therefore a defect to delete,
+# not a position to accommodate — execution is views-models#327, not yet done.
+#
+# Until that lands, both behaviours are live and neither may be relied on, and the
+# divergence stays tracked as C-51 (Tier 1). The two xfail(strict=True) tests in
+# tests/test_registry_readers_agree.py fail on the UNEXPECTED PASS, so the day the
+# readers converge, this repo's build says so and C-51 can close.
+#
+# Both are dangerous here, for different reasons:
 #
 #   - A raise means the delivery gets NO coordinates at all. `un_fao/run.sh`
 #     exports only GITHUB_TOKEN and APPWRITE_DATASTORE_API_KEY from `.env`, so
@@ -622,13 +635,25 @@ class = "secret"
 status = "planned — operator issues (D4). NEVER given to a long-running process."
 scopes = "buckets.write, databases.write, collections.write, attributes.write"
 
-# Not a slot yet — a carrier with no home. See seam contract §9 O3.
-[unmodelled.session_auth_email_password]
-class = "secret (carrier: email + password)"
-location = "views-pipeline-core/views_pipeline_core/modules/appwrite/file.py:359-412 (SessionAuth)"
-note = """Fits none of §5.2's three tiers and appears in no slot. The excision
-recorded in §2 is views-faoapi #274 and covers faoapi only. Either excise on the
-pipeline-core lineage too, or declare it as a slot with an owner."""
+# An "unmodelled carrier" entry lived here until 2026-08-11, for a credential kind
+# that fitted none of the contract's tiers. views-pipeline-core deleted the class it
+# described, so the entry has been removed rather than retired-in-place.
+#
+# THE HISTORY IS IN THE CONTRACT, NOT HERE, AND THAT IS DELIBERATE. Seam contract §9 O3
+# carries the finding, its two options, which one was taken, and the evidence. This file
+# records what IS; the contract records what was decided.
+#
+# The specific reason it is not merely struck through here: views-pipeline-core runs a
+# cross-repo check that asserts a citation of that class in THIS FILE and the existence
+# of the class must agree. It is `xfail(strict=True)`, so it is designed to turn RED the
+# moment this file stops citing the class — that XPASS is their signal to convert the stub
+# into a plain assertion. A retired entry that still named the class would have kept the
+# substring alive and their ratchet would never have fired: the citation gone in substance,
+# the detector unable to tell.
+#
+# Their build was red because of this file for three days and nobody here noticed; their
+# test did. A file:line pointing into another repository is a claim that decays on someone
+# else's schedule.
 
 # ------------------------------------- explicit exclusions (listed, not governed)
 [excluded.APPWRITE_UNFAO_APPROVED_FILE_IDS]

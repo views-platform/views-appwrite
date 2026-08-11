@@ -10,8 +10,8 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1** |
-| Version | **1.5.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-10 — **v1.5.0**: §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Version | **1.5.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-11 — **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -444,11 +444,34 @@ The shared substrate's own properties are contract surface. Authoritative source
   caller's key to reach storage. That question is untouched by this amendment; keeping
   caller-brings-own-key is a *deferral*, not a decision, and it is the open half of O2.
 - **O3 — credential carriers outside the tier model** (owner: views-pipeline-core + operator).
-  §2 records session auth as vestigial and "being excised" — that excision is views-faoapi #274
+  ~~§2 records session auth as vestigial and "being excised" — that excision is views-faoapi #274
   and covers faoapi only. `views-pipeline-core/.../modules/appwrite/file.py:359–412` still ships
   `SessionAuth`, which takes **email + password**: a credential kind that appears in no registry
   slot and fits none of §5.2's three tiers. Either
-  excise it on the pipeline-core lineage too, or declare it as a slot with an owner.
+  excise it on the pipeline-core lineage too, or declare it as a slot with an owner.~~
+
+  > **CLOSED 2026-08-11 — by excision, the first of the two options.**
+  >
+  > views-pipeline-core deleted the class (their #344). Verified in their code rather than from the
+  > issue: `class SessionAuth` returns **zero** matches in
+  > `views_pipeline_core/modules/appwrite/file.py` on their `main`, and the only two files still
+  > naming it are tests asserting its absence —
+  > `tests/test_modules/test_session_auth_is_gone.py` (`assert "class SessionAuth" not in
+  > FILE_PY.read_text()`, plus the enum member) and a falsification stub.
+  >
+  > **So the email+password carrier no longer exists anywhere on the seam.** §5.2's three tiers are
+  > again exhaustive over what actually ships, which is what O3 asked for.
+  >
+  > **The open item is struck through rather than deleted.** It was correct when written, it named a
+  > real gap, and the record of a gap that got closed is more useful than its absence. §10:
+  > supersession, never erasure.
+  >
+  > **It stayed open after its condition was met**, and that is worth recording too. The class went
+  > on 2026-08-08; this closed on 08-11. In between, this contract's companion registry cited a class
+  > that no longer existed — and views-pipeline-core's own falsification test was **red because of
+  > our file**, asserting that a citation by `file:line` and the thing it cites must agree. Nobody
+  > here noticed; their test did. That is the cross-repo case of C-71, and the argument for the
+  > citation being checked rather than remembered.
 
 ## 10. Change process
 
@@ -475,6 +498,34 @@ than obligation, that state is marked as such. A version bump driven only by an 
 no new obligation, and a consumer diffing two versions is entitled to that distinction.
 
 ## 11. Amendment Log
+
+### v1.5.1 — 2026-08-11 — §9 O3 closed; a dangling cross-repo citation removed
+
+**Status: ACCEPTED.** No new obligation — an open item closes and a stale reference goes.
+
+**O3 asked for one of two things:** excise the email+password carrier on the pipeline-core lineage,
+or declare it as a slot with an owner. **views-pipeline-core excised it** (their #344). Verified in
+their code rather than from the issue: `class SessionAuth` returns zero matches in
+`views_pipeline_core/modules/appwrite/file.py` on their `main`, and the only files still naming it
+are tests asserting its absence. So the carrier is gone from the seam and §5.2's three tiers are
+again exhaustive over what ships.
+
+**The companion registry's entry is removed rather than struck through**, which is a departure from
+§10's supersession habit and is deliberate. views-pipeline-core runs a cross-repo check —
+`xfail(strict=True)` — asserting that a citation of that class in the registry and the existence of
+the class must **agree**. It is built to turn red the moment the registry stops citing it: that XPASS
+is their signal to convert the stub into a plain assertion. A struck-through entry would have kept
+the substring alive, and their ratchet would never have fired — the citation gone in substance, their
+detector unable to tell. **The history therefore lives here, in the contract, where it belongs; the
+registry records what is.**
+
+**Confirmed after the change:** their test now reports `XPASS(strict)`, which is the intended outcome.
+
+**The lesson, which is why this is written up rather than just done.** Their class went on
+2026-08-08. This contract's registry went on citing it, by `file:line`, until 08-11 — **so their
+build was red because of our file for three days and nobody here noticed. Their test did.** A
+`file:line` pointing into another repository is a claim that decays on someone else's schedule. Name
+the thing; do not pin its address. Same family as C-71.
 
 ### v1.5.0 — 2026-08-10 — §4.1 added; the registry's charter widens
 
