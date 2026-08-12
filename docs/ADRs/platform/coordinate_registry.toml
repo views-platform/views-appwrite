@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.6.0"                          # Versions in lockstep with the contract (§10);
+version = "1.6.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -27,11 +27,17 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-11"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
+amended = "2026-08-12"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
                                            # they record state the operator created in the console and impose
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.6.1 (2026-08-12): both [contract.*] rows are now TWO-SIDED
+                                           #   AUTHORITIES — the 'not yet an authority' caveats are lifted. All four
+                                           #   independent readers landed: vpp#239 (producer, both partners),
+                                           #   views-faoapi#379 and views-crafdapi#53 (consumers). vpp#248 retired the
+                                           #   last consumer-source read. Verification status only; no value changed.
+                                           #   The rows now state what they still do NOT prove (vpp register C-92).
                                            # v1.6.0 (2026-08-11): NEW [edition.*] table + `obliges_consumers_since` —
                                            #   the machine-readable half of §10's observation/obligation distinction,
                                            #   so a consumer can pin against what asks something of it rather than
@@ -135,6 +141,12 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.6.1"]
+obliges_consumers = false
+summary = """Verification-status only: both [contract.*] rows' caveats lifted after all
+four independent readers landed. No value changed, no clause changed, nothing to re-pin —
+a consumer that ignores this edition is exactly as conformant as one that reads it."""
 
 [edition."1.6.0"]
 obliges_consumers = false
@@ -378,23 +390,31 @@ owner = """views-faoapi. views-postprocessing ADR-013 §4.1a: "Config-owned by
 views-faoapi; changing it is a contract amendment, not a deploy detail." The producer
 holds a mirror (`CONSUMER_DOCUMENT_NAME` in its unfao product module); this row is the
 authority that mirror is checked against."""
-verified_by = """Both sides check themselves against THIS row, and neither reads the
-other's source:
-  producer  views-postprocessing  — ADR-017 Appendix B step 2      OPEN (vpp#238)
-  consumer  views-faoapi          — views-faoapi#379               IN PLACE 2026-08-11
+verified_by = """BOTH SIDES CHECK THEMSELVES AGAINST THIS ROW, and neither reads the
+other's source. Verified in their code 2026-08-12, not taken from their issues:
+  producer  views-postprocessing  — vpp#238 / PR #239   LIVE, on their `main`
+                                    tests/test_product.py
+                                    ::test_the_declared_consumer_name_matches_the_registry
+  consumer  views-faoapi          — views-faoapi#379    LIVE, on their `development`
+                                    tests/test_seam_contract_binding.py
 
-CONSUMER SIDE IS LIVE. views-faoapi/tests/test_seam_contract_binding.py reads this row
-through `git show appwrite-seam-v1.5.0:<path>` — an immutable tag, so the edition it
-grades against cannot shift under it — and it FAILS under CI rather than skipping when the
-sibling or tag is absent. That is the right shape and it is worth naming: a check that
-skips when it cannot run is the first of the two vacuity shapes this platform keeps
-producing (views-appwrite C-55, C-53).
+This row is now a two-sided authority. Both readers FAIL under CI rather than skipping
+when they cannot reach the registry — the shape that matters, because a check that skips
+when it cannot run is off precisely when it counts (views-appwrite C-55, C-53).
 
-⚠ THE PRODUCER SIDE IS STILL OPEN, so this row is not yet a two-sided authority. Until
-vpp#238 lands, views-postprocessing verifies its mirror by reading the CONSUMER'S SOURCE —
-the mechanism this row exists to retire. ADR-017 §5 therefore forbids removing that
-source-reading check until step 3 ships. Stated here because one side landing makes a row
-look finished when it is half finished."""
+THE SOURCE-READ IS RETIRED, which was the point. views-postprocessing#248 deleted its
+last read of a consumer's source; "neither reads the other" is the present state rather
+than the end state. ADR-017 §5's ordering was honoured — the source-read went only after
+this row became checkable.
+
+⚠ WHAT THIS ROW STILL DOES NOT PROVE, and the distinction is load-bearing. It is an
+authority for WHAT THE LABEL IS. It is NOT proof that a delivery is visible end to end.
+views-faoapi binds its served-name CONSTANT to this row; nothing binds its QUERY to that
+constant. `managers/prediction/manager.py:116-117` applies the name filter conditionally
+(`if hasattr(...) and model_name`), so a falsy name drops the filter silently, while :435
+applies it unconditionally. Nothing checks the composition. views-postprocessing carries
+this as their register C-92. Stated here because a row that has just earned "both sides
+check" is exactly when someone reads it as a guarantee it does not make."""
 amendment = """Changing this value is a CONTRACT AMENDMENT, not an edit. It requires a
 version bump here (§10) and re-pinning by both sides. Both re-pin to the same new edition,
 which is what stops the two of them reading different editions and both passing while
@@ -421,22 +441,34 @@ d311e77 and views-postprocessing 2eb29f1:
                                   APIPathManager("un_crafd", validate=False)
                                   filtered at managers/prediction/manager.py:117
                                   filters["name"] = self.model_path.model_name"""
-verified_by = """Both sides check themselves against THIS row, and neither reads the
-other's source:
-  producer  views-postprocessing  — ADR-017 Appendix B step 2      OPEN (vpp#238)
-  consumer  views-crafdapi        — views-crafdapi#53               OPEN
+verified_by = """BOTH SIDES CHECK THEMSELVES AGAINST THIS ROW, and neither reads the
+other's source. Verified in their code 2026-08-12, not taken from their issues:
+  producer  views-postprocessing  — vpp#238 / PR #239       LIVE, on their `main`
+                                    tests/test_product.py, parametrised over
+                                    both partners, so crafd is covered by the
+                                    same assertion as unfao
+  consumer  views-crafdapi        — views-crafdapi#53       LIVE, on their `development`
+                                    src/views_crafdapi/seam_contract.py declares
+                                    CONSUMER_DOCUMENT_NAME and the pin;
+                                    tests/test_seam_contract_binding.py reads
+                                    this row at `appwrite-seam-v1.5.2` and FAILS
+                                    under CI rather than skipping
 
-⚠ NEITHER SIDE CHECKS ITSELF AGAINST THIS ROW YET, so it is a string a human typed. It is
-still worth writing down now: views-crafdapi is PUBLIC, so unlike the FAO case the producer
-*can* read the consumer's source and the seam is not currently blind. The reason to declare
-it anyway is uniformity — if only the private partner's name lives in the registry, the
-platform ends up with two mechanisms for one job, and the one used less often is the one
-that rots (views-appwrite#75).
+This row went from "a string a human typed" to a two-sided authority in one day. It was
+declared BEFORE either check existed, on the argument that one mechanism for one job beats
+two — and both sides then bound to it. Recorded because that ordering is usually the wrong
+one and here it was not: the declaration was what made the checks writable.
 
-A note on why this row is NOT blocked by views-crafdapi#9, which was believed to block it
-and does not: #9 defines CRAF'd's DATA contract — targets, geography, summary statistic,
+A note on why this row was NOT blocked by views-crafdapi#9, which was believed to block it
+and did not: #9 defines CRAF'd's DATA contract — targets, geography, summary statistic,
 bucket. The document name is a different fact, already decided and in force on both sides
-per `in_force` above. Recorded because the wrong reading cost this row several days."""
+per `in_force` above. Recorded because the wrong reading cost this row several days.
+
+⚠ THE SAME LIMIT AS THE UNFAO ROW APPLIES HERE. This is an authority for WHAT THE LABEL IS,
+not proof that a delivery is visible end to end. views-crafdapi binds its constant to this
+row; nothing binds its query to that constant — `managers/prediction/manager.py:117` filters
+on `self.model_path.model_name`, and no check ties that to `seam_contract.CONSUMER_DOCUMENT_NAME`.
+views-postprocessing carries the class as their register C-92."""
 amendment = """Changing this value is a CONTRACT AMENDMENT, not an edit. It requires a
 version bump here (§10) and re-pinning by both sides, to the SAME new edition — otherwise
 the two read different editions and both pass while disagreeing."""
