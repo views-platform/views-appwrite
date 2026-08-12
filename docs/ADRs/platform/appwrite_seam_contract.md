@@ -9,9 +9,9 @@
 | Field | Value |
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
-| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1** |
-| Version | **1.7.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1; v1.7.0's §4.2 struck by v1.7.1** |
+| Version | **1.7.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-08-13 — **v1.7.1**: **§4.2 STRUCK one day after it was added.** It had already been proposed, reviewed and **withdrawn** as §5.9 (views-appwrite#27 / PR #30, 2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it was a failure to open the story's own issue. `obliges_consumers_since` returns to **1.5.2** and v1.7.0 is reclassified `obliges_consumers = false`: nobody should inherit an obligation from a withdrawn clause. 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -185,51 +185,43 @@ agree on, which are not identifiers of a container.** They live in `[contract.*]
 the seam's parties must agree on*. Requested by views-postprocessing (views-appwrite#75) under its
 ADR-017, and accepted here rather than presumed — see the v1.5.0 amendment log entry.
 
-### 4.2 Exactly one writer per class of value (added v1.7.0)
+### 4.2 ~~Exactly one writer per class of value~~ — **STRUCK 2026-08-13, one day after it was added**
 
-**The rule.** For every value on this seam there is **exactly one writer**, and which one it is is
-declared, not implied by execution order:
+> ~~For every value on this seam there is exactly one writer, declared rather than implied by
+> execution order; a second writer must fail loudly rather than lose quietly.~~
+>
+> **Struck because it had already been proposed, reviewed and withdrawn — and the author of this
+> edition did not check.** The clause was §5.9 in views-appwrite#27, withdrawn in PR #30 on
+> 2026-08-02, on reasoning that still holds: *"the clause was redundant where it was right, and
+> wrong where it was new."*
 
-| Class | The single writer |
-|---|---|
-| Coordinates (`[connection.*]`, `[target.*]`) | **the registry**, via a launcher that resolves it |
-| The secret | **the operator**, via the carrier named in the registry's slot |
-| Contract facts (`[contract.*]`) | **the registry** — §4.1 |
+**Redundant where it was right.** §4 above has said since þing-01 that coordinates are *"never
+copied into repo-local `.env` files as a source of truth"*. A file that may not be a source of truth
+for coordinates may not write them; single-writer follows. §6 raises on a wrong or missing
+coordinate, naming it, and §7 makes the preflight fail loud. Between them the disagreement case is
+already covered.
 
-**A second writer must fail loudly rather than lose quietly.** A launcher that finds a value already
-set by another mechanism either refuses or is a defect; silently taking the later of two writes is
-the failure this clause exists to forbid.
+**Wrong where it was new.** The genuinely novel part — that a launcher finding a value already set
+must refuse *even when the two agree* — was rejected in 2026-08-02's review and rejected again here.
+It would make a correct environment an error.
 
-**Why this is a correctness rule and not tidiness.** The platform resolved Appwrite configuration
-through two mechanisms that both wrote to the same shared mutable state — the process environment —
-with nothing saying which won. `views-models/postprocessors/un_fao/run.sh` sourced `.env` and then
-exported registry values over the top. **The registry won because it ran second, not because
-anything said it should.** Reorder those two blocks and the semantics invert, silently, with every
-test still green.
+**Where the work actually went, and it is done.** #27's disposition was that *"a latent hazard with a
+correct current behaviour is a test, not a clause"*, and the enforcement moved to views-models#309
+— which shipped as `tools/credentials/platform_env.sh`, the declared single writer, with
+`platform_env_require_registry()` FATAL when the registry is unreachable. The hazard is enforced by
+a program, not by prose.
 
-That is the textbook definition of a data race, and it is satisfied literally rather than by
-analogy: two or more paths access the same data; at least one writes (**here both do**); nothing
-synchronises them. Statement order was the only discipline, and it was implicit.
+**Recorded rather than reverted silently, because the repetition is the point.** #27's closing note
+ends: *"Before adding a clause, check whether the contract already says it."* This edition's author
+read the epic's story table, grepped this document for "single writer", found nothing, and concluded
+the story was undone — without opening the story's own issue. **The same failure that produced the
+clause produced it a second time, against a note written to prevent exactly that.** The register
+carries the class as C-73.
 
-**Why it has to be stated here rather than left to the layer.** §2 already requires that libraries
-receive credentials as parameters and never source or persist them — ownership and borrowing,
-correctly specified. **Shell cannot express that.** It has no parameter passing to child processes,
-only the global environment, so the launcher layer cannot comply by construction. A rule the
-implementing layer cannot express must be stated where it *can* be checked, or it recurs — which is
-what this defect class did.
-
-**Conformance today, read in the launchers rather than assumed:**
-
-- `views-models/tools/credentials/platform_env.sh` declares itself the only writer of Appwrite
-  coordinates, and `platform_env_require_registry()` is **FATAL** when the registry is unreachable.
-- `views-faoapi/deployment/bootstrap.sh` and its views-crafdapi twin build the service environment
-  file *from the registry* and abort when it is absent, rather than falling back to a hand-written
-  file.
-
-**What this clause does not require.** Not one `.env` for the platform — impossible, since
-views-faoapi deploys standalone where views-models does not exist. Not the removal of `.env` files;
-they remain the correct carrier for **the secret**. The end state is **one secret and zero
-coordinates per machine**, which makes the number of files stop mattering.
+**v1.7.0 remains published and is not reissued.** §10: a published tag is never moved, and this is
+supersession rather than erasure. `obliges_consumers_since` returns to **1.5.2** — nobody should
+inherit an obligation from a withdrawn clause — and `[edition."1.7.0"]` is reclassified to
+`obliges_consumers = false` with its summary corrected in place.
 
 ## 5. Credentials — identity, tiers, one operator
 
@@ -615,6 +607,45 @@ immutable (above), and a consumer wanting strict lockstep may keep comparing aga
 that is a legitimate, more conservative choice. §10.1 offers a floor; it does not impose one.
 
 ## 11. Amendment Log
+
+### v1.7.1 — 2026-08-13 — §4.2 struck; it had already been withdrawn once
+
+**Status: ACCEPTED. This edition removes an obligation rather than adding one** —
+`obliges_consumers_since` returns to **1.5.2**, and v1.7.0 is reclassified
+`obliges_consumers = false`.
+
+**What happened.** v1.7.0 added §4.2, "exactly one writer per class of value", as epic #26's story
+S1. **S1 had been closed as unnecessary on 2026-08-02.** The clause was §5.9 in views-appwrite#27,
+its pull request #30 was withdrawn, and the closing note gives the reasoning that still holds:
+*"the clause was redundant where it was right, and wrong where it was new."*
+
+- **Redundant where right** — §4 has said since þing-01 that coordinates are never copied into
+  repo-local `.env` files as a source of truth; §6 raises on a wrong or missing coordinate; §7 makes
+  the preflight fail loud. The disagreement case was already covered.
+- **Wrong where new** — the novel part, that a launcher must refuse *even when the two writers
+  agree*, was rejected then and is rejected now. It would make a correct environment an error.
+- **The work went somewhere and is done** — #27's disposition was *"a latent hazard with a correct
+  current behaviour is a test, not a clause"*, and enforcement moved to views-models#309, which
+  shipped as `platform_env.sh`. Enforced by a program, not by prose.
+
+**How it was re-added.** The author read epic #26's story table, grepped this document for "single
+writer", found nothing, and concluded S1 was undone — **without opening S1's issue.** #27's closing
+note ends: *"Before adding a clause, check whether the contract already says it."* The same failure
+that produced the clause produced it again, against a note written to prevent exactly that.
+
+**Two smaller errors from the same audit, corrected alongside.** A duplicate issue was filed on
+`views-platform/docs` when #82 had covered it since 2026-08-01 — named in the very checklist being
+audited. And epic #26 was reported as 8 of 10 rather than 9 of 10, because S1's closure was never
+read. All three share one cause: **a summary table was read where the linked issues were the
+evidence.** Register C-73.
+
+**v1.7.0's tag is not reissued.** §10: a published tag is never moved, and this is supersession, not
+erasure. A consumer pinned at v1.7.0 reads a struck clause and loses nothing. The §10 exception for
+a tag cut in error does not apply — v1.7.0 was cut correctly and says exactly what it said.
+
+**What this does not undo.** §10.1 and the `[edition.*]` table (v1.6.0) stand; the two `[contract.*]`
+rows and their lifted caveats (v1.6.1) stand. Only §4.2 is struck.
+
 
 ### v1.7.0 — 2026-08-12 — exactly one writer per class of value (§4.2)
 
