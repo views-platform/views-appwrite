@@ -18,20 +18,26 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.7.0"                          # Versions in lockstep with the contract (§10);
+version = "1.7.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
-obliges_consumers_since = "1.7.0"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
+obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
                                            # obliges_consumers = true. A guard asserts the two
                                            # agree, so this cannot drift from the table below.
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-12"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
+amended = "2026-08-13"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
                                            # they record state the operator created in the console and impose
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
                                            #
+                                           # v1.7.1 (2026-08-13): STRIKES §4.2, added one day earlier. It had already
+                                           #   been proposed, reviewed and WITHDRAWN (views-appwrite#27 / PR #30,
+                                           #   2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it
+                                           #   was a failure to open the story's own issue. obliges_consumers_since goes
+                                           #   BACK to 1.5.2; v1.7.0 is reclassified obliges_consumers = false. The
+                                           #   enforcement it argued for already exists as views-models' platform_env.sh.
                                            # v1.7.0 (2026-08-12): contract §4.2 — EXACTLY ONE WRITER per class of
                                            #   value. Coordinates are written by the registry, the secret by the operator,
                                            #   and a second writer must fail loudly rather than lose quietly. OBLIGES
@@ -147,12 +153,22 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
 
+[edition."1.7.1"]
+obliges_consumers = false
+summary = """Strikes §4.2, added one day earlier. It had already been proposed, reviewed
+and WITHDRAWN as views-appwrite#27 / PR #30 on 2026-08-02, and re-adding it was a
+failure to check. Nothing is asked of anyone; this REMOVES an obligation that should
+never have been raised."""
+
 [edition."1.7.0"]
-obliges_consumers = true
-summary = """Contract §4.2 — exactly one writer per class of value, declared rather than
-implied by execution order, and a second writer must fail loudly. Every launcher that
-assembles this seam's environment is in scope: if two mechanisms both write a coordinate,
-that is now a stated defect rather than an accident of statement order."""
+obliges_consumers = false
+summary = """SUPERSEDED BY 1.7.1 — reclassified in place, and the reclassification is the
+honest record rather than a tidy one. This edition added contract §4.2 and raised
+obliges_consumers_since to 1.7.0. The clause was struck the next day: it had already been
+withdrawn on 2026-08-02 (#27 / PR #30) as redundant with §4 where it was right and wrong
+where it was new. The obligation was raised in error, so it is retracted rather than
+honoured. The TAG is not reissued (§10, tags are immutable); a consumer that pinned
+v1.7.0 reads a struck clause and loses nothing by it."""
 
 [edition."1.6.1"]
 obliges_consumers = false
