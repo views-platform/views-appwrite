@@ -16,12 +16,24 @@ deployed. Five repositories read from here.
 > and a passing scan; branch protection was impossible while the repo was private, so going
 > public is what made it enforceable.
 >
-> **Two workflows run on every pull request.** `secret_scan.yml` is the credential gate above.
-> `guards.yml` runs the checks that protect the coordinate registry — the invariant that a
-> value-less `[target]` entry kills every reader (C-29), that no secret carries a value, and that
-> the contract and registry cannot change without their versions moving (C-53). **Only the secret
-> scan is a *required* check so far**; making the guards required comes after each has been shown
-> to fail for the reason it exists (#71). A guard nobody has watched fail is decoration.
+> **Three workflows run on every pull request, and three checks are required to merge.**
+>
+> | Workflow | Job | Required? |
+> |---|---|---|
+> | `secret_scan.yml` | `gitleaks (full history)` | **yes** |
+> | `guards.yml` | `guards (self-contained)` — registry-shape invariants + `validate_docs.sh` | **yes** |
+> | `guards.yml` | `guards (cross-repo)` — the canonical readers still agree | **yes** |
+> | `falsification.yml` | `falsification (reporting only)` | **no, deliberately** |
+>
+> The guards protect the registry's live invariants: that a value-less `[target]` entry kills every
+> reader (C-29), that no secret carries a value, and that the contract and registry cannot change
+> without their versions moving (C-53). **Each was made required only after being watched fail for
+> the reason it exists** — mutated, observed red in CI, reverted, recorded (#71, epic #66).
+> A guard nobody has watched fail is decoration.
+>
+> The falsification job is **excluded from the required set on purpose**: its stubs are red by
+> design, so blocking on them would make deleting one the fastest way to ship. It reports instead,
+> and shouts when a stub turns green.
 
 > **This repository ships no code today.**
 >
@@ -34,8 +46,26 @@ deployed. Five repositories read from here.
 |---|---|
 | [The seam contract](docs/ADRs/platform/appwrite_seam_contract.md) | Identity, secrets and configuration on the Appwrite seam. Formerly `PLATFORM-001`, renamed by [ADR-011](docs/ADRs/011_naming_of_cross_repo_contracts.md) |
 | [The deployment pattern](docs/ADRs/platform/consumer_api_deployment_pattern.md) | How a consumer API reaches production: registry-sourced coordinates, operator-slot secret, **a box that records which registry version built it**, tag-gated deploys, fail-visible serving. Repo-agnostic; each consumer's concrete ADR references it by pinned tag |
-| **Pin against this tag** | **`appwrite-seam-v1.4.4`** — the newest published seam-contract tag, matching `main`. The deployment pattern is versioned **separately** at **v1.0.0**; pin it independently, because the two change for different reasons. `platform-001-v1.2.0` is retained and still resolves — §10 forbids moving a published tag |
+| **How to pin** | Pin an `appwrite-seam-v*` tag — **[the newest is on the releases page](https://github.com/views-platform/views-appwrite/tags)**, and this README deliberately does not name one (see below). The deployment pattern is versioned **separately** at **v1.0.0**; pin it independently, because the two change for different reasons. `platform-001-v1.2.0` is retained and still resolves — §10 forbids moving a published tag |
 | [The coordinate registry](docs/ADRs/platform/coordinate_registry.toml) | The canonical source for every bucket, collection and database id on the seam, plus named secret slots — **never secret values** |
+
+> **Are you still conformant? Compare against the floor, not the newest tag.**
+>
+> The registry carries `[meta] obliges_consumers_since`. Most editions ask nothing of you — of the
+> eleven published so far, **three oblige a consumer and eight do not**. So:
+>
+> ```
+> conformant  ⟺  your_pin >= obliges_consumers_since
+> ```
+>
+> An observation-only bump moves `[meta] version` and leaves the floor still; you stay green. When a
+> row appears that asks something of you, the floor rises and you go red **with something to do** —
+> the only thing a red build should ever mean. Every edition declares which it is, in
+> `[edition."x.y.z"].obliges_consumers`. See seam contract **§10.1**.
+>
+> **Why this README no longer names a specific tag:** it named `appwrite-seam-v1.4.4` for seven
+> editions after that stopped being current, and every gate here stayed green throughout. A number
+> on this page is a claim nothing checks. Registered as **C-76**.
 
 **What is planned.** This repo is also the intended home of a **shared Appwrite client library**,
 extracting the storage, metadata and caching logic currently duplicated across
@@ -138,7 +168,13 @@ Everything that is about **talking to Appwrite** and nothing else. Concretely:
 
 ### Auth (`views_appwrite.auth`)
 
-- **`AuthManager`** (ABC), **`ApiKeyAuth`**, **`SessionAuth`** -- Pluggable authentication strategies. Same structure as both repos already have.
+- **`AuthManager`** (ABC), **`ApiKeyAuth`** -- Pluggable authentication strategies.
+
+  > **`SessionAuth` is deliberately absent.** It was listed here until 2026-08-13. views-pipeline-core
+  > **deleted the class** (their #344); the only occurrences left on their `main` are two tests
+  > asserting its absence. That deletion closed seam contract **§9 O3** and drove registry **v1.5.1**,
+  > which removed this repo's dangling citation of it. An email+password carrier is not a tier on
+  > this seam (§5.2), and a future shared client must not reintroduce one.
 
 ---
 
@@ -169,7 +205,7 @@ The table below shows what exists today and where the code should live after mig
 | SDK client wrapper | `modules/appwrite/file.py` (3,047 lines) | `managers/appwrite.py` (2,000 lines) | `views_appwrite.client` + `views_appwrite.storage` + `views_appwrite.metadata` + `views_appwrite.cache` + `views_appwrite.auth` |
 | Config dataclass | `AppwriteConfig` in `file.py` | `AppwriteConfig` in `appwrite.py` | `views_appwrite.client.AppwriteConfig` |
 | Result type | `OperationResult` in `file.py` | `OperationResult` in `appwrite.py` | `views_appwrite.client.OperationResult` |
-| Auth managers | `AuthManager`, `ApiKeyAuth`, `SessionAuth` in `file.py` | Same names, same structure in `appwrite.py` | `views_appwrite.auth` |
+| Auth managers | `AuthManager`, `ApiKeyAuth` in `file.py` — **`SessionAuth` deleted 2026-08 (their #344)** | `AuthManager`, `ApiKeyAuth` in `managers/appwrite/auth.py` | `views_appwrite.auth` — **API key only** |
 | Cache manager | `CacheManager` in `file.py` | `CacheManager` in `appwrite.py` | `views_appwrite.cache.CacheManager` |
 | Metadata handler | `AppwriteMetadataHandler` in `file.py` | `AppwriteMetadataHandler` in `appwrite.py` | `views_appwrite.metadata.MetadataManager` |
 | SDK compat layer | Does not exist (SDK 13 only) | `_as_dict()`, `_get()` in `appwrite.py` | `views_appwrite.compat` |
@@ -263,7 +299,7 @@ views-appwrite/
 │       ├── storage.py          # StorageManager (upload, download, delete, list)
 │       ├── metadata.py         # MetadataManager, FileMetadata (database/collection CRUD)
 │       ├── cache.py            # CacheManager (disk cache with TTL)
-│       ├── auth.py             # AuthManager ABC, ApiKeyAuth, SessionAuth
+│       ├── auth.py             # AuthManager ABC, ApiKeyAuth  (no SessionAuth -- §5.2)
 │       ├── compat.py           # _as_dict(), _get() -- SDK 13/14+ normalisation
 │       └── datastore.py        # DatastoreManager (high-level facade)
 └── tests/
@@ -354,7 +390,7 @@ This means:
 
 2. **Start from `views-faoapi`'s `appwrite.py`** as the base, since it has the SDK 13/14 compat layer and the `_as_dict`/`_get` fixes that `views-pipeline-core` lacks. Copy it into `src/views_appwrite/` and decompose the monolith into the module structure defined in [Package Design](#package-design):
    - Extract `_as_dict()`, `_get()` into `compat.py`
-   - Extract `AuthManager`, `ApiKeyAuth`, `SessionAuth` into `auth.py`
+   - Extract `AuthManager`, `ApiKeyAuth` into `auth.py` — **not** `SessionAuth`; the carrier was excised platform-wide and §9 O3 closed on that excision
    - Extract `CacheManager` into `cache.py`
    - Extract `AppwriteMetadataHandler` into `metadata.py`
    - Extract file upload/download/delete into `storage.py`
