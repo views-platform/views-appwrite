@@ -4,7 +4,7 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-08-11                           |
+| Last Updated      | 2026-08-13                           |
 | Total Concerns    | 56                                   |
 | Open Concerns     | 51                                   |
 | Resolved Concerns | 5                                    |
@@ -32,7 +32,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 > pre-þing, pre-registry-incident and private. It covered 24 of 24 open entries then. By today it
 > covered **24 of 48** — every concern from C-29 onward, which is the entire credential, registry and
 > publication era, sat in no cluster at all. Clusters A–F are **kept unchanged** because their
-> analysis of the pre-þing corpus is still correct; **G–K are new** and cover the other half.
+> analysis of the pre-þing corpus is still correct; **G–K** cover the second half, and **L** (2026-08-13) the third.
 >
 > Note what the gap itself demonstrates: the register grew by 24 entries in seven weeks and its
 > *organising layer* did not move once. A flat list of 48 is a write-only artifact.
@@ -50,15 +50,26 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard now runs on every PR and the blocking ones are required, each proven by mutation in CI. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70, C-74, C-75** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard now runs on every PR and the blocking ones are required, each proven by mutation in CI. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-54, C-59, C-64, C-65, C-71** (C-53 also, via G) | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
+| **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
 
-**Reading the two halves together.** A–F are about *documents that were never written*. G–K are about
-*checks and facts that were written and then quietly stopped being true*. The repository's failure
-mode changed as it matured, and the register did not notice until this review.
+**Reading the three parts together.** A–F are about *documents that were never written*. G–K are
+about *checks and facts that were written and then quietly stopped being true*. **L, added
+2026-08-13, is a third failure mode and the newest**: things this repository says to *other people*
+that nothing here can check — a pin instruction, a compatibility claim, an assumption about how a
+consumer reads us.
+
+The progression is worth naming, because it is a maturity curve rather than a list. **Absent →
+stale → outward.** Each stage only becomes visible once the previous one is largely fixed: you
+cannot notice that your guards are blind while your documents are missing, and you cannot notice
+that your claims about others are unverified while your own guards are blind. **L's three entries
+all fired within one week, immediately after the epic that closed G's acute member (C-70).**
+
+The uncomfortable implication is that L is probably not the last stage.
 
 Standalone: C-01 (dissolves when the scaffold exists), C-21 (README instance closed 2026-07-28; pipeline-core's dataclass-defaults instance and the fixture guard remain), C-04's re-derived remainder, C-26 (external, operational).
 
@@ -1144,7 +1155,7 @@ Cross-refs: C-51, C-47 (views-models#308, the warn-and-continue this was meant t
 | ID | C-63 |
 | Tier | 3 |
 | Source | `expert-code-review` of D-05, 2026-08-03 (Kleppmann — the only perspective to reframe D-05 this way, and uncontradicted) |
-| Trigger | Adding any construct to the registry that an existing reader does not understand — a new class, a new field with semantics, a new table. |
+| Trigger | **RULED 2026-08-13 — the trigger is now the VOIDING CONDITION, not an open question:** a future edition that alters the semantics of `[connection]` or `[target]` — the two tables every reader scans. Growth in unscanned tables (`[contract]`, `[edition]`) does not fire it; that is why the accepted risk has held. |
 | Location | all three `registry_to_env.py` copies; `coordinate_registry.toml` `[meta] version` |
 
 The registry is versioned and consumers pin by version and commit. **The readers ignore the version
