@@ -253,6 +253,104 @@ else
     done
 fi
 
+# 9. The README's pinning advice must be followable.
+#
+# C-76. For seven editions the README said "Pin against this tag -- appwrite-seam-v1.4.4"
+# while the current edition was v1.7.1, and all eight checks above passed the whole time.
+# They verify cross-references and version coherence; nothing verified whether prose ABOUT
+# this repo was true. The front page of a public contract repo told five consumers to pin
+# an edition predating the [contract.*] table two of them now bind to.
+#
+# The fix was to stop naming a tag and point at the FLOOR instead -- §10.1's
+# `obliges_consumers_since`, which moves only when an edition actually obliges a consumer.
+# This check defends that, three ways:
+#
+#   (a) the README still references the floor mechanism. If someone rewrites the pin
+#       advice back to "pin the newest tag", this fails -- that is the regression.
+#   (b) every appwrite-seam-v* tag the README names RESOLVES. A historical mention is
+#       legitimate (the C-76 note names v1.4.4 on purpose); an invented one is not.
+#   (c) the floor itself is a fetchable tag. Consumers are told to compare against
+#       obliges_consumers_since; if no tag exists at that version, the advice is unusable.
+#
+# LOCAL vs CI ARE ASYMMETRIC, same as check 8 and for the same reason: a developer in a
+# checkout with no tags should not be blocked, but in CI a check that cannot run must not
+# pass. `actions/checkout` does not fetch tags by default, so the skip path would be the
+# DEFAULT there -- which is exactly how C-55, C-53 and the reader guard each switched
+# themselves off while reporting green.
+echo "--- Checking that the README's pinning advice is followable ---"
+
+_vd_readme="$SCRIPT_DIR/../README.md"
+_vd_registry="$SCRIPT_DIR/ADRs/platform/coordinate_registry.toml"
+
+if [ ! -f "$_vd_readme" ]; then
+    echo "  ERROR: README.md not found at $_vd_readme"
+    errors=$((errors + 1))
+else
+    # (a) the floor mechanism is still what the README points at
+    if grep -q "obliges_consumers_since" "$_vd_readme"; then
+        echo "  OK: README points at obliges_consumers_since (the §10.1 floor)"
+    else
+        echo "  ERROR: README.md no longer references \`obliges_consumers_since\`."
+        echo "         C-76: it named a fixed tag for seven editions while every gate stayed"
+        echo "         green. Consumers should compare against the FLOOR, not the newest tag —"
+        echo "         most editions oblige nobody. Restore the §10.1 pinning guidance."
+        errors=$((errors + 1))
+    fi
+
+    if ! command -v git >/dev/null 2>&1 || ! git -C "$SCRIPT_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+        if [ -n "${CI:-}" ]; then
+            echo "  ERROR: CI is set but this is not a git checkout, so the tag checks"
+            echo "         cannot run. A gate that cannot run must not pass."
+            errors=$((errors + 1))
+        else
+            echo "  SKIP: not a git checkout — cannot resolve tags"
+        fi
+    elif [ -z "$(git -C "$SCRIPT_DIR" tag -l 'appwrite-seam-v*')" ]; then
+        if [ -n "${CI:-}" ]; then
+            echo "  ERROR: CI is set but no appwrite-seam-v* tags are present, so the tag"
+            echo "         checks cannot run. actions/checkout does NOT fetch tags by default;"
+            echo "         fetch them in the workflow:"
+            echo "             git fetch --no-tags --depth=1 origin +refs/tags/*:refs/tags/*"
+            echo "         Passing here would leave C-76's guard inert."
+            errors=$((errors + 1))
+        else
+            echo "  SKIP: no appwrite-seam-v* tags in this checkout (try: git fetch --tags)"
+        fi
+    else
+        # (b) every tag the README names must exist
+        _vd_bad=""
+        for _vd_t in $(grep -o 'appwrite-seam-v[0-9][0-9.]*' "$_vd_readme" | sort -u); do
+            git -C "$SCRIPT_DIR" rev-parse -q --verify "refs/tags/${_vd_t}" >/dev/null 2>&1 \
+                || _vd_bad="$_vd_bad $_vd_t"
+        done
+        if [ -n "$_vd_bad" ]; then
+            echo "  ERROR: README.md names tags that do not exist:$_vd_bad"
+            echo "         Every tag named here is something a consumer may pin. §10 forbids"
+            echo "         moving a published tag, so a name that resolves to nothing stays"
+            echo "         broken until someone reads this line."
+            errors=$((errors + 1))
+        else
+            echo "  OK: every appwrite-seam-v* tag named in README.md resolves"
+        fi
+
+        # (c) the floor must itself be a fetchable edition
+        _vd_floor="$(grep -m1 '^obliges_consumers_since' "$_vd_registry" 2>/dev/null \
+                     | sed 's/.*"\(.*\)".*/\1/')"
+        if [ -z "$_vd_floor" ]; then
+            echo "  ERROR: [meta] obliges_consumers_since is absent from the registry, but the"
+            echo "         README tells consumers to compare against it."
+            errors=$((errors + 1))
+        elif git -C "$SCRIPT_DIR" rev-parse -q --verify "refs/tags/appwrite-seam-v${_vd_floor}" >/dev/null 2>&1; then
+            echo "  OK: the obligation floor v${_vd_floor} resolves to a published tag"
+        else
+            echo "  ERROR: obliges_consumers_since is v${_vd_floor} but no tag"
+            echo "         appwrite-seam-v${_vd_floor} exists. Consumers are told to compare"
+            echo "         their pin against this edition; without a tag they cannot fetch it."
+            errors=$((errors + 1))
+        fi
+    fi
+fi
+
 echo ""
 if [ "$errors" -gt 0 ]; then
     echo "=== FAILED: $errors issue(s) found ==="

@@ -53,8 +53,18 @@ jobs:
       # The script ALSO errors rather than skips when CI is set, so if this step
       # is ever removed the build fails loudly instead of quietly narrowing. Two
       # mechanisms on purpose: this step is the one most likely to be tidied away.
+      # Check 9 needs TAGS as well, and `actions/checkout` fetches none by default. Without
+      # this second fetch, check 9's tag half would take its skip path on every CI run --
+      # which is the C-76 guard inert on the exact surface it was written for. The script
+      # ALSO errors rather than skips when CI is set and no tags are present, so removing
+      # this line fails the build loudly instead of quietly narrowing. Same belt-and-braces
+      # as the fetch above, for the same reason: a workflow step is the thing most likely
+      # to be tidied away later.
       - name: Fetch origin/main so the version check can run
         run: git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main
+
+      - name: Fetch tags so the README pinning check can run
+        run: git fetch --depth=1 origin '+refs/tags/appwrite-seam-v*:refs/tags/appwrite-seam-v*'
 
       - name: Set up Python
         uses: actions/setup-python@v5
