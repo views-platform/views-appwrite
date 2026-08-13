@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-11                           |
-| Total Concerns    | 55                                   |
-| Open Concerns     | 50                                   |
+| Total Concerns    | 56                                   |
+| Open Concerns     | 51                                   |
 | Resolved Concerns | 5                                    |
 | Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -1449,7 +1449,39 @@ into a secret-scan PR.
 > and raises a workflow annotation. Auditing these six — resolve-and-convert, or restore the
 > assertion — is separate work and is not smuggled into a CI story.
 
-Cross-refs: C-02, C-52, C-55, C-67, #8, #70.
+**Update 2026-08-13 — one of the six audited: `c41`, and it is the shape this entry names.**
+
+`test_falsify_c41_readme_first_sentence_is_true` has been green since the README's opening sentence
+was fixed. Audited during `review-base-docs`; **the green was accurate and almost worthless.**
+
+| | |
+|---|---|
+| What it **asserts** | one regex on one line — the first prose line must not start with `"Shared Appwrite client library"` |
+| What its **docstring** demands | *"the opening sentence describes what the repo IS, before it describes what it may become"* |
+
+The sentence was corrected; the *property* was not. The README remained **807 lines, of which 731
+described what the repo may become** — so the document still failed the docstring's expectation
+while the stub reported success. **An assertion narrower than its own docstring**, which is exactly
+what this entry registers.
+
+**Not weakened deliberately.** It was written as a probe against one specific sentence, and that
+sentence was fixed. The defect is that a stub about a *document's shape* was implemented as a check
+on *one line*, and nothing marked the gap.
+
+**Resolved by the artifact rather than the test.** The README is now 106 lines, with the roadmap at
+`docs/roadmap_shared_client.md` (**C-76**), so the docstring's property now holds. The assertion was
+left unchanged: encoding "shape" needs a threshold nobody can defend, and this paragraph is the
+honest record.
+
+**One thing the audit caught that the stub could not.** Splitting the file flipped a *different*
+stub — `r2_01` — from green to red, because two modules read `README.md` at module scope for content
+that had moved. A **false red**, fixed by having them read both files, verified by the failure set
+returning to 10 and the green set being identical. **Caught only because the baseline was re-checked
+after the change** — this cluster's own lesson, arriving from the opposite direction.
+
+**Five of the six remain unaudited.**
+
+Cross-refs: C-02, C-52, C-55, C-67, **C-76** (the README defect this audit surfaced), #8, #70.
 
 ---
 
@@ -1870,6 +1902,65 @@ So the consumer has a shape-check on our registry that the publisher lacks. Thei
 **Interaction with C-74 worth stating.** These two compose badly. C-74 says a secret-classed entry outside `[secret]` is unguarded; C-75 says a new table is unguarded. Together, a `[staging.SOME_KEY]` table with `class = "secret"` and a real value passes every gate in this repository.
 
 Cross-refs: **C-74** (composes with it, above), **C-63** (the same subject one layer out — *readers* ignore constructs they do not understand; this is *our own guards* ignoring them), **C-73** (the same publisher/consumer asymmetry pointing the other way), seam contract §4.1, views-postprocessing `test_every_table_in_the_registry_is_classified_here` as the reference implementation.
+
+---
+
+### C-76: The README makes verifiable claims about this repository, and nothing verified any of them
+
+| Field | Value |
+|-------|-------|
+| ID | C-76 |
+| Tier | **2** |
+| Source | `review-base-docs`, 2026-08-13 |
+| Trigger | **Publishing any edition, or changing the required-check set.** Both make a README claim false, and neither produces a signal. Not hypothetical — it has fired seven times |
+| Location | `README.md` (the pin instruction; the CI paragraph; the Auth section); `docs/validate_docs.sh` (eight checks, none covering README claims) |
+
+**Three claims on the front page of a public contract repo were false, and every gate was green
+throughout.** `validate_docs.sh` passed all eight checks in the same run.
+
+| Claim | Reality |
+|---|---|
+| *"Pin against this tag — `appwrite-seam-v1.4.4`"* | current was **v1.7.1** — seven editions on |
+| *"Two workflows… only the secret scan is required… comes after #71"* | three workflows, three required checks, #71 closed |
+| `SessionAuth` listed as a class the package will contain | views-pipeline-core **deleted it**; that deletion drove registry v1.5.1 |
+
+**The pin instruction is the acute one.** A consumer following the front page pinned an edition
+predating the entire `[contract.*]` table — the thing two of them now bind their delivery names to.
+
+**Tier 2, and the justification is the shape rather than the damage.** No corruption occurred and no
+consumer is known to have followed it. It is Tier 2 because the failure is **silent and
+outward-facing**: nothing in this repository can go red for it. Every check here verifies this
+repo's internal consistency, and the one artifact that speaks *to other people* was unverified.
+Same class as **C-73** — this repo sees its own files perfectly and cannot see what it tells anyone
+else — and its third instance in a week, which is what moves it above Tier 3.
+
+**Also structural, and the reason it persisted.** The README was **807 lines, of which 731 described
+a package that does not exist.** The live artifacts got one table. Wrong facts survive in a document
+whose shape means nobody reads past the first screen.
+
+**Fixed 2026-08-13, and the fix is what closes it:**
+
+- The three false claims corrected; the pin instruction now points at **`obliges_consumers_since`**
+  rather than a tag, because a hardcoded number goes stale every edition and this one did, silently,
+  for seven.
+- **`validate_docs.sh` check 9** — the README references the floor mechanism; every tag it names
+  resolves; the floor is itself a fetchable tag. **Mutation-proven four ways**, including
+  *no tags + `CI` set → error, not skip*, and `guards.yml` now fetches tags so the check cannot take
+  its skip path in CI.
+- README reduced to **106 lines**; the roadmap preserved whole at
+  `docs/roadmap_shared_client.md`.
+
+**Deliberately NOT fixed by requiring the README to name the newest tag.** That would rebuild the
+defect with a gate attached: most editions oblige nobody, so chasing the newest was always the wrong
+advice.
+
+**What remains open, and why this entry is not resolved.** Check 9 covers the *pinning* claim — the
+one that misled consumers. **It does not cover the rest.** The CI paragraph, the file counts, the
+consumer count and the class lists are still prose that nothing verifies; they were corrected by
+hand and can rot by hand. The class is narrowed, not closed.
+
+Cross-refs: **C-73** (same class, same week — the publisher blind to its readers), **C-72** (pin
+incoherence from the consumer side), **C-68** (the `c41` stub, audited below), seam contract §10.1.
 
 ---
 
