@@ -28,40 +28,15 @@
 
 ## Current posture
 
-*Recorded 2026-07-28, on completion of this repo's þing-01 obligations.*
+**Stated once, in [`README.md`](../README.md#current-posture).** It is not repeated here.
 
-> **Contract home: live. Code: parked.**
+This section previously carried its own copy, and within hours of the split the two had already
+drifted: the README said *six repositories* and *pinned tag*; this copy still said *five* and
+*pinned commit*. A fact in two places is a fact that must agree, with nothing checking that it does
+— **C-53's shape**, produced while relocating a document rather than while writing one.
 
-**What is live here.** **The Appwrite Seam Contract** — the VIEWS Appwrite seam's identity, secrets and
-configuration contract — and its `coordinate_registry.toml`, both under `docs/ADRs/platform/`.
-Five other repos reference them **by URL at a pinned commit**. Changes come by supersession and a
-version bump, never by silent edit (seam contract §10). Hosting a document creates no dependency
-edge on this repo's code maturity; that is precisely why the seam's contract lives in the platform's
-only leaf that depends on nothing.
-
-**What is parked.** Everything else. No `src/` and no `pyproject.toml`, by recorded decision — not by
-neglect. The scaffold and the reference validator were approved by the þing's verdict and
-then **deferred again** on adversarial review (`dómr_endurmat` E5/E6): the scaffold's justification
-was hosting the validator, and the validator's distinctive jobs only become real at the credential
-cutover, so both wait behind one trigger. C-02, C-18's open half and D-04 stay open with them —
-they were priced against hosting code, and no code is hosted.
-
-**Next wake-up — one of two triggers, nothing else:**
-
-| # | Trigger | Fires when | Recorded at |
-|---|---|---|---|
-| 1 | **Scaffold + reference validator** | **operator named ✓ ∧ test project exists ✗** — currently blocked on the test project | issue [#8](https://github.com/views-platform/views-appwrite/issues/8); seam contract §7 |
-| 2 | **Phase 1 (the shared client)** | `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)` — the three repo-local triggers below, **or** the platform's two-component trigger | Decision Log **#10**; þing-01 D8 |
-
-Trigger 2's deferral is **no longer this repo's to reverse**: it was ratified by six seats, so
-un-parking on that path returns to the þing (or its successor process). Trigger 1 is the operator's
-to unblock (issue [#9](https://github.com/views-platform/views-appwrite/issues/9)).
-
-**What is *not* waiting on either trigger:** the contract and registry are in force now, and the
-seam's live risks belong to other repos' code — the two client lineages shipping raise-by-default
-(C-13), and the operator's rotation and external-caller design (C-27/C-28). Nothing here blocks
-them.
-
+The short version, so this page is readable on its own: **contract home live, code parked.** The
+trigger that would un-park it is Decision Log **#11**.
 ---
 
 ## Table of Contents
