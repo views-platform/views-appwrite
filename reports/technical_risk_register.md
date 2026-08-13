@@ -1449,7 +1449,39 @@ into a secret-scan PR.
 > and raises a workflow annotation. Auditing these six — resolve-and-convert, or restore the
 > assertion — is separate work and is not smuggled into a CI story.
 
-Cross-refs: C-02, C-52, C-55, C-67, #8, #70.
+**Update 2026-08-13 — one of the six audited: `c41`, and it is the shape this entry names.**
+
+`test_falsify_c41_readme_first_sentence_is_true` has been green since the README's opening sentence
+was fixed. Audited during `review-base-docs`; **the green was accurate and almost worthless.**
+
+| | |
+|---|---|
+| What it **asserts** | one regex on one line — the first prose line must not start with `"Shared Appwrite client library"` |
+| What its **docstring** demands | *"the opening sentence describes what the repo IS, before it describes what it may become"* |
+
+The sentence was corrected; the *property* was not. The README remained **807 lines, of which 731
+described what the repo may become** — so the document still failed the docstring's expectation
+while the stub reported success. **An assertion narrower than its own docstring**, which is exactly
+what this entry registers.
+
+**Not weakened deliberately.** It was written as a probe against one specific sentence, and that
+sentence was fixed. The defect is that a stub about a *document's shape* was implemented as a check
+on *one line*, and nothing marked the gap.
+
+**Resolved by the artifact rather than the test.** The README is now 106 lines, with the roadmap at
+`docs/roadmap_shared_client.md` (**C-76**), so the docstring's property now holds. The assertion was
+left unchanged: encoding "shape" needs a threshold nobody can defend, and this paragraph is the
+honest record.
+
+**One thing the audit caught that the stub could not.** Splitting the file flipped a *different*
+stub — `r2_01` — from green to red, because two modules read `README.md` at module scope for content
+that had moved. A **false red**, fixed by having them read both files, verified by the failure set
+returning to 10 and the green set being identical. **Caught only because the baseline was re-checked
+after the change** — this cluster's own lesson, arriving from the opposite direction.
+
+**Five of the six remain unaudited.**
+
+Cross-refs: C-02, C-52, C-55, C-67, **C-76** (the README defect this audit surfaced), #8, #70.
 
 ---
 
