@@ -86,13 +86,22 @@ them.
 
 ## Motivation
 
-Three repos in the VIEWS platform interact with Appwrite cloud storage today:
+**Four** repos in the VIEWS platform carry Appwrite client code today. File counts read
+2026-08-13; the original text said three, before views-crafdapi was cut:
 
 | Repo | Role | Appwrite code |
 |------|------|---------------|
 | `views-pipeline-core` | Uploads predictions to the public forecast store | `modules/appwrite/file.py` (~3,000 lines), `modules/datastore/datastore.py` (~550 lines) |
-| `views-faoapi` | Downloads predictions from the UNFAO bucket and serves them via HTTP | `managers/appwrite.py` (~2,000 lines), `managers/prediction.py` (~380 lines) |
+| `views-faoapi` | Downloads predictions from the UNFAO bucket and serves them via HTTP | **`managers/appwrite/` — a PACKAGE, not a file.** Ships `auth.py`, `config.py`, `constants.py`, `file_cache.py`, `manager.py`, `metadata.py`, `provisioning.py`, `results.py`, `sdk_compat.py` (7 files import the SDK) |
+| `views-crafdapi` | The second consumer API, cut 2026-08-01 from faoapi | its own copy of the client (8 files import the SDK) |
 | `views-postprocessing` | Reads from the public forecast bucket, transforms data, writes to the UNFAO bucket | Uses `views-pipeline-core`'s classes directly |
+
+> **⚠ The central premise below is overtaken.** This document proposes extracting faoapi's
+> monolith and *splitting it into modules*. **faoapi already did that.** `managers/appwrite/` now
+> ships almost exactly the module structure §Package Design proposes — `auth.py`, `config.py`,
+> `metadata.py`, `file_cache.py`, `sdk_compat.py`, `results.py`, `provisioning.py`. Phase 1's
+> central task has substantially been done in someone else's repo. **Re-cost this plan before
+> executing it**; what remains is relocation and de-domaining, not decomposition.
 
 The problem is that `views-faoapi` was deliberately decoupled from `views-pipeline-core` (to avoid pulling in the entire God-repo as a dependency), so its Appwrite client was copy-pasted and evolved independently. The two implementations are now ~90% identical in structure but differ in:
 
@@ -100,7 +109,7 @@ The problem is that `views-faoapi` was deliberately decoupled from `views-pipeli
 - Naming (`AppWriteFileManager` vs `AppWriteFileModule`, `PredictionStoreManager` vs `DatastoreModule`, `PredictionMetadata` vs `FileMetadata`)
 - Bug fixes applied to one but not the other (the `_as_dict` guard for SDK 14 only exists in `views-faoapi`)
 
-This situation will get worse: we plan to clone `views-faoapi` to build consumer APIs for other stakeholders (e.g., World Bank, UNHCR). Each clone would carry its own copy of the Appwrite client. A bug fix or SDK upgrade would need to be applied N times.
+This situation will get worse: we plan to clone `views-faoapi` to build consumer APIs for other stakeholders (the next is named **views-publicapi** — operator ruling, Decision Log #11). Each clone would carry its own copy of the Appwrite client. A bug fix or SDK upgrade would need to be applied N times.
 
 `views-appwrite` solves this by being the single source of truth for "how to talk to Appwrite." Every consumer API and the pipeline itself depend on this one package. Changes propagate by bumping a version number, not by copy-pasting across repos.
 
@@ -238,8 +247,8 @@ When we clone `views-faoapi` for new consumer APIs, each clone carries copy B:
 
 ```
 views-faoapi         ←── copy B
-views-worldbankapi   ←── copy B'
-views-unhcrapi       ←── copy B''
+views-publicapi   ←── copy B'
+views-publicapi       ←── copy B''
 ```
 
 ### After (target state)
@@ -257,7 +266,7 @@ views-faoapi
 ├── views-appwrite               ←── depends DOWN
 └── (FAO-specific code: GAUL mapping, HDI-MAP, API endpoints)
 
-views-worldbankapi
+views-publicapi
 ├── views-appwrite               ←── depends DOWN
 └── (WB-specific code)
 
@@ -362,7 +371,7 @@ The current `PredictionMetadata` (in `views-faoapi`) enforces that metadata must
 This means:
 - `views-faoapi` keeps its `PredictionMetadata` class and validates before calling `store.upload()`
 - `views-pipeline-core` keeps its `FileMetadata` class and validates before calling `store.upload()`
-- A future `views-worldbankapi` can define its own metadata schema
+- A future `views-publicapi` can define its own metadata schema
 - `views-appwrite` never needs to change when a consumer adds a metadata field
 
 ---
@@ -687,6 +696,7 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 8 | 2026-06-12 | Repository created at `views-platform/views-appwrite`; governance scaffolded (ADRs 000–010, contributor protocols, risk register) ahead of any extraction trigger. Phase 1 start is **deferred** pending in-flight work on adjacent repositories. | Records the honest current state: none of the §Datafactory triggers has clearly fired; the hold recommendation stands until upstream work settles. Resolves register C-11. |
 | 9 | 2026-06-22 | Stay **parked** despite the sibling leaf `views-frames` shipping `v1.0.0` to PyPI. Adopt `views-frames` as the **scaffold template / proof-of-pattern** for this repo's eventual Phase 1, but do **not** start extraction and do **not** add `views-frames` as a dependency. | `views-frames` (numpy-only data-contract leaf, `views-platform` org) executed exactly this repo's extract→publish→shim playbook end-to-end — de-risking it and providing a copyable scaffold (hatchling+uv, `requires-python>=3.10`, MIT, single-dep + optional extras behind submodules, `type-floor` CI job, `py.typed`, in-package conformance suite, `GOVERNANCE.md` with a versioned conformance floor). But its publication is **not** one of the §Datafactory triggers, so the hold stands. The two are **sibling leaves**: neither imports the other; frame↔store integration is a *consumer* saver concern (pipeline-core/faoapi), never code in this repo. See `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`. |
 | 10 | 2026-07-28 | Activation of the shared client remains **deferred**, now under a **platform-ratified two-component trigger**. **Demand:** a second incident whose root cause is auth/provision handling in a duplicated client path — *whether by divergence between copies or by a defect common to them*. **Supply:** `views-pipeline-core`'s **C-221** decomposition freeing the auth/config seam. **Either component alone triggers a revisit; both together activate Phase 1.** The three repo-local triggers in §Datafactory below are **retained and remain independently sufficient**; composition is: activate on `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)`, revisit on `demand ∨ supply`. | Ratified by **þing-01** (the cross-repo assembly on identity, secrets and configuration: `orð_dómr.md` D8 as amended by `dómr_endurmat.md`; six seats, human sign-off Simon Polichinel von der Maase). This **supersedes the unilateral character** of the hold recorded in #8/#9 — the deferral now belongs to the platform, not to this repo alone, and cannot be reversed here without returning to the þing. The demand component was deliberately widened from its original "divergence between copies" wording: þing-01 sáttmál S8 (amended) settled that the two lineages **do not diverge** on their write paths — they share the same defect — so a divergence-only trigger could not fire where the evidence actually lives. Recording it here also keeps **C-11** closed: no posture change of this repo goes unrecorded. |
+| 11 | 2026-08-02 | **T1 is superseded: the trigger counts three CONSUMER APIS, not three copies of the client.** Operator ruling, recorded on views-appwrite#23: *"Once we have views-faoapi, views-crafdapi, and **views-publicapi**, we will consider the abstraction again."* Extraction is **deferred behind that named trigger**; on 2026-08-13 the count stood at **two of three** — `views-publicapi` does not exist. | #10's T1 read *"second consumer API clone… at N=3 copies"*, and on that reading it **fired** when views-crafdapi was cut on 2026-08-01, carrying its own copy of the client. The ruling counts differently and more usefully: crafdapi is the *second consumer*, so the trigger is one clone away rather than here. It is the position views-faoapi#325 already records — *"extract-to-shared, not delete… WET-before-DRY"* — stated for the clone that actually happened. Blocking an in-flight clone to design a shared package from two examples, one of which does not exist, would be **guessing the abstraction rather than observing it**. #10 is superseded on T1 only and otherwise stands; §10's habit is supersession, never erasure. |
 
 ---
 

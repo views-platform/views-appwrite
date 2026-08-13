@@ -2,7 +2,8 @@
 
 **Home of the VIEWS platform's cross-repo contracts** — the Appwrite seam (identity, secrets and
 shared coordinates) and the consumer-API strategy that governs how those repos are built and
-deployed. Five repositories read from here.
+deployed. **Six repositories reference these documents** — views-models, views-pipeline-core,
+views-faoapi, views-crafdapi, views-postprocessing and views-datafactory (counted 2026-08-13).
 
 > **The name is narrower than the charter, deliberately for now.** Operator decision, 2026-08-05:
 > this repo owns platform contracts *and* consumer-API strategy, not the Appwrite seam alone — *"maybe
@@ -73,7 +74,7 @@ deployed. Five repositories read from here.
 > **Contract home: live. Code: parked.**
 
 **What is live here** is everything in the table above: the seam contract, the coordinate registry,
-and the deployment pattern. Five other repositories reference them **by URL at a pinned tag**.
+and the deployment pattern. Six other repositories reference them **by URL at a pinned tag**.
 Changes come by supersession and a version bump, never by silent edit (§10).
 
 **What is parked** is a shared Appwrite client library. There is no `src/` and no `pyproject.toml`,
