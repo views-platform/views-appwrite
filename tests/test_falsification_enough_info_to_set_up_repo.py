@@ -20,7 +20,25 @@ import pytest
 pytestmark = pytest.mark.falsification
 
 REPO = Path(__file__).resolve().parent.parent
-README = (REPO / "README.md").read_text(encoding="utf-8")
+# THE ROADMAP TEXT THESE STUBS PROBE, WHEREVER IT LIVES.
+#
+# These stubs were written when README.md WAS the roadmap -- 731 of its 807 lines. On
+# 2026-08-13 the roadmap moved to docs/roadmap_shared_client.md (R6: the front page of a
+# public contract repo was, in the main, a plan for a package with no plan to exist).
+#
+# Reading both files is a RELOCATION fix, not a weakening, and the distinction matters
+# because carbon protocol §1-2 forbids the other kind. Every string these stubs could find
+# before, they can still find; none of their assertions changed. Proven by the count:
+# splitting the file alone flipped `r2_01` from green to red -- a FALSE red, since the SDK
+# staleness banner it looks for still exists, just in the other file -- and this restores
+# the failure set to its baseline of 10 rather than hiding a real finding.
+#
+# If the roadmap document is ever deleted, these go red for a real reason.
+README = (
+    (REPO / "README.md").read_text(encoding="utf-8")
+    + "\n"
+    + (REPO / "docs" / "roadmap_shared_client.md").read_text(encoding="utf-8")
+)
 
 
 def test_falsify_01_scaffold_buildable_without_invented_values():
