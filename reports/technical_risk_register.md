@@ -1137,7 +1137,7 @@ Cross-refs: C-51, C-47 (views-models#308, the warn-and-continue this was meant t
 
 ---
 
-### C-63: No reader checks the registry's `[meta] version`
+### C-63: No reader checks the registry's `[meta] version` — RULED, ACCEPTED 2026-08-13
 
 | Field | Value |
 |-------|-------|
@@ -1161,7 +1161,50 @@ a specific dispute.
 
 Filed as **views-appwrite#45**.
 
-Cross-refs: C-51, D-05, seam contract §10 (versioning).
+---
+
+**RULED 2026-08-13 (operator): the readers do NOT refuse a newer edition. Accepted risk, with the
+argument recorded.** views-appwrite#45 closed.
+
+The ruling is that adding the check would be **worse than the exposure**, not that the exposure is
+negligible:
+
+1. **Covered from the other side now.** `[meta] obliges_consumers_since` and contract §10.1
+   (v1.6.0) tell a consumer when an edition asks something of it. A reader refusing on version
+   fires on *every* edition, including the seven that oblige nobody — the noise #76 was filed to
+   remove. A gate that cries wolf is bypassed reflexively, and that is how its one real firing goes
+   unread.
+2. **A fourth pin per consumer, unchecked.** Each already carries a pinned tag or version constant
+   (views-faoapi `REGISTRY_PIN_TAG`, views-crafdapi `seam_contract.py`, views-postprocessing
+   `SEAM_CONTRACT_VERSION`). A second "written against" number must agree with the first and
+   **nothing would check that it does** — C-53's exact shape.
+3. **The live instance is not a version problem.** D-05's divergence happens on the *same* edition.
+   A version gate would not have caught it.
+
+**Why the exposure shrank without anyone acting on it.** The registry's growth has been in tables
+the readers structurally ignore — they scan exactly `[connection]` and `[target]`, so `[contract]`
+(v1.5.0) and `[edition]` (v1.6.0) were invisible by construction. The remaining risk is narrower
+than filed: a change *within* a scanned table that an old reader misreads, of which D-05 is the only
+instance.
+
+**The cheaper alternative, offered to the reader repos and not imposed.** Their ignore-list is
+implicit — the comment names `excluded`, `meta`, `test_environment`, written before `[contract]` and
+`[edition]` existed, so it is three tables out of date. A reader that fails on a table it has never
+heard of catches the class for one line each. **This repo shipped exactly that guard on its own
+side** (`test_every_table_in_the_registry_is_classified_here`, C-75, mutation-proven both
+directions). Offered as a pattern; no clause, no version bump, nothing to re-pin.
+
+**Two of #45's three questions were already answered before the ruling**, by work that did not know
+it was answering them: major-vs-minor is superseded by §10.1, and the constant's location was
+settled by practice in three repos.
+
+**Stays in the register rather than moving to Resolved.** Nothing was fixed — a risk was measured,
+argued, and accepted. It is retained so the next person meets the argument rather than the question,
+and reopens it if the premise changes: **if a future edition alters `[connection]` or `[target]`
+semantics, this ruling is void and the question returns.**
+
+Cross-refs: C-51, D-05, **C-53** (the unchecked-second-number shape this avoids), **C-75** (the
+table-classification guard offered as the alternative), seam contract §10 and §10.1, #76.
 
 ---
 
