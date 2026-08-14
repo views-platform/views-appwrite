@@ -30,6 +30,10 @@ TESTS_DIR = pathlib.Path(__file__).resolve().parent
 
 KINDS = ("guard", "falsification")
 
+# Every marker this repository declares, kind and CI lane together. A module-level
+# marker outside this set is a typo (C-78) -- see the test at the bottom of the file.
+KNOWN_MARKERS = set(KINDS) | {"crossrepo"}
+
 
 def _module_level_marks(path: pathlib.Path) -> set[str]:
     """Marker names in a module's top-level `pytestmark`, read without importing.
@@ -190,4 +194,47 @@ def test_crossrepo_is_only_ever_used_alongside_guard():
         "`crossrepo` is a CI lane for GUARDS and is meaningless without it:\n  "
         + "\n  ".join(offenders)
         + "\n\nEither add `pytest.mark.guard`, or drop `crossrepo`."
+    )
+
+
+def test_no_module_declares_an_unknown_marker():
+    """C-78 — the check `--strict-markers` was supposed to be and is not.
+
+    `tests/conftest.py` sets `config.option.strict_markers = True`, and its
+    docstring used to claim that made a typo an error. It does not: setting the
+    option from `pytest_configure` is too late for pytest to honour, so
+    `pytest.mark.guardd` emits a `PytestUnknownMarkWarning` and the module PASSES.
+    Measured, not assumed.
+
+    Nothing else covers the interesting case. `test_every_test_module_declares_
+    exactly_one_kind` catches a module that declares NO valid kind -- but a module
+    marked `guard` plus a mistyped `crossrepoo` declares a perfectly good kind, so
+    that test is satisfied while the lane marker silently means nothing and the
+    module lands in the wrong CI job. That is C-77's failure re-entering through
+    a spelling mistake.
+
+    KNOWN LIMIT, stated rather than discovered later: this reads module-level
+    `pytestmark` only. A custom marker applied to a single test function
+    (`@pytest.mark.something`) is invisible here. None exist today -- the only
+    function-level marker in this suite is `_D05`, which wraps the BUILTIN
+    `xfail` -- and closing that would mean either a `pytest.ini` carrying
+    `--strict-markers` or walking every decorator, neither of which is worth it
+    until a custom function-level marker exists.
+    """
+    offenders: list[str] = []
+    for path in sorted(TESTS_DIR.glob("test_*.py")):
+        unknown = _module_level_marks(path) - KNOWN_MARKERS
+        if unknown:
+            offenders.append(f"{path.name}: {sorted(unknown)}")
+
+    assert not offenders, (
+        "these modules declare a marker this repository does not define:\n  "
+        + "\n  ".join(offenders)
+        + f"\n\nKnown markers: {sorted(KNOWN_MARKERS)}\n"
+        "Almost always a typo. An unknown marker is NOT an error to pytest here "
+        "(C-78: `strict_markers` set from `pytest_configure` is inert), so without "
+        "this check it would warn and pass — and a mistyped `crossrepo` would put "
+        "a guard in the wrong CI job silently.\n\n"
+        "If the marker is genuinely new, add it to KNOWN_MARKERS *and* register it "
+        "in tests/conftest.py, and say which CI job selects it."
     )
