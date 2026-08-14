@@ -12,3 +12,16 @@ build/
 # Untracked in every other views-platform repo; committed here by accident
 # via `git add -A` in 28c897d and removed from tracking in this commit.
 CLAUDE.md
+
+# Generated knowledge-graph output (`/graphify`). Derived from the corpus and
+# regenerated on demand — graph.json, graph.html and GRAPH_REPORT.md together
+# run to ~2 MB.
+#
+# NOT committed, deliberately. A checked-in copy would go stale the moment any
+# governed document changed, with nothing in this repository able to notice —
+# which is the failure class already registered as C-71 (a posture statement
+# outliving the state it described) and C-76 (front-page claims nothing checked).
+# Committing it would manufacture a fresh instance of the thing this repo keeps
+# registering. If it is ever wanted durably it needs a regeneration trigger and
+# a staleness marker first, not a commit.
+graphify-out/
