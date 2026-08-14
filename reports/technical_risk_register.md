@@ -6,8 +6,8 @@
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
 | Total Concerns    | 63                                   |
-| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
-| Resolved Concerns | 11                                   |
+| Open Concerns     | 51 — of which **36 live, 15 dormant** (see *Dormancy*) |
+| Resolved Concerns | 12                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -50,7 +50,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ *C-09's vacuity half belonged here; resolved 2026-08-14*) · *resolved members, kept as the cluster's evidence: C-09, C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
@@ -254,7 +254,7 @@ Migrating `views-pipeline-core` to depend on `views-appwrite` requires buy-in fr
 
 ---
 
-### C-09: `validate_docs.sh` checks are narrower than a green run implies — and a green run cannot show which of them looked at anything
+### C-09: `validate_docs.sh` checks are narrower than a green run implies — and a green run cannot show which of them looked at anything — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -308,6 +308,74 @@ Part of causal cluster **G** (guards that are green and blind) for the vacuity h
 **A** (corpus freshness) for the `ADR-00[0-9]` half. Cross-refs: **C-55** (the same skip-into-dormancy
 shape), **C-70** (what made this a required gate), **C-77** (the same defect one layer up, in the
 workflow rather than the script).
+
+---
+
+### RESOLVED 2026-08-14 — widened, made auditable, and put under test
+
+**Four changes to `docs/validate_docs.sh`, and a test file that did not exist.**
+
+**Check 3 now sees ADR-010+.** Pattern widened `ADR-00[0-9]` → `ADR-0[0-9][0-9]`, with three
+exclusions declared in the script rather than inferred: lines naming a `views-*` repo (foreign
+ADRs), lines marked `(candidate)` (ADR-012–015 deliberately do not exist), and the `ADRs/platform/`
+tier. A green run now reads **`OK: 127 reference(s) checked against 12 ADR file(s)`** where it
+previously printed a bare header.
+
+**Why the platform tier is excluded, which was the real decision.** Measured before writing: without
+that exclusion the rule produces **11 errors, all in `appwrite_seam_contract.md` and
+`consumer_api_deployment_pattern.md`** — bare citations like *"Their ADR-017 §5"* where the owning
+repo is established in surrounding prose. Those are not defects. Fixing them means editing a
+**versioned contract**, which under §10 forces a version bump, an edition, a tag, and a re-pin
+decision for six consumers — **the exact cost C-73 registers** — for a cosmetic citation change. The
+platform tier is not part of this repository's constitutional series; ADR-011 draws that distinction
+explicitly. The reasoning is in the script, not only here.
+
+**Check 2 stops iterating over nothing.** C-55's remedy — an always-runs companion — applied to the
+one file C-55 did not examine: the check now compares the `CICs/README.md` list against the
+`docs/CICs/` directory **in both directions**. Today that is 0 and 0, which passes while genuinely
+comparing two things, and the reverse direction is the likelier Phase-1 defect: a CIC written and
+never added to the index ADR-006 points readers at.
+
+**Every check reports what it scanned.** Checks 1, 2, 3, 4 and 6 now emit `OK:` lines carrying
+counts, matching the style checks 7–9 already used. A narrowed check no longer looks like a passing
+one.
+
+**Check 1 includes `Deferred`.** The Status filter read `Accepted|Active`, so ADR-004 was never
+scanned for placeholders. No behaviour change today; the gap the entry named is closed.
+
+**AND THE SCRIPT IS NOW TESTED — `tests/test_validate_docs.py`, 18 tests.** It was 361 lines, a
+required check on every pull request, with no coverage at all; only checks 8 and 9 had ever been
+shown to fail, both by hand, both once. Each test builds a complete doc-tree in `tmp_path`, copies
+the **real** script into it, and introduces the fault that check exists to catch.
+
+**Proven non-vacuous, which is the part that matters.** Run against the pre-fix script from `HEAD`,
+**5 of the 18 fail** — and exactly the right five:
+
+| Test | Against the old script |
+|---|---|
+| `test_every_check_reports_what_it_scanned` | **RED** — no `OK:` lines existed |
+| `test_check1_now_scans_deferred_files` | **RED** — Deferred was filtered out |
+| `test_check2_fires_when_a_contract_exists_but_is_unlisted` | **RED** — no reverse direction |
+| `test_check3_fires_on_a_reference_to_a_nonexistent_adr` | **RED** — `ADR-099` was outside the pattern |
+| `test_check3_sees_the_010_plus_range` | **RED** — the headline defect |
+
+The other 13 pass against both, because they cover behaviour that already worked. **A harness that
+only asserted its author's own diff would have failed all 18 or none.**
+
+**The most valuable single test is `test_a_check_that_cannot_run_skips_locally_but_fails_under_ci`.**
+It runs the script with no git repository at all — the strongest form of "cannot run" — and asserts
+it skips visibly without `CI` and **exits 1 with `CI=1`**. That property is what C-53, C-55 and C-70
+were all about, `actions/checkout` makes the skip path the *default* on a runner, and until now it
+rested entirely on a comment.
+
+**Deliberately not asserted: exact wording.** The tests pin exit codes and short load-bearing
+substrings — the coordinate, the filename, the word `ERROR`. Pinning sentences would make every prose
+improvement a failure, and a guard that cries wolf at rewording gets deleted.
+
+Cross-refs: **C-55** (whose always-runs remedy check 2 now uses), **C-77** (the same defect one layer
+up — and this new module is the live proof its fix works: a brand-new guard joined the blocking lane
+with no workflow edit), **C-53**, **C-70**, **C-73** (the consumer cost that justified excluding the
+platform tier), **C-76** (check 9, which this harness now covers).
 
 ---
 
