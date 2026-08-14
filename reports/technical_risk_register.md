@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
-| Total Concerns    | 62                                   |
-| Open Concerns     | 51 — of which **36 live, 15 dormant** (see *Dormancy*) |
+| Total Concerns    | 63                                   |
+| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
 | Resolved Concerns | 11                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -2612,6 +2612,90 @@ one does not fix the other.
 Cross-refs: **C-65** (the dated deadline this is measured against), **C-27**, **C-28**, **C-56**,
 **C-66**, **C-69**, seam contract §5.3 (the floor that governs who may hold what), §7 and issue #8
 (the test-project decision, blocked behind the same person).
+
+---
+
+### C-83: Two production collections were readable and writable by anyone, and no document on this platform had ever considered the question
+
+| Field | Value |
+|-------|-------|
+| ID | C-83 |
+| Tier | **1** |
+| Source | `manual` — targeted investigation from the views-models seat (2026-08-14), commissioned after a delivery-path audit noticed `crafd` had `$permissions: []` while its two siblings did not |
+| Trigger | **Before provisioning any collection for a new partner**, run `views-models/tools/credentials/close_resource_permissions.py` and require an empty permission list. **Also:** when views-pipeline-core changes the `provisioning.py` default, close this entry rather than the symptom. |
+| Location | live Appwrite state — `file_metadata/unfao`, `file_metadata/production_forecasts`; root cause at `views-pipeline-core/views_pipeline_core/modules/appwrite/provisioning.py` (the `Role.any()` argument list); guard at `views-models/tools/credentials/close_resource_permissions.py` |
+
+**Measured, not inferred.** An unauthenticated `listDocuments` carrying only the project ID — no key,
+no session:
+
+| collection | with key | anonymous | `$permissions` |
+|---|---|---|---|
+| `unfao` | 111 | **HTTP 200, all 111 rows** | `read/create/update/delete("any")` |
+| `production_forecasts` | 461 | **HTTP 200, all 461 rows** | `read/create/update/delete("any")` |
+| `crafd` | 111 | HTTP 401 — refused | `[]` |
+
+`documentSecurity` was `false` on all three, so the collection grant governed. **Closed 2026-08-14**:
+both set to `permissions: []`, `documentSecurity` and `enabled` untouched; re-verified at 111 / 461 /
+111 with the key and 401 without. All three buckets were already closed (`permissions=[]`,
+`fileSecurity=True`) and were not touched.
+
+**Tier 1, on the silent-corruption criterion rather than on the reading.** `delete("any")` is loud —
+a missing row is noticed. `update("any")` is not: `file_hash` is present on 100% of rows and was
+attacker-writable, so rewriting `fileId` and `file_hash` in one call repoints a metadata record at
+substituted content **and repairs the only integrity control that would have caught it**. That is
+corruption with no error signal, which is what Tier 1 names. Counts matched expectations at discovery
+(461/461, 111/111, 111/111), so there is no evidence of tampering — but a matching count is exactly
+what a successful `update` would leave behind, and no hash was re-derived from bucket bytes. **That
+verification has not been done and this entry does not claim it.**
+
+**There was no obscurity barrier, and this repository supplied the map.** `APPWRITE_ENDPOINT` and
+`APPWRITE_DATASTORE_PROJECT_ID` are tracked on the public default branch at
+`docs/ADRs/platform/coordinate_registry.toml`, along with every collection and bucket id; the
+`e939b3a` "production coordinates stripped" cleanup removed them from the README only.
+views-pipeline-core's register — also public — states at **C-292** that the CLI *"creates collections
+readable, writable and deletable by anyone."* Coordinates in one public repo, the vulnerability class
+in another. Neither is wrong on its own; together they were a complete set of instructions.
+
+**Why nothing broke when it was closed.** `AuthMethod` is a single-member enum (`API_KEY`); session
+auth was deleted platform-wide (þing-01 #274 / C-255, 2026-08-01); there is no JS or web client on the
+platform; FAO's shipped notebooks call `faoapi.viewsforecasting.org` with `X-API-Key` and never import
+`appwrite`. API keys bypass resource permissions entirely. **`crafd` was the proof and not the
+outlier** — it has served at `permissions: []` throughout while the delivery read and wrote it under
+the datastore key, so an empty list was already known-good in production before anything was changed.
+
+**The governance finding, which is the larger half of this entry.** Seam contract §5.5 and þing-01 D4
+decide **API-key scopes** in ratified detail: three tiers, exact scope lists, a named operator, a
+six-step ordering. They decide **nothing** about resource permissions, and the two are different
+objects on different planes — key scopes are console state, collection ACLs are arguments in
+pipeline-core's Python. A grep for `Role.`, `Permission.`, `document_security` or `file_security`
+across every `.md` and `.toml` in this repository returns **zero hits**: not in the seam contract, not
+in the registry, not in `joining_the_seam.md`, not in this register's previous 62 entries. Neither
+þing ruled on it. No ADR in any of the six repositories names it.
+
+`views-faoapi/docs/ADRs/active/027_authentication_and_per_key_isolation.md` records the reasoning that
+kept it hidden — *"an over-scoped key over-exposes data, and faoapi cannot tighten what Appwrite
+handed out."* Every sentence written about Appwrite exposure on this platform frames it as flowing
+from **key breadth**. Under `Role.any()`, no key is needed at all, so the framing had no shape for
+this to occupy.
+
+**Deliberately not filed under cluster I** (*credential lifecycle has no owner*), though it will look
+like it belongs there. Cluster I is about keys. Filing a resource-ACL entry inside it would reproduce
+the precise conflation that let this survive — the platform decided the neighbouring question in
+detail and inferred the answer to this one. If a cluster is warranted it is a new one, and that is
+`review-rr`'s call rather than this entry's.
+
+**Open, not resolved.** The live exposure is closed; the two things that produced it are not. (1) The
+upstream default is unchanged — `provisioning.py` grants `Role.any()` on collection creation while the
+sibling `ensure_bucket` in the same module defaults to `permissions=[]`, so one command still produces
+a locked bucket and an open collection, and the next partner bring-up reopens this. (2) No target
+state is declared anywhere, so there is nothing for a future contributor to violate knowingly. The
+guard script is a detector, not a fix: C-292's own wording is *"No test inspects the argument"*, and
+that is still true of everything except a script somebody has to remember to run.
+
+Cross-refs: **C-292** (views-pipeline-core — the code-level entry, Tier 3 and "consciously accepted",
+which this entry supersedes in severity), **C-82** (the operator concentration this fix routed
+around — it needed no console action, which is itself worth noticing), seam contract **§5.5** (the
+neighbouring decision), views-models `tools/credentials/close_resource_permissions.py`.
 
 ---
 
