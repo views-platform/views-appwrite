@@ -13,19 +13,26 @@ name: Guards
 # catches it, but ran only when a human remembered `pytest`. That commit would have
 # merged with a green tick.
 #
-# WHAT RUNS HERE, AND WHAT DOES NOT
-#   this job   `-m guard` over the SELF-CONTAINED guards + docs/validate_docs.sh.
+# WHAT RUNS HERE, AND WHAT DOES NOT — ALL OF IT SELECTED BY MARKER (C-77)
+#   this job   `-m "guard and not crossrepo"` + docs/validate_docs.sh.
 #              Needs nothing outside this repository.
-#   NOT here   tests/test_registry_readers_agree.py -- it needs sibling checkouts
-#              and gets its own job (story #69). Running it here would fail on a
-#              lone runner for the wrong reason: its anti-vacuity assertion
+#   NOT here   guards marked `crossrepo` -- they need sibling checkouts and get
+#              their own job (story #69). Running them here would fail on a lone
+#              runner for the wrong reason: the anti-vacuity assertion
 #              `test_at_least_one_reader_is_present` correctly FAILS when no
 #              readers are present, which is right, and useless as a signal here.
 #   NOT here   the falsification stubs. Red by design; reporting-only job (#70).
 #
-# The `guard` / `falsification` split is DECLARED via markers in tests/conftest.py,
-# not inferred from filenames -- ADR-003, and the registry's own rule about itself.
-# tests/test_test_kinds.py fails if any module declares neither.
+# The `guard` / `falsification` kind AND the `crossrepo` CI lane are both DECLARED
+# via markers in tests/conftest.py, never inferred from filenames -- ADR-003, and
+# the registry's own rule about itself. tests/test_test_kinds.py fails if any
+# module declares neither kind, and fails if either step below goes back to naming
+# test files.
+#
+# THE STEPS BELOW USED TO NAME FILES, AND THAT WAS C-77. `-m guard` narrowed a
+# hand-written list and could never widen it, so a guard module added later
+# belonged to no job while satisfying every rule this repository states about
+# markers. The marker scheme was one layer below the thing that decided what ran.
 
 on:
   push:
@@ -78,8 +85,19 @@ jobs:
       # only below 3.11 and FAIL rather than skip if neither exists -- that
       # fallback exists because these tests once skipped silently on 3.10, on the
       # exact registry break they were written to catch.
+      # SELECTED BY MARKER, NEVER BY FILENAME (C-77).
+      #
+      # This step used to name two files. `-m guard` then narrowed that list and
+      # could never widen it, so the marker scheme decided nothing about what CI
+      # collected: a new guard module ran in NO job while passing the meta-guard,
+      # which checks declarations rather than selection. Mutation-proven before
+      # the fix -- a deliberately-failing probe module was collected by
+      # `pytest -m guard tests/` and NOT by this step, which exited 0.
+      #
+      # `and not crossrepo` excludes only the modules that DECLARE they need
+      # sibling checkouts. Absence is the safe default: a new guard lands here.
       - name: Registry-shape guards
-        run: python -m pytest -q -m guard tests/test_registry_reader_contract.py tests/test_test_kinds.py
+        run: python -m pytest -q -m "guard and not crossrepo" tests/
 
       - name: Documentation and version checks
         run: bash docs/validate_docs.sh
@@ -185,4 +203,4 @@ jobs:
         run: |
           echo "::notice title=Cross-repo coverage::Comparing 2 of 3 canonical readers. \
           views-faoapi is private and not fetched (#73 withdrawn, ADR-017 §9). C-51 tracks the gap."
-          python -m pytest -q -m guard tests/test_registry_readers_agree.py -v
+          python -m pytest -q -m "guard and crossrepo" tests/ -v
