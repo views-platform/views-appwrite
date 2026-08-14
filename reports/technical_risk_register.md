@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
-| Total Concerns    | 61                                   |
-| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
+| Total Concerns    | 62                                   |
+| Open Concerns     | 53 — of which **38 live, 15 dormant** (see *Dormancy*) |
 | Resolved Concerns | 9                                    |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -52,7 +52,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 |---------|-----------|---------|--------------|--------------|
 | **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-77, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
-| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
 | **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
@@ -2452,6 +2452,72 @@ So the default reading of this repository is **all of the governance and none of
 **Not merged into C-09.** C-09 is about this repository's own checks being narrower than they look. This is about *external* readers of the repository being narrower than they look, which is a different party and a different fix.
 
 Cross-refs: cluster **G** (an instrument reporting success without having looked — the same shape, a different instrument), cluster **L** (things about this repository that nothing here can verify), **C-74** and **C-75** (the two entries that turn on what a tool does and does not enumerate).
+
+---
+
+### C-82: Every credential path routes through one person, and nothing anywhere says so
+
+| Field | Value |
+|-------|-------|
+| ID | C-82 |
+| Tier | **2** |
+| Source | `review-rr` strategic (2026-08-14) — blind-spot analysis; the category was empty because nobody had looked, not because the risk was absent |
+| Trigger | **By 2026-09-17 — sixty days before the keys die — establish whether the 2026-11-17 rotation can be executed if the operator is unavailable for two weeks.** Concretely: is there a second Appwrite console holder, or a written handover naming what to do? If neither, that is the answer and it should be recorded as an accepted risk rather than left unasked. **Also:** when `PRODUCTIONAPI_API_KEY` or any further external-party key is issued, record who besides the operator can revoke it. |
+| Location | organizational — Appwrite console custody; `docs/ADRs/platform/appwrite_seam_contract.md` (the `Operator` header row, §5.1–§5.5, §7, §9 O1/O2); `coordinate_registry.toml` `[secret.*]` (`issued_by = "operator"` on every slot); cluster **I** in this register |
+
+**The concentration, counted rather than asserted.** One named person holds Appwrite console custody,
+key issuance, key rotation, scope narrowing, and the non-production-project decision. Every one of the
+following routes to that person and to nobody else:
+
+| Entry | What waits on the operator |
+|---|---|
+| **C-27** (O1) | designing the secret-value propagation path — no mechanism exists |
+| **C-28** (O2) | issuing and scoping any further external-party key |
+| **C-56** | the console action that fixed the CRAFD key's scopes |
+| **C-65** | the rotation of **both** platform keys before **2026-11-17** |
+| **C-66** | deciding whether `crafd-caller-read` gets an expiry at all |
+| **C-69** | buying, or declining to buy, GitHub Secret Protection |
+| seam contract §7 | creating a test project, which blocks the reference validator, the scaffold (#8), C-21's fixture guard and D-04 |
+
+Nine open entries and one deferred scaffold decision, one holder.
+
+**Why this is a register entry and not merely an org chart.** The seam contract names the operator in
+its header and in six clauses. The registry stamps `issued_by = "operator"` on every secret slot. So
+the *dependency* is recorded everywhere — and the *risk in the dependency* is recorded nowhere. No
+document states that this is one person, that there is no second console holder, or what happens to a
+rotation already sized in hours if that person is away for a fortnight. **A reader of this register
+sees nine entries assigned to an owner and reasonably infers the owner is a role. It is a name.**
+
+That is this platform's own distinction, applied to itself: *"an accepted gap is done; a silent gap is
+not."* This gap is silent.
+
+**Tier 2, and the justification is structural rather than dramatic.** Not Tier 1: the failure is
+**loud** — at 16:10 on 2026-11-17 every Appwrite identity on the seam is dead at once and everyone
+knows immediately. Nothing is silently corrupted. It is Tier 2 because the fragility is structural and
+the change scenario is ordinary: **illness, leave, or a two-week absence across a fixed external
+deadline that cannot be moved.** The FAO half of the rotation additionally needs coordination with an
+external partner (C-65), which is the part that cannot be compressed at the end. There is no second
+holder, no documented procedure, and no fallback key — C-65 already establishes that the two platform
+keys cannot cover for each other because they die together.
+
+**What this entry does not claim.** It does not argue for a second console holder — handing Appwrite
+custody to a second party has its own blast-radius cost and is exactly the kind of decision §5.3's
+floor exists to reason about carefully. **Both answers are defensible. Only the absence of a decision
+is not** — which is the same shape as C-66, where `never` was a default rather than a choice, and
+nobody looked until the key list was read.
+
+**Why it took a blind-spot pass to find.** The register grew by tracking what its audits looked at,
+and every audit so far read code, prose or config. Nothing reads the org. The category was empty
+because it had not been examined, which is the difference the blind-spot analysis exists to detect.
+
+Cluster **I** (*credential lifecycle has no owner*) — and note the inversion worth stating: cluster I
+says the lifecycle has **no owner**, meaning no defined process. This entry says the process that does
+exist has **exactly one**, undocumented. Those are complementary, not contradictory, and the fix for
+one does not fix the other.
+
+Cross-refs: **C-65** (the dated deadline this is measured against), **C-27**, **C-28**, **C-56**,
+**C-66**, **C-69**, seam contract §5.3 (the floor that governs who may hold what), §7 and issue #8
+(the test-project decision, blocked behind the same person).
 
 ---
 
