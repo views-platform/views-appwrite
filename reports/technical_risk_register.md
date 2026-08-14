@@ -6,8 +6,8 @@
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
 | Total Concerns    | 62                                   |
-| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
-| Resolved Concerns | 10                                   |
+| Open Concerns     | 51 — of which **36 live, 15 dormant** (see *Dormancy*) |
+| Resolved Concerns | 11                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -50,7 +50,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70, C-77* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
@@ -2353,7 +2353,7 @@ cluster **G**.
 
 ---
 
-### C-78: `strict_markers` is set where pytest does not read it, so a typo'd marker only warns
+### C-78: `strict_markers` is set where pytest does not read it, so a typo'd marker only warns — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -2408,10 +2408,46 @@ source. Recorded here rather than as its own entry because it is evidence for th
 one — and because it upgrades the concern from "someone might believe this" to "something already
 did."
 
-Cross-refs: **C-77** (the other half of the marker scheme, also inert at a different layer), **C-64**
+---
+
+### RESOLVED 2026-08-14 — the check is written in Python, where it works
+
+**Not fixed by making `--strict-markers` work.** The obvious repair — a `pytest.ini` carrying
+`addopts = --strict-markers` — was considered and declined: it adds a config file to a repository
+that has deliberately avoided them (C-18, D-04), and it moves pytest's rootdir. The cheaper fix uses
+machinery that already exists.
+
+**`test_test_kinds.py::test_no_module_declares_an_unknown_marker`** asserts every module-level
+marker is one this repository defines, reusing the `_module_level_marks()` AST parser already in that
+file. `KNOWN_MARKERS` is `{guard, falsification, crossrepo}`.
+
+**The inert line is kept, not deleted**, with a comment saying plainly that it does nothing here,
+why, and where the real check lives. Deleting it would remove the only pointer to why the Python
+check exists — and this entry's whole subject is a mechanism believed to work.
+
+**Mutation-proven, reverted.** The second row is the one that matters:
+
+| Mutation | Old kind check | New check |
+|---|---|---|
+| `guard` → `guardd` (the kind) | red (module declares no valid kind) | **RED**, naming `['guardd']` |
+| `crossrepo` → `crossrepoo` (**the lane**) | **1 passed** — satisfied | **RED**, naming the typo |
+
+**The lane row is why this needed its own check.** A module marked `guard` plus a mistyped
+`crossrepoo` declares a perfectly valid kind, so `test_every_test_module_declares_exactly_one_kind`
+passes — while the lane marker means nothing and the module lands in the wrong CI job. **That is
+C-77's failure re-entering through a spelling mistake**, and it became reachable the moment C-77
+introduced a third marker.
+
+**Known limit, stated in the test rather than discovered later.** It reads module-level `pytestmark`
+only. A custom marker on a single test function is invisible to it. None exists today — the one
+function-level marker in this suite is `_D05`, which wraps the builtin `xfail` — and closing that
+would need either the `pytest.ini` declined above or walking every decorator. Not worth it until a
+custom function-level marker exists.
+
+Cross-refs: **C-77** (the other half of the marker scheme — the lane this now protects), **C-64**
 (a docstring citing a verdict that did not say what it claimed — the same propagation, by hand),
 **C-68**, **C-55**, **C-81** (the same extraction run, the opposite failure — what it could not see),
-cluster **G**.
+**C-18** / **D-04** (why a `pytest.ini` was declined), cluster **G**.
 
 ---
 
