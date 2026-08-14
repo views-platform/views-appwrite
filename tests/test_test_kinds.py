@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
 
 import pytest
 
@@ -100,4 +101,93 @@ def test_the_two_kinds_partition_the_whole_suite():
         f"selectors: {missing}\n\n"
         "CI runs `-m guard` (blocking) and `-m falsification` (reporting). A "
         "module in neither is invisible to both."
+    )
+
+
+# --------------------------------------------------------------------------
+# C-77 — the checks above verify DECLARATIONS. These verify SELECTION.
+#
+# Both tests above passed while `guards.yml` selected guard modules by FILENAME,
+# so a new guard module declared its kind correctly, satisfied the meta-guard,
+# and ran in no CI job. The marker scheme sat one layer below the thing that
+# decided what actually ran. Declaring a kind is worthless if the workflow does
+# not select on it.
+# --------------------------------------------------------------------------
+
+WORKFLOW = TESTS_DIR.parent / ".github" / "workflows" / "guards.yml"
+
+# A guard step must select by marker expression. These are the two lanes; between
+# them they cover `guard` exactly, and `crossrepo` is absence-safe so a module
+# that declares no lane lands in the self-contained one rather than in none.
+LANE_SELECTORS = ('-m "guard and not crossrepo"', '-m "guard and crossrepo"')
+
+
+def test_the_workflow_selects_guards_by_marker_not_by_filename():
+    """The C-77 regression: a `-m guard` step that also names test files.
+
+    `-m` can only NARROW the paths it is given, never widen them. So a step that
+    passes both a marker and a file list is selecting by file list, whatever the
+    marker says — and a module absent from that list runs nowhere while looking
+    correctly declared.
+    """
+    assert WORKFLOW.is_file(), f"{WORKFLOW} is missing; the guard jobs are defined there"
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    offenders = [
+        line.strip()
+        for line in text.splitlines()
+        if "-m " in line
+        and "pytest" in line
+        and re.search(r"tests/test_\w+\.py", line)
+    ]
+    assert not offenders, (
+        "a guard step in guards.yml names test FILES alongside `-m`:\n  "
+        + "\n  ".join(offenders)
+        + "\n\nThat is C-77. `-m` narrows the given paths and cannot widen them, so "
+        "the file list — not the marker — decides what runs, and a guard module "
+        "missing from it joins no job while passing every check in this file. "
+        "Pass a directory and let the marker expression select."
+    )
+
+
+def test_both_ci_lanes_are_present_in_the_workflow():
+    """The other half: selecting by marker is only safe if BOTH lanes exist.
+
+    Drop `-m "guard and crossrepo"` and the cross-repo guards stop running while
+    the self-contained job stays green — the same silence C-77 describes, arrived
+    at from the opposite direction.
+    """
+    assert WORKFLOW.is_file(), f"{WORKFLOW} is missing"
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    missing = [sel for sel in LANE_SELECTORS if sel not in text]
+    assert not missing, (
+        f"guards.yml no longer contains these lane selectors: {missing}\n\n"
+        "Every module marked `guard` must be collected by exactly one of:\n"
+        f"    {LANE_SELECTORS[0]}   (self-contained job)\n"
+        f"    {LANE_SELECTORS[1]}       (cross-repo job)\n\n"
+        "If a lane is renamed, update LANE_SELECTORS here in the same change — "
+        "this constant and the workflow are two statements of one fact, and the "
+        "point of this test is that they must agree."
+    )
+
+
+def test_crossrepo_is_only_ever_used_alongside_guard():
+    """`crossrepo` routes a module to a job that only runs blocking guards.
+
+    On a falsification module it would be a no-op the author would not notice:
+    the reporting job selects `-m falsification` and would ignore it, so the
+    module would run there and the marker would mean nothing. Declared markers
+    that quietly mean nothing are how a scheme stops being trusted.
+    """
+    offenders = []
+    for path in sorted(TESTS_DIR.glob("test_*.py")):
+        marks = _module_level_marks(path)
+        if "crossrepo" in marks and "guard" not in marks:
+            offenders.append(f"{path.name}: declares {sorted(marks)}")
+
+    assert not offenders, (
+        "`crossrepo` is a CI lane for GUARDS and is meaningless without it:\n  "
+        + "\n  ".join(offenders)
+        + "\n\nEither add `pytest.mark.guard`, or drop `crossrepo`."
     )
