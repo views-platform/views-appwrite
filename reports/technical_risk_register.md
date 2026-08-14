@@ -6,8 +6,8 @@
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
 | Total Concerns    | 62                                   |
-| Open Concerns     | 53 — of which **38 live, 15 dormant** (see *Dormancy*) |
-| Resolved Concerns | 9                                    |
+| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
+| Resolved Concerns | 10                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -50,7 +50,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-77, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70, C-77* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
@@ -2239,7 +2239,7 @@ incoherence from the consumer side), **C-68** (the `c41` stub, audited below), s
 
 ---
 
-### C-77: CI selects guard modules by filename, so the next guard added would run in no job
+### C-77: CI selects guard modules by filename, so the next guard added would run in no job — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -2289,9 +2289,67 @@ and rather than 1 because no coordinate is wrong today.
 exists, runs the guards it was told about, and cannot be told about a new one*. C-70's resolution note
 claims "every guard now runs on every PR" — true when written, and narrowed by this entry.
 
-Cross-refs: **C-70** (the resolved entry whose closing claim this qualifies), **C-52** (a guard that
-graded two identical clones), **C-55**, **C-68**, **C-09** (the same defect one layer down, inside
-`validate_docs.sh`), **C-78** (the other inert half of the marker scheme), cluster **G**.
+---
+
+### RESOLVED 2026-08-14 — the workflow now selects by marker, and cannot go back silently
+
+**Fixed in the same session it was registered, because the entry's own point was that it opens on the
+next guard added — and the next guard added was one of the three below.**
+
+**The change.** Both jobs select by marker expression over `tests/`, and the CI lane is now
+*declared* the same way the kind is:
+
+| Job | Selector |
+|---|---|
+| `guards (self-contained)` | `-m "guard and not crossrepo" tests/` |
+| `guards (cross-repo)` | `-m "guard and crossrepo" tests/` |
+
+`crossrepo` is registered in `tests/conftest.py` and declared on
+`test_registry_readers_agree.py`, the one module that needs sibling checkouts.
+**Absence is the safe default**: a new guard module with no lane marker joins the self-contained
+lane rather than none, so the failure mode of forgetting it is loud (a sibling-needing test failing
+in the wrong job) instead of silent (running nowhere).
+
+**Proven both directions, mutations reverted, working tree verified clean.**
+
+*The defect is gone* — the same probe module that exposed C-77 was re-run against the new command:
+
+| | Before the fix | After |
+|---|---|---|
+| `pytest -m guard tests/` (what the markers promised) | 1 failed | 1 failed |
+| **the exact CI step** | **14 passed, exit 0** — probe never collected | **1 failed, 17 passed** — probe caught |
+
+*The fix is guarded* — three new tests in `test_test_kinds.py`, each watched failing for its own
+reason:
+
+| Mutation | Result |
+|---|---|
+| workflow reverted to naming test files | **RED** — `test_the_workflow_selects_guards_by_marker_not_by_filename` |
+| the `crossrepo` lane selector deleted | **RED** — `test_both_ci_lanes_are_present_in_the_workflow`, naming the missing lane |
+| `crossrepo` placed on a falsification module | **RED** — `test_crossrepo_is_only_ever_used_alongside_guard` |
+
+**Why a guard on the workflow and not just a corrected workflow.** The entry's finding was that
+*declarations* were checked and *selection* was not — the meta-guard verified markers while the
+workflow ignored them. Correcting the workflow without checking it would leave that asymmetry
+untouched and simply reset the clock: `-m` narrows the paths it is given and can never widen them, so
+any future step that passes both a marker and a file list is selecting by file list again, whatever
+the marker says. The first of the three tests above is the one that makes that irreversible.
+
+**Lane arithmetic, verified:** 17 self-contained + 4 cross-repo + 2 xfailed = 21 passed + 2 xfailed,
+exactly the `-m guard` union. The two lanes partition the guard set with nothing outside.
+
+**One honest residual.** `LANE_SELECTORS` in the test and the strings in `guards.yml` are two
+statements of one fact — a rename must change both. That is C-53's shape in miniature, and it is
+accepted rather than hidden: the test fails loudly on divergence (mutation 2 proves it), which is
+precisely the property C-53 was about. The alternative, parsing the YAML and reconstructing pytest's
+marker algebra, is brittle against every legitimate way a step can be written, and a brittle guard
+gets deleted.
+
+Cross-refs: **C-70** (the resolved entry whose closing claim this qualifies — *"every guard now runs
+on every PR"* is true again, and now checked), **C-52**, **C-55**, **C-68**, **C-09** (the same
+defect one layer down, inside `validate_docs.sh`, still open), **C-78** (the other inert half of the
+marker scheme — still open, and the reason `conftest.py` now warns against deleting the meta-guard),
+cluster **G**.
 
 ---
 

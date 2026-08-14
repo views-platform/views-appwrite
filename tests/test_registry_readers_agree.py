@@ -51,7 +51,13 @@ import pytest
 
 # GREEN AND BLOCKING. These protect a live invariant, so they run in the gating
 # CI job -- see tests/conftest.py for why the kind is declared, not inferred.
-pytestmark = pytest.mark.guard
+#
+# `crossrepo` is the CI LANE, and it is why this module is not in the
+# self-contained job: every test below needs sibling repositories on disk, and
+# `test_at_least_one_reader_is_present` correctly FAILS on a lone runner. The
+# workflow used to express that by naming this file; it now selects on this
+# marker (C-77).
+pytestmark = [pytest.mark.guard, pytest.mark.crossrepo]
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 WORKSPACE = REPO.parent
