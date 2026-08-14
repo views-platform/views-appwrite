@@ -4,11 +4,11 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-08-13                           |
-| Total Concerns    | 56                                   |
-| Open Concerns     | 51                                   |
-| Resolved Concerns | 5                                    |
-| Disagreements     | 5 (3 open, 2 resolved — D-02, D-05)  |
+| Last Updated      | 2026-08-14                           |
+| Total Concerns    | 61                                   |
+| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
+| Resolved Concerns | 9                                    |
+| Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
 ---
@@ -50,8 +50,8 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-52, C-53, C-55, C-62, C-67, C-68, C-70, C-74, C-75** | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard now runs on every PR and the blocking ones are required, each proven by mutation in CI. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
-| **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-54, C-59, C-64, C-65, C-71** (C-53 also, via G) | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-77, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
 | **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
@@ -71,7 +71,48 @@ all fired within one week, immediately after the epic that closed G's acute memb
 
 The uncomfortable implication is that L is probably not the last stage.
 
-Standalone: C-01 (dissolves when the scaffold exists), C-21 (README instance closed 2026-07-28; pipeline-core's dataclass-defaults instance and the fixture guard remain), C-04's re-derived remainder, C-26 (external, operational).
+Standalone: C-01 (dissolves when the scaffold exists), C-21 (README instance closed 2026-07-28; pipeline-core's dataclass-defaults instance and the fixture guard remain), C-04's re-derived remainder, C-26 (external, operational), **C-81** (a *reader* of this repository that cannot see the product — adjacent to G and L, but the failing party is neither a guard of ours nor a consumer, so it is not forced into either).
+
+### Dormancy — added 2026-08-14 (`review-rr` strategic)
+
+**Fifteen concerns describe a package that does not exist**, and their triggers are conditioned on
+Phase 1 extraction — which is deferred behind roadmap **Decision Log #11** (three consumer APIs;
+`views-publicapi` does not exist, so the count stands at two of three). **Those triggers cannot fire
+today.** They are marked `> **Dormant**` beneath their field table:
+
+`C-01 · C-02 · C-04 · C-06 · C-07 · C-12 · C-14 · C-15 · C-16 · C-17 · C-18 · C-19 · C-20 · C-24 · C-25`
+— and disagreements **D-01** and **D-03**, whose resolutions both defer to what Phase 1 reveals.
+
+**Two entries were considered and deliberately left live**, because reading them carefully is what the
+marker is for. **C-03** fires when views-pipeline-core upgrades its Appwrite SDK to 14+, and **C-05**
+fires when a bug is fixed in one client copy — those are roadmap triggers **T2** and **T3**, which are
+*independently sufficient* to activate extraction and can fire on any ordinary working day. Marking
+them dormant would have inverted their meaning: they are not waiting on Phase 1, they are among the
+things that would **start** it.
+
+**Tiers are deliberately unchanged.** A tier says *how bad if it fires*; dormancy says *whether it can
+fire now*. Collapsing the two would either understate the severity of real risks or overstate the
+urgency of parked ones. This is **§10.1's own move applied to this register**: `obliges_consumers_since`
+separated an edition's size from whether it asks anything of you, and tier alone had the same gap.
+
+**Why this is a marker and not a deletion.** Every one of these becomes immediately relevant the day
+the trigger fires — that is what a register is *for*. What they should not do meanwhile is compete
+for attention with entries that have already fired, several of them more than once.
+
+The live set is therefore **37 concerns**, not 52.
+
+**Every number in this section is derived, not authored** — reproduce it rather than trusting it:
+
+```
+grep -B14 '^> \*\*Dormant\*\*' reports/technical_risk_register.md | grep -o '^### [CD]-[0-9]*'
+```
+
+Stated because the alternative is what this register spent v1.4.0 learning. The count appears in the
+header, twice in this section, and as an enumerated list — **four hand-maintained statements of one
+derived fact, compared to each other and to nothing else, which is C-53's shape.** It was introduced
+here while resolving C-53, caught by `review-diff` on this section's own branch, and is left visible
+rather than tidied: the list is a convenience for reading, the markers are the source of truth, and
+when they disagree **the markers win.**
 
 **Note on Cluster E and D-04 (2026-07-28):** the þing briefly approved this repo's scaffold, then
 **deferred it again** on adversarial review — the scaffold's justification was hosting the reference
@@ -94,6 +135,10 @@ parked, with one more recorded trigger.
 | Trigger | When a consumer repo adds `views-appwrite @ git+...@v0.1.0` to its `pyproject.toml` dependencies, verify that the tag and package actually exist before relying on the import. |
 | Location | `views-appwrite/` (entire repo: untracked `README.md`, `docs/`, `reports/`; 0 commits as of 2026-06-12) |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 The repository contains only a 640-line `README.md` and has no commits, no `src/`, no `tests/`, and no `pyproject.toml`. Everything described under "Package Design" (`README.md:216-237`) is a plan, not code. The risk is that the roadmap's concrete install instructions (`pip install git+...@v0.1.0`, `README.md:326`) are read as already-published, and a consumer pins a dependency that cannot resolve. The failure is loud (install/import error) rather than silent, which is why this is Tier 3 rather than Tier 2. Currently mitigated only by the `Status: Planned` line (`README.md:5`) and the "hold until a trigger fires" recommendation (`README.md:616`).
 
 ---
@@ -107,6 +152,10 @@ The repository contains only a 640-line `README.md` and has no commits, no `src/
 | Source | repo-assimilation (2026-06-11) |
 | Trigger | When the first code commit lands (Phase 1 scaffold), verify CI/lint enforces the "Appwrite-SDK-only dependency", "no domain logic", and "no `os.getenv`/`load_dotenv`" rules — not just the README prose. |
 | Location | planned `pyproject.toml` and CI; rules stated at `README.md:106-119,255,322` |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 The package's defining constraints — exactly one runtime dependency (`appwrite>=5.0.0`), zero VIEWS domain logic, and no environment-variable loading inside the package — are asserted only as prose in "What This Package Does NOT Contain" (`README.md:106-119`). The README's own R5 (`README.md:572`) identifies scope creep as "the most likely way this package fails long-term." Without an import-linter rule, a dependency allowlist in CI, or a grep gate for `os.getenv`, nothing prevents a future PR from adding pandas, a domain schema, or hidden `.env` coupling. This raises cost of change for every future maintainer. Currently mitigated by the prose contract and the Decision Log (D2–D4, `README.md:599-601`).
 
@@ -145,6 +194,10 @@ The Appwrite SDK changed responses from plain `dict` (SDK 13) to Pydantic models
 | Trigger | When defining `views_appwrite.client.AppwriteConfig`, diff the field sets of both source repos' configs and confirm the new dataclass is a superset; then update every `AppwriteConfig(...)` construction site to pass `cache_dir=` instead of `path_manager=`. |
 | Location | external: `views-pipeline-core` (`AppwriteConfig` with `timeout_seconds`, `path_manager`), `views-faoapi` (`AppwriteConfig` with `timeout_seconds` + `connect_timeout_seconds`, `path_manager`); documented at `README.md:148-155,421-422,578-582` |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 The two source repos define `AppwriteConfig` with different fields: pipeline-core has `timeout_seconds` but not `connect_timeout_seconds`; both pass a `path_manager: ModelPathManager` that the extracted package intends to replace with `cache_dir: Optional[Path]` (roadmap Decision Log #4, `README.md:601`). The new config must be a superset (`README.md:421`), and every construction site across at least three repos must change `path_manager=...` to `cache_dir=path_manager.cache / "appwrite"` (`README.md:383,422`). A missed call site fails at construction time (`TypeError`) — but the silent path is what grounds Tier 2: if the superset config quietly redefines a field's default or semantics between the two source variants (e.g. differing timeout defaults), consumers get changed runtime behavior with no error at all. This is structural fragility with a concrete migration trigger. The README proposes a transitional config accepting both fields (R6 mitigation, `README.md:582`) — not yet implemented.
 
 **Falsification evidence (2026-06-12, probe P6):** the divergence already exists *inside this repository's own docs* — four partial, disagreeing field enumerations: `README.md:57` (has `auth_method`, cache TTL, timeout; omits `cache_dir`), the canonical example `README.md:268-276` (7 fields; omits `auth_method`, TTL, all timeouts), ADR-009:41 (adds `cache_dir`, plural "timeouts"), and `README.md:501` (derived `bucket_name`/`database_name` fields appearing in no list). No authoritative enumeration exists from which even a class stub could be written; candidate ADR-012 is the natural home. Enforced by failing stub `tests/test_falsification_enough_info_to_set_up_repo.py::test_falsify_06_appwriteconfig_has_single_authoritative_field_list`.
@@ -158,7 +211,7 @@ The two source repos define `AppwriteConfig` with different fields: pipeline-cor
 | ID | C-05 |
 | Tier | 2 |
 | Source | repo-assimilation (2026-06-11) |
-| Trigger | When a bug is fixed in one Appwrite client copy, check whether the other copy has the same bug; and when `views-faoapi` is cloned for a new consumer API (e.g. World Bank, UNHCR), confirm whether the clone copies the Appwrite client a third time. |
+| Trigger | **(a)** When a bug is fixed in one Appwrite client copy, check whether the other copy has the same bug. **(b)** When `views-faoapi` is cloned for a new consumer API, confirm whether the clone copies the Appwrite client again — *(b) fired on 2026-08-01 when views-crafdapi was cut, and Decision Log #11 reclassified it: the trigger counts consumer APIs, not copies, so it is one clone short rather than met.* |
 | Location | external: `views-pipeline-core/modules/appwrite/file.py` (~3,047 lines), `views-faoapi/managers/appwrite.py` (~2,000 lines); documented at `README.md:39-45,128-155,540-552,622-639` |
 
 Two implementations of the Appwrite client (~5,000 lines total) are ~90% identical but have already diverged: the `_as_dict` SDK-14 guard exists only in faoapi, class names differ, and timeout config exists in only one (`README.md:39-45,148-155`). Continued independent evolution risks silent behavioural divergence in production (e.g. one copy auto-creates a missing bucket while the other raises, `README.md:550`) and widens the eventual extraction diff. Cloning `views-faoapi` for a new stakeholder API copies the client a third time — the README's strongest "start now" trigger (#1, `README.md:622`). Currently mitigated only by the manual discipline in the Datafactory note: "if you fix a bug in one copy, fix both" (`README.md:639`). Subsumes the clone-creates-3rd-copy finding (RA-8) as an additional trigger/location. **Drift confirmed live (falsification round 2, 2026-06-12):** `prediction.py` measured at 423 lines vs the roadmap's 383 (`README.md:142`) — ~10% growth in the eleven days since the roadmap was written.
@@ -175,6 +228,10 @@ Two implementations of the Appwrite client (~5,000 lines total) are ~90% identic
 | Trigger | When implementing `DatastoreManager.upload()` in `views-appwrite`, define and document specific exception types, and update pipeline-core's `AppwriteSaver` to catch those specific types rather than bare `Exception`. |
 | Location | external: `views-pipeline-core/managers/prediction/savers.py` (`AppwriteSaver`); documented at `README.md:423,584-588` |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 `AppwriteSaver` in pipeline-core deliberately catches all exceptions during upload and logs instead of raising (graceful degradation, tied to the README's reference to pipeline-core's own decision log #10 and that repo's external register entry C-50, `README.md:423`). The risk: if the extracted `DatastoreManager.upload()` changes the exception types or error codes it raises, the catch-all still swallows them but log messages shift, so silently-failed uploads (predictions not stored) become harder to diagnose (R7, `README.md:584-588`). This borders Tier 1 because a swallowed upload failure leaves downstream consumers reading stale data with no raised error; it is held at Tier 2 because a log signal does exist and the behaviour is an intentional, documented contract. The README itself flags catching specific types as the improvement (`README.md:588`).
 
 ---
@@ -189,27 +246,72 @@ Two implementations of the Appwrite client (~5,000 lines total) are ~90% identic
 | Trigger | When Phase 3 (migrate `views-pipeline-core`) is scheduled, confirm the pipeline-core maintainer has agreed to take the inbound `views-appwrite` dependency before starting the import-path migration. |
 | Location | organizational; `views-pipeline-core` repo; documented at `README.md:385-389,560-564,602` |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 Migrating `views-pipeline-core` to depend on `views-appwrite` requires buy-in from a different maintainer who may prefer to keep their own copy (R3, `README.md:560-564`). This is a coordination/process risk rather than a code-quality defect, so it is registered at Tier 4. It does not block the rest of the plan: the README notes consumer APIs can adopt `views-appwrite` regardless, and pipeline-core can migrate later (`README.md:564`). Currently mitigated by the documented framing strategy (present as a benefit: free SDK-14 compat, fewer lines to maintain).
 
 ---
 
-### C-09: `validate_docs.sh` cannot see ADR-010+ references and skips Deferred-status files
+### C-09: `validate_docs.sh` checks are narrower than a green run implies — and a green run cannot show which of them looked at anything
 
 | Field | Value |
 |-------|-------|
 | ID | C-09 |
-| Tier | 4 |
-| Source | repo-assimilation (2026-06-12) |
-| Trigger | When the first project-specific ADR (011+) is written, or when ADR-004 is activated out of Deferred status, extend the script's reference pattern beyond `ADR-00[0-9]` and include Deferred files in the placeholder scan before trusting a green run. |
-| Location | `docs/validate_docs.sh:60` (pattern `ADR-00\K[0-9]`), `docs/validate_docs.sh:36` (Status filter excludes `Deferred`), `docs/validate_docs.sh:24-35` (placeholder checks) |
+| Tier | **3** (raised from 4 on 2026-08-14 — see the exposure change below) |
+| Source | repo-assimilation (2026-06-12); **extended repo-assimilation (2026-08-14), measured** |
+| Trigger | When the first project-specific ADR (011+) is written, or ADR-004 is activated out of Deferred status, extend the pattern beyond `ADR-00[0-9]` and include Deferred files in the placeholder scan. **And when the first CIC is authored in Phase 1** — that is the moment check 2 first has an input, and the moment someone first trusts it. |
+| Location | `docs/validate_docs.sh:60` (pattern `ADR-00\K[0-9]`), `:36` (Status filter excludes `Deferred`), `:24-35` (placeholder checks), **`:41-52` (check 2, zero inputs today)**, and the silent-success paths in checks 2, 3, 4, 6 and check 8's per-file loop |
 
 The script was inherited from the base_docs template when only constitutional ADRs (000–009) existed. ADR-010 now exists and is referenced from `reports/technical_risk_register.md:144` and `docs/ADRs/README.md:32`, but the cross-reference check at `validate_docs.sh:60` only matches `ADR-00[0-9]`, so a phantom reference to ADR-010 — or to any of the candidate ADRs 011–015 anticipated in `docs/ADRs/README.md` — passes validation silently. The placeholder scan likewise only examines files whose Status is Accepted/Active, excluding the Deferred ADR-004. The failure mode is a false "PASSED" from the repository's only mechanical documentation gate. Currently mitigated only by manual review of cross-references.
 
 See also C-02 (shared root cause: invariants asserted in prose with incomplete mechanical enforcement).
 
+**Extended 2026-08-14 (`repo-assimilation`) — a second mechanism, measured, and the reason the tier moves.**
+
+**Check 2 iterates over nothing and has never executed its body.** It resolves every CIC named in
+`CICs/README.md` against a file on disk. Measured today:
+
+```
+grep -E '^- `[A-Z].*\.md`' CICs/README.md | grep -v '>'   ->  0 lines
+```
+
+`CICs/README.md` says *"Active Contracts — None yet"*, so the loop has no input and cannot fail. That
+is **C-55's shape** — a guard that stands down whenever there is nothing to satisfy it — in the one
+file C-55 did not examine, and it is off during precisely the window that matters: after the first
+CIC is written and before anyone re-reads the script.
+
+**And a green run does not distinguish "checked" from "scanned nothing".** Checks 7 and 9 print `OK:`
+lines. Checks 2, 3, 4 and 6 print only on error, and check 8's loop prints only for files that differ
+from `origin/main`. A full passing run therefore renders three bare headers with no verdict beneath
+them. Those checks *do* have inputs today — 123 `ADR-00[0-9]` references, 8 protocol references, 3
+files citing the retired name, measured — but **the output carries no evidence of that**, so a future
+narrowing (a moved directory, a renamed heading, a `grep -P` unavailable on the runner) would present
+identically to success. The repo's own question — *under what circumstance does this check report
+success without having looked at anything?* — has an answer here that is visible only by
+instrumenting the script.
+
+**Why the tier moves from 4 to 3, on a dated change in exposure rather than a change of opinion.**
+This entry was written on 2026-06-12, when this repository had **no CI at all** and the script was
+something a person occasionally ran. Since 2026-08-11 (C-70's resolution) `guards (self-contained)`
+runs it on every pull request and **`guards (self-contained)` is a required check**. A vacuous check
+inside an advisory script is a curiosity; the same check inside a required gate is a green tick that
+several contributors read as coverage. Still Tier 3 and not 2: nothing here corrupts data, and the
+script's two load-bearing checks (8 and 9) are the two that were mutation-proven and that do print
+their verdicts.
+
+**Not merged into C-02.** C-02 is about invariants that have *no* mechanical enforcement. This is
+about enforcement that exists, runs, is required, and is narrower than it looks.
+
+Part of causal cluster **G** (guards that are green and blind) for the vacuity half; stays in cluster
+**A** (corpus freshness) for the `ADR-00[0-9]` half. Cross-refs: **C-55** (the same skip-into-dormancy
+shape), **C-70** (what made this a required gate), **C-77** (the same defect one layer up, in the
+workflow rather than the script).
+
 ---
 
-### C-10: ADR numbering scheme is stated inconsistently across three documents
+### C-10: ADR numbering scheme is stated inconsistently across three documents — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -234,6 +336,10 @@ ADR-000 and ADR-010 both describe 010+ as the project-specific range, while `doc
 | Source | expert-review (2026-06-12) |
 | Trigger | When implementing `DatastoreManager.upload()` and `delete()`, define the write order (file-first vs metadata-first), partial-failure behavior, and orphan handling in the `DatastoreManager` CIC before writing the methods. |
 | Location | planned `src/views_appwrite/datastore.py`; interface at `README.md:92-98`; danger named but unspecified in ADR-008 (Context: "a metadata write that partially succeeds") |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 `upload()` performs two separate Appwrite writes — file to storage, then a metadata document — and `delete()` the inverse. A failure between them leaves either an orphaned file invisible to `search()`/`get_latest()` (consumers silently read older "latest" data) or, with the reverse order, metadata pointing at a nonexistent file. ADR-008 explicitly names partial metadata writes as a key danger, but no document specifies ordering, compensation, or reconciliation. Tier 2 (bordering 1) because the orphaned-file case produces stale downstream reads with no error signal; held at 2 because a `list_all()`-based reconciliation can detect it and the failure requires a mid-operation fault. No mitigation currently exists.
 
@@ -297,6 +403,10 @@ path → test project → drill the provisioning path). See also D-02 (resolved)
 | Trigger | When implementing any retry loop (the `MetadataManager` database/collection auto-creation retries, or transient SDK error handling), ratify a retry policy first: bounded attempts, exponential backoff with jitter, and an explicit retryable-error-code list. |
 | Location | `README.md:73` ("auto-creation with retry logic" — no policy), planned `metadata.py`/`storage.py` |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 The roadmap mentions retry logic but no document specifies attempt counts, backoff, jitter, or which error codes are retryable. Because every platform consumer (`views-pipeline-core`, `views-faoapi`, future clones) will run this same client, an Appwrite brownout plus naive synchronized retries becomes a coordinated retry storm against the shared endpoint, prolonging the outage and risking platform-wide rate limiting. Tier 3: affects all consumers (multiple developers) but degrades loudly rather than corrupting data. Mitigated only by the fact that no retry code exists yet to get wrong.
 
 ---
@@ -310,6 +420,10 @@ The roadmap mentions retry logic but no document specifies attempt counts, backo
 | Source | expert-review (2026-06-12) |
 | Trigger | When defining `OperationResult` in `client.py`, decide whether `code` carries package-owned vocabulary or raw Appwrite SDK codes; if package-owned, relegate the raw SDK code to a debug/diagnostic field. |
 | Location | `README.md:59` (`OperationResult{success, data, error, code}`), ADR-009 §1 (envelope contract) |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 Both source repos pass Appwrite SDK error codes through their result envelopes today. If the extracted `OperationResult.code` does the same, consumers will branch on Appwrite-specific codes, re-coupling every consumer to SDK semantics through the very envelope meant to insulate them — and an SDK upgrade that changes codes silently misroutes consumer error handling with no package-side signal. Tier 3: a coupling/cost-of-change issue across all consumers; becomes correctness-relevant only after an SDK code change. Unmitigated; the roadmap does not address `code`'s vocabulary.
 
@@ -326,6 +440,10 @@ See also C-03 (the same SDK-version coupling surfacing through a different chann
 | Source | expert-review (2026-06-12) |
 | Trigger | Before decomposing any source file in Phase 1, record the exact commit SHAs of `views-faoapi/managers/appwrite.py` and `views-pipeline-core/modules/appwrite/file.py` being extracted, and commit the R1 public-method diff as an artifact (e.g. `docs/extraction/divergence_audit.md`). |
 | Location | `README.md:309` (extraction base), `README.md:552` (R1 mitigation: "Before extracting, write a diff of the two files' public methods"), `docs/contributor_protocols/silicon_based_agents.md:80-105` (anti-truncation rule lacking a reference snapshot to diff against) |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 The roadmap's own R1 mitigation — a public-method diff of the two source files settling every divergence explicitly — has not been executed; the divergence table (`README.md:544-552`) covers only five known divergences and the "~90% identical" claim is unverified from this repository. No source commit SHAs are recorded anywhere, so the extraction target is a moving file in a live repo: an upstream fix landing mid-extraction would silently diverge from the copy being decomposed, and the silicon-agent anti-truncation review has no immutable origin to diff modules against. Tier 2: structural fragility of the extraction itself, with contract tests catching behavioral loss only where consumer suites happen to have coverage. Currently mitigated only by the contract-test strategy (ADR-005).
 
@@ -384,6 +502,10 @@ plus (b)'s name-injection blocker. **Tier stays 2.** Cross-refs: **C-26** (the n
 | Trigger | When writing the scaffold `pyproject.toml` dependency pin, verify the floor against the compat layer's actual coverage (SDK 13+) and test against the current PyPI major (20.x as of 2026-06-12) before tagging `v0.1.0`; update `README.md:244` and the SDK Compatibility section (`README.md:463-485`) to match reality. |
 | Location | `README.md:244` (`appwrite>=5.0.0`), `README.md:463-485` (compat narrative covering SDK 13/14+ only); evidence: PyPI `appwrite` releases span majors 0–20, latest 20.1.0 |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 The roadmap's single runtime dependency line is materially wrong in two directions. The pin `appwrite>=5.0.0` admits majors 5–12, which predate the entire SDK-13/14 compat narrative and whose APIs the design never considers; and it resolves today to major 20 — six majors past the narrative's frontier (15–20 all unexamined). A scaffolder copying the documented pin verbatim, as the docs intend, installs an SDK version the compat layer (`_as_dict`/`_get`, designed against the 13→14 dict-to-Pydantic break) has never been evaluated against. The roadmap (dated 2026-06-01) described a dependency landscape that did not exist even when written. Tier 2: structural fragility with a concrete trigger — the first `pip install` of the scaffolded package resolves to an unconsidered major, and any breakage in compat normalisation surfaces as misread responses, not necessarily as loud errors. Enforced by failing stub `tests/test_falsification_enough_info_to_set_up_repo.py::test_falsify_02_sdk_pin_consistent_with_compat_narrative`.
 
 **Falsification round-2 evidence (2026-06-12, probe P1):** the contradiction is worse than staleness — `views-faoapi` ratified **ADR-019 (Accepted 2026-05-29, three days before this roadmap was written)** pinning `appwrite==19.2.0` *exactly*, after discovering its declared pin (`==13.3.0`) had silently diverged from its runtime (19.2.0). ADR-019 also documents that SDK 19.2.0 **deprecates `databases.list_documents()`** — used at 5 call sites in the code slated for extraction into `MetadataManager` — with tripwire tests already present in faoapi's `test_sdk_compat.py`. The roadmap's broad-pin strategy (`>=5.0.0`) therefore contradicts the extraction source's own accepted governance, and a known, tested-for deprecation hazard in the to-be-extracted code is absent from the migration plan entirely. Candidate ADR-011 (SDK strategy) must reconcile with faoapi ADR-019, not just with PyPI. Additional enforcing stub: `tests/test_falsification_enough_info_orthogonal.py::test_falsify_r2_01_roadmap_consumed_source_repo_sdk_decision`.
@@ -403,6 +525,10 @@ See also C-03 (same SDK-version asymmetry in the source repos) and C-15 (SDK sem
 | Source | falsification-audit (2026-06-12) |
 | Trigger | When creating the Phase 1 scaffold commit, decide the license, `requires-python` floor, and `.gitignore` content explicitly (or record an explicit deferral in the README Decision Log) before tagging `v0.1.0` for consumer installation. |
 | Location | entire corpus (grep for license/`requires-python`/gitignore returns zero specification hits); demonstrated by dry-run build producing `views_appwrite-0.1.0-py2.py3-none-any.whl` |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 Zero mentions of a software license, a supported Python version range, or `.gitignore` content exist in the documentation, and none is explicitly scoped out. (**Update 2026-06-12:** the `.gitignore` half self-demonstrated — commit `1e54734` accidentally swept `tests/__pycache__/*.pyc` into history; a minimal `.gitignore` was added immediately after. License and `requires-python` remain open for the scaffold session.) The falsification dry-run (probe P1) built a wheel from documented values only: it succeeded, but the artifact was tagged `py2.py3-none-any` — with no Python floor specifiable, the package silently claims Python 2 compatibility, a wrong-by-default installability claim that surfaces as confusing downstream failures rather than a clean resolver error. For an org-distributed, pip-installable package (`README.md:326-328`), the missing license decision is reviewer-blocking. Tier 3: affects every consumer repo and contributor but fails loudly-ish at review/install time rather than corrupting data. Enforced by failing stubs `test_falsify_01_scaffold_buildable_without_invented_values` and `test_falsify_05_license_and_python_floor_decided`.
 
@@ -437,6 +563,10 @@ green stubs C-68 asks someone to audit. **Audit this one by reading it, not by t
 | Trigger | When writing `__init__.py` and naming the compat functions during the Phase 1 decomposition, resolve whether `_as_dict`/`_get` are public API (rename without the underscore prefix and export them) or internal (give consumers a public wrapper); update `README.md:382` and the Phase 2 migration instructions accordingly. |
 | Location | `README.md:222,261-265` (3-name public surface, "Everything else is internal"), `README.md:382` (Phase 2: consumers "must" import `_as_dict`/`_get` from `views_appwrite.compat`); ADR-001 Category 4 (compat's public effect is dicts, implying no direct consumer access) |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 The package design declares exactly three public names (`AppwriteConfig`, `DatastoreManager`, `OperationResult`) with everything else internal — yet the Phase 2 migration plan instructs `views-faoapi` to import the underscore-prefixed `_as_dict()`/`_get()` directly from `views_appwrite.compat`, making private-by-convention names load-bearing consumer API. The scaffolder cannot write `__init__.py`, choose compat naming, or apply semver guarantees (deferred ADR-004 activates at `v0.1.0`) without resolving this contradiction, and ADR-003 forbids resolving it by guessing. Tier 3: an API-design ambiguity propagating into at least one consumer repo's migration; no silent correctness impact. Enforced by failing stub `test_falsify_04_public_surface_internally_consistent`.
 
 See also C-15 (the envelope side of the same public-surface question) and D-01 (module granularity, which a compat-surface decision feeds into).
@@ -452,6 +582,10 @@ See also C-15 (the envelope side of the same public-surface question) and D-01 (
 | Source | falsification-audit (2026-06-12) |
 | Trigger | When writing the `DatastoreManager` CIC (first Phase-1 contract per ADR-006), specify each of the six methods' parameters, `OperationResult.data` shape, and error behavior — before any method body is written. |
 | Location | `README.md:92-98` (six-method interface), `README.md:255-257` (`download` dual-mode, `"file_bytes"` key mentioned once), `README.md:365-366` (Phase-2 example: `get_latest_file_id` returns `get_latest()` output unmodified) |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 The return contracts of `get_latest()`, `search()`, and `list_all()` are specified nowhere — file ID, metadata document, or some `OperationResult.data` shape is undeterminable from the corpus; `upload()`'s result payload is likewise unstated, and `download()` is dual-mode (bytes vs write-to-path) with its data key named once in passing. The roadmap's own Phase-2 migration example does not know the answer: a consumer wrapper named `get_latest_file_id` passes through `get_latest()`'s return value unchanged. Until these contracts exist, neither the facade nor the consumer wrappers nor their tests can be written without guessing, which ADR-003 forbids. Tier 3: blocks correct implementation across package and consumer repos; no silent-corruption path until code exists. Enforced by failing stub `tests/test_falsification_enough_info_orthogonal.py::test_falsify_r2_02_facade_return_contracts_specified`.
 
@@ -514,6 +648,10 @@ that refuses. Cross-refs: `PLATFORM-001` §4/§7, C-01, issue #8.
 | Trigger | When implementing `DatastoreManager.get_latest()`, document the ordering semantics (server-assigned `$createdAt`, its resolution, tie behavior) in the `DatastoreManager` CIC, steer consumers toward consumer-owned recency metadata where ordering matters, and add a beige-team test for two uploads landing within the same timestamp resolution. |
 | Location | `README.md:500` (`get_latest()` sorts by `$createdAt` descending, returns first match), `README.md:96` (facade interface); ADR-005 beige-team list (does not currently include this case) |
 
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
+
 "Latest" is defined by Appwrite's server-assigned creation timestamp, not by any pipeline-semantic ordering. Two uploads from the same forecast run (or a retry racing its original) can interleave within clock resolution, after which `get_latest()` returns whichever document the server stamped later — silently, with no error and no tie signal. A consumer serving forecasts would read the wrong file while everything reports success. Tier 3 rather than 2 because the scenario requires near-simultaneous writes to the same filter set and the fix is a documented contract plus consumer guidance, not a structural redesign; it borders Tier 2 if retry logic (C-14) ever re-uploads automatically. Surfaced in the expert review (Kleppmann perspective and Long-Term Regret #5) but not previously registered.
 
 See also C-12 (partial-failure orphans interact with "latest" selection), C-14 (retries create exactly the racing writes this needs), and C-20 (the return contract that must encode these semantics).
@@ -529,6 +667,10 @@ See also C-12 (partial-failure orphans interact with "latest" selection), C-14 (
 | Source | expert-review (2026-06-12) |
 | Trigger | When implementing `metadata.py` in Phase 1, decide whether `FileMetadata` exists at all: either give it a stated responsibility distinct from the opaque `Dict[str, Any]` payload, or remove it from the plan (and from ADR-001 Category 8). |
 | Location | `README.md:225` (`metadata.py # MetadataManager, FileMetadata`), `README.md:143` ("`FileMetadata` (generic, no domain fields)"), ADR-001 Category 8 (lists both `FileMetadata` and the opaque dict as Metadata Value entities) |
+
+> **Dormant** — the trigger above cannot fire until Phase 1 extraction begins, which is deferred
+> behind roadmap Decision Log #11 (three consumer APIs; currently two). **Tier is unchanged**: it
+> states severity if this fires, not urgency today.
 
 The design's metadata contract is an opaque `Dict[str, Any]` passed through unmodified (Decision D-3) — yet the plan also retains a generic `FileMetadata` class with no domain fields and no described purpose. Two representations of the same concept with no stated division of labor is precisely what ADR-001's non-entity clause forbids ("objects that mix or duplicate ontological roles"), and the class invites exactly the field-accretion drift (C-05 history) that motivated the opaque-dict decision. Tier 4: a design-clarity issue resolvable by one decision before any code depends on it. Surfaced in the expert review (GoF and Hickey perspectives) but not previously registered.
 
@@ -677,7 +819,7 @@ epic #26.
 | ID | C-30 |
 | Tier | 3 |
 | Source | `manual` — prudence sweep of epic #26, 2026-08-02; premise corrected the same day |
-| Trigger | Cutting `views-productionapi`, the second clone, which will inherit whatever default the org carries. Also: any decision to treat a clean scan as evidence, since this flag governs what "clean" covers. |
+| Trigger | **Cutting `views-productionapi`**, which inherits whatever default the org carries — or **making any further repository public**, which is when the absent control next matters. *(The former second clause, "any decision to treat a clean scan as evidence", was perpetual: it describes a standing limit, not an event. That limit is now stated in `.gitleaks.toml` and in the surviving text of contract §5.7 — "a clean scanner run is a floor, not a proof".)* |
 | Location | `views-platform/views-crafdapi` (public); org-wide setting; þing-02 **G2(d)**, tracked at views-appwrite#12 |
 
 **Corrected premise.** This entry was first registered as *"crafdapi went public before its scanning
@@ -740,6 +882,17 @@ Cross-refs: views-appwrite#12 G2(d) (operator), C-29 (same sweep), þing-02 S32,
 > `C-47`/`C-50` appear here only as cross-references into **views-models'** register. Reusing any of
 > those numbers would make a citation ambiguous about which register it means. The gap is deliberate.
 > Registering C-31–C-41 properly is separate outstanding work.
+>
+> **Audited 2026-08-14 (`review-rr`): the note explained 13 of the 20 missing numbers.**
+> `C-42`–`C-46`, `C-48` and `C-49` were **never allocated to anything** — no audit claimed them, no
+> entry cites them, and no foreign register uses them. They are simply unused. Stated because the
+> whole purpose of this note is to make a gap *deliberate rather than accidental*, and seven numbers
+> with no recorded reason defeat it: the next person cannot tell an unused number from a lost entry.
+> **None of the twenty may be reused**, allocated or not — a citation that resolves to two different
+> things in two different years is the failure this convention exists to prevent.
+>
+> Verified by search rather than recalled: `C-31`–`C-41` appear in this file **only inside this note**,
+> so nothing anywhere cites an entry that was never written.
 
 ---
 
@@ -778,7 +931,7 @@ D-05 (the raise-vs-skip disagreement).
 
 ---
 
-### C-52: The reader-agreement guard is vacuous — it points at a path that does not exist and grades two identical clones
+### C-52: The reader-agreement guard is vacuous — it points at a path that does not exist and grades two identical clones — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -805,11 +958,37 @@ its `_is_planned()` matches. The tempting one-line fix is to delete that `status
 fixture, which greens the suite **and destroys the only artifact that exposes C-51**. Fix the path
 and settle raise-vs-skip in the same change, or not at all.
 
-Cross-refs: C-51, C-29, D-05, epic #26 story S6 (#28).
+---
+
+### RESOLVED 2026-08-14 (`review-rr` strategic) — the fix shipped and was never recorded here
+
+**This entry sat at Tier 1, open, describing a defect that had already been fixed.** Found by a
+strategic review reading the entry against the code, not by anything failing. Recorded in place
+rather than moved, because the trap-on-repair paragraph above is the part worth keeping.
+
+| The claim | State on 2026-08-14 |
+|---|---|
+| *"`READER_PATHS` names `views-models/tools/registry_to_env.py`. That file does not exist."* | **Corrected.** `tests/test_registry_readers_agree.py:73` names `tools/credentials/registry_to_env.py`, with the C-52 history in a comment above it |
+| *"`_present()` … drops missing readers **silently**"* | **Guarded.** `test_every_declared_reader_path_resolves` distinguishes *repo absent* (fine) from *repo present, reader absent* (error) |
+| *"all four tests grade only views-faoapi and views-crafdapi"* | **Guarded twice.** `_require_two_readers()` fails under CI, and `guards.yml`'s *Refuse to run against fewer readers than we cloned* fails **before** pytest |
+| Proven, not asserted | C-70's resolution table records the CI mutation: *"clone one sibling instead of two → `guards (cross-repo)` **FAILED** — at the anti-vacuity gate, before pytest, naming the missing reader"* |
+
+**What is NOT closed by this, and moved rather than lost.** The *local* path still tolerates ambient
+state — the interpreter is discovered by globbing sibling virtualenvs, so a laptop run and a CI run
+compare different reader sets. That is **C-79**, registered separately on 2026-08-14. And the
+divergence this guard was built to detect is real and still open: **C-51**, held by the two
+`xfail(strict=True)` ratchets.
+
+**Why this mattered while it stood.** C-52 was one of three Tier 1 entries. Anyone reading this
+register to decide what is dangerous met a fixed defect at the top of the list — the register doing
+to its reader what **C-76** did to consumers.
+
+Cross-refs: C-51 (the divergence, still open), C-29, C-79 (the residual, local-only), D-05,
+epic #26 story S6 (#28), C-76 (same shape, outward).
 
 ---
 
-### C-53: Four coordinates were added with no version bump, defeating the one cross-repo drift detector
+### C-53: Four coordinates were added with no version bump, defeating the one cross-repo drift detector — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -852,11 +1031,30 @@ on the exact violation this entry describes. A guard that asks "was this line to
 the question consumers ask, which is "is what I pinned still what I would get?" Recorded because this
 register already contains two entries (C-52, C-55) about guards that were green and blind.
 
-Cross-refs: C-29, C-52, C-55, seam contract §10, `test_falsify_c40_*`.
+---
+
+### RESOLVED 2026-08-14 (`review-rr` strategic) — the entry said "Fixed in v1.4.0" and then stayed open
+
+The narrative above already recorded the fix and the three drafts it took. **It never said what
+remained, so nothing did, and the entry stood at Tier 2 for eleven days describing a closed defect.**
+
+**What closed it.** `docs/validate_docs.sh` check 8 compares the version **value** across revisions
+(`_version_of origin/main` vs the working tree) for the contract, the registry and the deployment
+pattern. Mutation-proven in CI and recorded in C-70's resolution table: *"registry changed with no
+version bump → `guards (self-contained)` **FAILED** on check 8"*. Draft 3's discrimination — value,
+not line-touched — is what makes it answer the question consumers actually ask.
+
+**The residual went to its own entries rather than keeping this one open.** Three consumers resolving
+through `/blob/main/` is **C-72** (pin incoherence, consumer side) and **C-73** (the publisher
+believing every consumer pins by immutable tag — which is the discovery that a *correct* bump still
+breaks a consumer comparing against a moving branch). Neither is this entry's subject.
+
+Cross-refs: C-29, C-52, C-55, **C-72**, **C-73** (where the residual lives), seam contract §10,
+`test_falsify_c40_*`.
 
 ---
 
-### C-54: The load-bearing C-29 warning now asserts the opposite of the data beneath it
+### C-54: The load-bearing C-29 warning now asserts the opposite of the data beneath it — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -880,7 +1078,45 @@ concludes it is stale, and writes a value-less `[target]` entry — **commit `21
 no reader scans."* An auditor opening the registry today finds no `[planned]` table and **cannot
 distinguish "fixed" from "reverted."**
 
-Cross-refs: C-29, C-55.
+---
+
+### RESOLVED 2026-08-14 (`review-rr` strategic) — rewritten as a rule about the file, and then guarded
+
+**Closed by registry v1.4.0**, whose amendment log names this entry as the reason: *"Standing
+reservation rule — rewritten as a rule about the file rather than a note about four particular
+entries, after it inverted against its own data (C-54)."*
+
+The block today opens *"HOW TO RESERVE A COORDINATE THAT HAS NO VALUE YET — READ BEFORE ADDING ONE"*,
+states it is a standing rule about the file's shape, and says plainly that **there are currently no
+reserved slots** — the state that used to make it read as stale. The word *"THESE"* that pointed at
+nothing is gone.
+
+**And it is guarded, which is why this closes rather than merely being tidied.**
+`tests/test_registry_reader_contract.py::test_the_reservation_rule_is_still_written_down` pins the
+four tokens that cannot be rephrased away — `[planned.*]`, `registry_to_env.py`, `2186d45`, `C-51` —
+chosen deliberately as the shortest needles carrying each fact, so the guard does not cry wolf at
+innocent rewording.
+
+**Proven, not asserted — mutation-tested 2026-08-14, reverted, registry verified byte-identical.**
+The first draft of this resolution closed the entry on the guard being *green*, which is the thing
+this repository does not accept. Three mutations, each on the pristine file:
+
+| Mutation | Result |
+|---|---|
+| `2186d45` → `XXXXXXX` (the incident) | **RED** — `missing ['the incident']` |
+| `C-51` → `C-99` (the open divergence) | **RED** — names the missing label |
+| `[planned.*]` → `[reserved.*]` (the table) | **RED** — names the missing label |
+
+Each failure names *which* fact went, not merely that something did. `git diff --quiet` on the
+registry confirms nothing was left behind.
+
+**The compounding problem is also gone.** This entry recorded that an auditor could not distinguish
+*"fixed"* from *"reverted"* because `[planned]` had vanished from the parsed file. The standing block
+now states the empty state explicitly, and `KNOWN_TABLES` classifies `[planned]` as *"deliberately
+unscanned (D-05, C-29)"* whether or not it currently holds rows.
+
+Cross-refs: C-29, C-55 (the guard that used to skip itself when `[planned]` was empty), C-71 (the
+same prose-outliving-its-data shape, still open on the registry's minimalism claim).
 
 ---
 
@@ -928,7 +1164,7 @@ Cross-refs: C-54, C-29, C-68 (same family: a guard that reports without establis
 | Field | Value |
 |-------|-------|
 | ID | C-56 |
-| Tier | 2 |
+| Tier | **3** (lowered from 2 on 2026-08-14 — the defect was remediated at source 2026-08-03; what remains is a verification, not an exposure. The key now carries six console-verified scopes; only the end-to-end proof is outstanding, and views-crafdapi is not deployed) |
 | Source | `code-review max`, 2026-08-02; call path and registry evidence both re-verified |
 | Trigger | views-crafdapi **S11** (#12) — the first deploy and smoke test. Its acceptance criterion is `smoke ALL PASS`, which cannot be met. |
 | Location | `docs/ADRs/platform/coordinate_registry.toml:279`; `views-crafdapi/src/views_crafdapi/managers/api.py:297` |
@@ -1347,7 +1583,7 @@ two keys that *do* expire, together), C-28, views-appwrite#12.
 | Field | Value |
 |-------|-------|
 | ID | C-67 |
-| Tier | 2 |
+| Tier | **3** (lowered from 2 on 2026-08-14 — the key half was closed by `.gitleaks.toml` in the same change, verified both ways. The residual is the **prose-password** class, which no regex closes and which is a purchasing decision tracked at C-30/C-69, not an exposure this repository can act on) |
 | Source | `code-review` of PR #57, 2026-08-08 — measured against gitleaks 8.30.1 with controls, not inferred |
 | Trigger | Relying on a green Secret Scan as the gate for making this repository **public**, which is irreversible. |
 | Location | `.github/workflows/secret_scan.yml`; fixed by `.gitleaks.toml` in the same change |
@@ -1403,7 +1639,7 @@ Cross-refs: C-30 (the þing-02 condition), C-68, `FAO_CALLER_API_KEY.history_lea
 | ID | C-68 |
 | Tier | 3 |
 | Source | `code-review` of PR #57, 2026-08-08 — noticed because the pytest failure count moved from 10 to 9 |
-| Trigger | Reading C-02 as resolved because its stub is green. |
+| Trigger | **When the `falsification (reporting only)` job names a green stub in its summary** — that annotation is the signal this entry exists to make audible. **And: auditing the five stubs that have been green since before 2026-08-11 and remain unread** (`r2_01`, `r2_03`, `c38`, and the two below them). *Trigger widened 2026-08-14: it named only C-02's stub, while the entry had grown to cover six.* |
 | Location | `tests/test_falsification_enough_info_to_set_up_repo.py::test_falsify_03_ci_gate_is_specified` |
 
 Adding the secret-scan workflow turned this stub green. Its assertion was:
@@ -1677,7 +1913,7 @@ C-53.
 | ID | C-71 |
 | Tier | 3 |
 | Source | `repo-assimilation`, 2026-08-08 |
-| Trigger | Anyone quoting the README's posture section or the registry's minimalism claim — both are the passages people cite when asked "what is this repo?" |
+| Trigger | **When the next workflow, test or check is added** — re-read `coordinate_registry.toml:10-12` before merging. Its *"no tooling, no generators, no CI attachment"* is already false and gets falser with each one. *(The README half of this entry is closed — see the narrowing below — so the trigger no longer names it.)* |
 | Location | `README.md:672`; `docs/ADRs/platform/coordinate_registry.toml:10-12` |
 
 Two claims went stale the moment `secret_scan.yml` landed, and both sit in the sentences most likely
@@ -1689,11 +1925,21 @@ true and its reasoning is intact; only the two words are wrong, which is precise
 survivable and therefore persistent.
 
 **`coordinate_registry.toml:10-12`** — *"Deliberately minimal (`dómr_endurmat` E3): **no tooling**,
-no generators, no CI attachment."* Four files in this repository read the registry today:
-`docs/validate_docs.sh`, `tests/test_registry_reader_contract.py`,
-`tests/test_registry_readers_agree.py`, `tests/test_falsification_thing02_contract.py`. **The "no
+no generators, no CI attachment."* ~~Four~~ **Three** files in this repository read the registry today:
+`docs/validate_docs.sh`, `tests/test_registry_reader_contract.py`, and
+`tests/test_registry_readers_agree.py` (fixtures only, plus the sibling readers it executes). **The "no
 tooling" half was already false before today** — the tests and the version checks are tooling — and
 today's workflow makes the "no CI attachment" half harder to read charitably.
+
+> **Corrected 2026-08-14 (`repo-assimilation`).** This entry said **four** files and named
+> `tests/test_falsification_thing02_contract.py` as the fourth. It does not read the registry.
+> `REGISTRY = PLATFORM / "coordinate_registry.toml"` is defined at line 42 of that module and
+> **referenced nowhere** — a dead constant that reads, on inspection, exactly like a reader.
+>
+> The correction is small and the shape is not: this entry is *about* a claim outliving the state it
+> described, and it made one of its own, in the same sentence, by counting an import-looking line
+> instead of a use. Left as a strike-through rather than a silent edit, per §10's habit. The dead
+> constant itself is a Tier-4 observation and is recorded here rather than as its own entry.
 
 Registered as one entry rather than two: same defect (a posture statement outliving the state it
 described), same cause (a change that nobody thought of as touching prose), different files.
@@ -1704,8 +1950,26 @@ that did not say what it claimed), and **C-65** (a relayed key expiry that was t
 The pattern is not carelessness about prose; it is that **no check reads prose**, so only a human
 re-reading it can catch these.
 
-Cross-refs: C-53, C-64, C-65, C-54 (the same failure inside the registry's own warning block),
-C-70.
+**Narrowed 2026-08-14 (`review-rr` strategic) — one half is closed, the other is more false than when
+it was written.**
+
+| Half | State |
+|---|---|
+| `README.md` — *"no CI, by recorded decision"* | **CLOSED.** The README was rewritten to 106 lines under **C-76** on 2026-08-13; the CI paragraph now describes three workflows and three required checks, and `validate_docs.sh` check 9 guards the pinning claim beside it |
+| `coordinate_registry.toml:10-12` — *"no tooling, no generators, no CI attachment"* | **OPEN, and worse.** Three files in this repository read the registry, two CI jobs exercise it on every pull request, and its shape is asserted by eleven guards. The sentence has not moved since it was written |
+
+**Why the surviving half is worth keeping open rather than just fixing now.** It is the registry's
+own self-description, in the file six repositories read. The claim is inherited from `dómr_endurmat`
+E3 — *"no tooling, no generators, no CI attachment"* — which was a **ratified decision about what not
+to build**, and is still the right decision. What decayed is its use as a **description of the
+present**. Correcting it means separating the standing rule from the stale status line, which is a
+small edit to a file that versions in lockstep with the contract — so it rides the next edition
+rather than being smuggled in.
+
+Cross-refs: C-53, C-64, C-65, **C-54** (the same failure inside the registry's own warning block —
+now resolved, which is the model for closing this one), C-70, **C-76** (which closed the README half),
+**C-81** (the registry being invisible to tooling that reads by file type — the same file, the
+opposite problem).
 
 ---
 
@@ -1975,6 +2239,222 @@ incoherence from the consumer side), **C-68** (the `c41` stub, audited below), s
 
 ---
 
+### C-77: CI selects guard modules by filename, so the next guard added would run in no job
+
+| Field | Value |
+|-------|-------|
+| ID | C-77 |
+| Tier | **2** |
+| Source | `repo-assimilation` (2026-08-14) — **mutation-proven, mutation reverted** |
+| Trigger | **Adding a new guard module to `tests/`** — the next time a registry invariant earns a test of its own, which has happened four times in three weeks (`[contract]` guards, the table-classification guard, the edition guards, the meta-guard). |
+| Location | `.github/workflows/guards.yml:82` and `:188`; `tests/conftest.py:15-31`; `tests/test_test_kinds.py` |
+
+`tests/conftest.py` replaced a filename glob with **declared markers**, and its docstring gives the
+reason in the repo's own words: *"A guard added later under a name the glob does not match joins no
+gate and runs nowhere — a new blind guard, introduced by the epic written to remove blind guards
+(C-70, cluster G)."*
+
+**The workflow still selects by filename.** Both jobs pass an explicit file list alongside `-m guard`:
+
+```
+guards (self-contained)  pytest -q -m guard tests/test_registry_reader_contract.py tests/test_test_kinds.py
+guards (cross-repo)      pytest -q -m guard tests/test_registry_readers_agree.py
+```
+
+The marker **narrows** that selection and can never widen it. So the mechanism built to stop a guard
+from running nowhere is applied at the one layer that does not decide what runs.
+
+**Proven, then reverted.** A new module `tests/test_zz_probe_new_guard.py` carrying
+`pytestmark = pytest.mark.guard` and one deliberately failing assertion:
+
+| Command | Result |
+|---|---|
+| `pytest -m guard tests/` — what the marker scheme promises | **1 failed**, 18 passed, 2 xfailed |
+| `pytest -m guard tests/test_registry_reader_contract.py tests/test_test_kinds.py` — **the exact CI step** | **14 passed, exit 0** — the probe was never collected |
+| `pytest -m guard tests/test_test_kinds.py` — the meta-guard | **2 passed** — it accepts the module |
+
+The module is well-formed by every rule this repository wrote, and runs nowhere. **The meta-guard
+structurally cannot catch it**: `test_the_two_kinds_partition_the_whole_suite` verifies that every
+module carries a marker, not that any job selects it. It is a check on the declaration, and the
+defect is in the consumption.
+
+**Latent, not live, and that is the whole tier argument.** The two file lists happen to name all
+three guard modules today, so coverage is currently complete — which is also why nothing reports it.
+The gap opens on the next addition and opens silently: the author's new tests pass locally, `-m guard`
+looks like the selector, CI goes green, and the guard protects nothing. Tier 2 rather than 3 because
+the affected surface is the registry whose breakage produced a Tier 1 platform-wide outage (**C-29**),
+and rather than 1 because no coordinate is wrong today.
+
+**Same failure as C-70, one layer up.** C-70 was *CI exists and runs none of the guards*; this is *CI
+exists, runs the guards it was told about, and cannot be told about a new one*. C-70's resolution note
+claims "every guard now runs on every PR" — true when written, and narrowed by this entry.
+
+Cross-refs: **C-70** (the resolved entry whose closing claim this qualifies), **C-52** (a guard that
+graded two identical clones), **C-55**, **C-68**, **C-09** (the same defect one layer down, inside
+`validate_docs.sh`), **C-78** (the other inert half of the marker scheme), cluster **G**.
+
+---
+
+### C-78: `strict_markers` is set where pytest does not read it, so a typo'd marker only warns
+
+| Field | Value |
+|-------|-------|
+| ID | C-78 |
+| Tier | 3 |
+| Source | `repo-assimilation` (2026-08-14) — mutation-proven, mutation reverted |
+| Trigger | **Removing or weakening `tests/test_test_kinds.py` on the grounds that `conftest.py` already makes a mistyped marker an error.** That belief is what this entry is about; the behaviour is currently covered by the very test the belief would license deleting. |
+| Location | `tests/conftest.py:48-60` (`pytest_configure` sets `config.option.strict_markers = True`); claim at `tests/conftest.py:29-31` |
+
+`conftest.py` sets `config.option.strict_markers = True` inside `pytest_configure`, commented *"A
+typo'd marker is exactly the silent no-op this repo keeps finding"*, and its module docstring states:
+*"the kind is declared, and `--strict-markers` makes a typo an error rather than a silent no-op."*
+
+**It does not.** A module carrying `pytestmark = pytest.mark.guardd` produced, under pytest 9.0.2:
+
+```
+PytestUnknownMarkWarning: Unknown pytest.mark.guardd - is this a typo?
+1 passed, 1 warning
+```
+
+The unknown mark is applied and the run succeeds. Setting the option at `pytest_configure` time does
+not reach the strictness check.
+
+**The backstop held, and that is why this is Tier 3 and not 2.** The same probe turned **both** tests
+in `test_test_kinds.py` red, naming the file — a module marked `guardd` declares neither known kind,
+so the meta-guard rejects it. The outcome is correct; only the advertised mechanism is inert.
+
+**The risk is therefore the belief, not the behaviour.** Two defences are documented, one works, and
+the file says both do. The register already carries what happens next: **C-55** records a guard whose
+remedy was known, written up, and *still* recurred in the next thing written, and cluster G's whole
+subject is checks trusted on the strength of what they claim rather than what they were watched
+doing. A contributor tidying `test_test_kinds.py` as redundant would be reasoning from a sentence in
+`conftest.py` that is false. Same class as **C-64** — a docstring asserting a guarantee its source
+does not support.
+
+**The predicted harm happened the same day, and it is worth recording because it is normally invisible.**
+This entry says the risk is *the belief, not the behaviour* — that a reader takes the comment as fact.
+A few hours after it was written, a knowledge-graph extraction over this repository (`graphify`,
+2026-08-14) produced a node for `tests/conftest.py:60` labelled:
+
+> `strict_markers = True (a typo'd marker is an error)`
+
+That is the claim, restated as a fact, in a downstream artifact that other people and tools will
+query — with no trace of the measurement showing it is false. **A reader believed the comment,
+exactly as predicted, and the reader was a program.** No human judgement was involved and none would
+have caught it.
+
+The graph is not wrong to have done this; it extracted what the source asserts, which is its job. The
+point is the propagation path: **an inaccurate comment does not stay in its file.** It is copied into
+summaries, graphs, onboarding notes and context packs, each of which looks like an independent
+source. Recorded here rather than as its own entry because it is evidence for this concern, not a new
+one — and because it upgrades the concern from "someone might believe this" to "something already
+did."
+
+Cross-refs: **C-77** (the other half of the marker scheme, also inert at a different layer), **C-64**
+(a docstring citing a verdict that did not say what it claimed — the same propagation, by hand),
+**C-68**, **C-55**, **C-81** (the same extraction run, the opposite failure — what it could not see),
+cluster **G**.
+
+---
+
+### C-79: The reader comparison finds its interpreter by globbing sibling repositories' virtualenvs
+
+| Field | Value |
+|-------|-------|
+| ID | C-79 |
+| Tier | 3 |
+| Source | `repo-assimilation` (2026-08-14) — observed in a local run |
+| Trigger | **Reading a local `pytest` result as a verdict on reader agreement before opening a PR** — which is the documented pre-PR habit, and the only place all three readers are ever compared. |
+| Location | `tests/test_registry_readers_agree.py:130-145` (`_interpreter_with_tomllib`), specifically the candidate line `str(p) for p in sorted(WORKSPACE.glob("*/envs/*/bin/python"))` |
+
+The behavioural tier needs an interpreter the readers can run under (stdlib `tomllib`, ≥3.11). The
+candidate list is `sys.executable`, then `python3.13/3.12/3.11` from `PATH`, then **every virtualenv
+under every sibling repository in the workspace**, taken in sort order.
+
+On this machine `sys.executable` is 3.10.14 and no `python3.1x` is on `PATH`, yet the behavioural
+tests **ran and passed** — meaning the three canonical readers were executed under an interpreter
+belonging to some other project, selected by whichever path sorted first.
+
+Two consequences, both about trusting a local green:
+
+1. **The verdict is not reproducible between two developers.** It depends on which sibling repos are
+   checked out and what environments they happen to contain. A developer with no such env gets a
+   `pytest.skip` and a smaller signal; a developer with one gets a full comparison under an
+   interpreter nobody chose.
+2. **Local and CI scope differ by design.** Locally all three readers are present and compared; CI
+   sees **two of three**, because `views-faoapi` is private (**C-51**). A divergence involving faoapi
+   is therefore visible on a laptop and invisible in CI — the opposite of the usual direction, and
+   worth knowing before someone cites a local run as the stronger evidence.
+
+**The `CI`-set branch is correct and is not the subject.** `_require_interpreter()` fails rather than
+skips when `CI` is set, and `guards.yml` pins 3.12 — belt and braces, deliberately. This entry
+concerns the local path only, which is the path used before a PR exists.
+
+Tier 3: no correctness impact and no silent data path, but it affects every contributor's pre-PR
+check and makes one guard's result depend on ambient state nobody declared.
+
+Cross-refs: **C-51** (why CI sees two of three), **C-52** (the last time this guard's inputs were
+narrower than they looked), cluster **G**.
+
+---
+
+### C-80: The two meta-guard tests fire together on one cause and read as two signals
+
+| Field | Value |
+|-------|-------|
+| ID | C-80 |
+| Tier | 4 |
+| Source | `repo-assimilation` (2026-08-14) — both observed failing on a single probe |
+| Trigger | **Diagnosing a red `guards (self-contained)` job by counting failures** — two reds here mean one defect, and acting on them as two would send someone looking for a second cause that does not exist. |
+| Location | `tests/test_test_kinds.py:61` (`test_every_test_module_declares_exactly_one_kind`) and `:83` (`test_the_two_kinds_partition_the_whole_suite`) |
+
+Both tests parse every `tests/test_*.py` for module-level `pytestmark` and both fail on any module
+lacking a known kind — confirmed: the C-78 probe reddened both simultaneously with near-identical
+messages. The second is implied by the first for every input except a module declaring *both* kinds,
+which the first already rejects.
+
+The docstrings state a real distinction of intent — one is per-module, the other is about the pair of
+selectors CI uses — but the implementations do not differ, and neither observes CI's actual selection
+(that gap is **C-77**). Tier 4: no correctness impact, localised, and the duplication is cheap. Worth
+recording only because this repository's stated standard is that a check earns its place by failing
+for its own reason, and one of these two has never failed for a reason the other did not.
+
+Cross-refs: **C-77** (what neither of them can see), **C-78** (the probe that fired both), cluster **G**.
+
+---
+
+### C-81: A corpus tool reading this repository by file type sees the governance and misses the product
+
+| Field | Value |
+|-------|-------|
+| ID | C-81 |
+| Tier | 4 |
+| Source | `graphify` knowledge-graph build (2026-08-14) — observed during the run, corrected by hand |
+| Trigger | **Running any corpus-level tool over this repository** — a knowledge graph, a documentation-coverage report, an onboarding summary, an LLM context pack, a new contributor's `find`. Before trusting its output, check that `coordinate_registry.toml` and the four gate files appear in its file list. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml`; `docs/validate_docs.sh`; `.github/workflows/{guards,falsification,secret_scan}.yml`; `.gitleaks.toml`; `tests/fixtures/*.toml` |
+
+**Measured, not inferred.** `graphify`'s file detector classified this repository as **35 files: 8 code (`.py`) and 27 documents (`.md`)**. The eight files it did not surface are:
+
+| Missed | What it is |
+|---|---|
+| `coordinate_registry.toml` | **THE canonical artifact. The thing six repositories consume.** |
+| `docs/validate_docs.sh` | the documentation gate, 9 checks, required on every PR |
+| `.github/workflows/*.yml` (×3) | every CI job this repository has |
+| `.gitleaks.toml` | the scan rule that gates going public |
+| `tests/fixtures/*.toml` (×3) | the C-29 and D-05 evidence |
+
+So the default reading of this repository is **all of the governance and none of the mechanism.** The seam contract is a `.md` and was seen; the registry it governs is a `.toml` and was not. Had the omission not been caught by hand, the resulting graph would have contained the contract, the ADRs, the register and the protocols — and no registry, no guards, no CI — while reporting complete coverage of a 35-file corpus.
+
+**Tier 4, and the justification is scope rather than harm.** Nothing here corrupts data, nothing breaks, and this repository has no runtime to degrade. It is registered because the class is familiar and the cost lands on whoever audits next: **an analysis that reports coverage without having seen the thing that ships.** That is the shape of cluster G stated one level out — not a guard that cannot see its invariant, but a *reader* that cannot see the artifact. The fix is not this repository's to make; the discipline is to check the file list before believing the summary.
+
+**Why it is worth a row rather than a note.** This repository's product is deliberately a data file and its gates are deliberately shell and YAML — those choices are ratified (`dómr_endurmat` E3: *"no tooling, no generators"*) and are not in question. The consequence is: **every generic tool that walks this tree by extension will be wrong about it in the same direction, and will not say so.** That will recur, and the next person deserves to meet the finding rather than rediscover it.
+
+**Not merged into C-09.** C-09 is about this repository's own checks being narrower than they look. This is about *external* readers of the repository being narrower than they look, which is a different party and a different fix.
+
+Cross-refs: cluster **G** (an instrument reporting success without having looked — the same shape, a different instrument), cluster **L** (things about this repository that nothing here can verify), **C-74** and **C-75** (the two entries that turn on what a tool does and does not enumerate).
+
+---
+
 ## Disagreements
 
 ### D-01: Decomposition granularity — eight modules vs depth-driven boundaries
@@ -1985,6 +2465,10 @@ incoherence from the consumer side), **C-68** (the `c41` stub, audited below), s
 | Source | expert-review (2026-06-12) |
 | Perspectives | Martin/GoF (eight one-concern modules per `README.md:216-237` is clean separation aligned with ADR-001/002), Ousterhout/Hickey (`auth.py` and `compat.py` are shallow modules — interface proliferation without hiding; merge until depth justifies splitting) |
 | Resolution | Unresolved. Proposed: defer to what the Phase 1 decomposition reveals; pre-authorize boundary merges via ADR update rather than treating ADR-002's layer list as fixed file boundaries. Revisit at the Phase-1 decomposition review, when actual module depth is observable. |
+
+> **Dormant** — this disagreement's resolution defers to what the Phase 1 decomposition reveals,
+> and Phase 1 is deferred behind roadmap Decision Log #11 (three consumer APIs; currently two).
+> It is not stalled; it is waiting on evidence that does not exist yet.
 
 ---
 
@@ -2007,6 +2491,10 @@ incoherence from the consumer side), **C-68** (the `c41` stub, audited below), s
 | Source | expert-review (2026-06-12) |
 | Perspectives | Feathers (change nothing during characterization: extract faithfully, get contract tests green against known behavior, improve afterward), Hickey/Nygard (the single-error-channel consolidation and cache-as-decorator restructuring are cheapest to make *during* the decomposition that is happening anyway) |
 | Resolution | Proposed: extract faithfully first; land improvements as contract-test-visible changes in v0.2 — with one exception: the C-13 fail-loud bucket default ships in v0.1 because the ratified constitution demands it. |
+
+> **Dormant** — this disagreement's resolution defers to what the Phase 1 decomposition reveals,
+> and Phase 1 is deferred behind roadmap Decision Log #11 (three consumer APIs; currently two).
+> It is not stalled; it is waiting on evidence that does not exist yet.
 
 ---
 
@@ -2154,7 +2642,8 @@ incoherence from the consumer side), **C-68** (the `c41` stub, audited below), s
 
 - **ID format:** `C-xx` for concerns, `D-xx` for disagreements. IDs are permanent — gaps in numbering indicate merged or resolved entries.
 - **Sources:** `repo-assimilation`, `expert-review`, `test-review`, `falsification-audit`, `clean-architecture-review`, `pr-review`, `tech-debt-audit`, `incident`, `manual`, **`þing-01`** (cross-repo assembly testimony — entries sourced here carry another seat's sworn account of its own code; treat the seat as the authority for its repo, and cite the `orð`/`sáttmál` item).
-- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. Three entries (C-10, C-70, D-02) are marked resolved **in place** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved. C-70 additionally anchors Cluster G and is cross-referenced by C-52, C-53 and C-68 — moved to the bottom, the cluster stops reading as one story.
-- **Header counts:** Manually maintained — update whenever a concern is added or resolved.
+- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. **Six entries (C-10, C-52, C-53, C-54, C-70, D-02) are marked resolved *in place*** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved, and each carries `— RESOLVED` in its heading so the count can be reproduced by `grep`. C-70 additionally anchors Cluster G and is cross-referenced by C-52, C-53 and C-68 — moved to the bottom, the cluster stops reading as one story.
+- **Dormancy:** an entry whose trigger cannot fire until a deferred event may carry a `> **Dormant**` marker beneath its field table (see *Dormancy* under Causal Clusters). **It does not change the tier**, which states severity if the trigger fires. Dormant entries are open and counted as open.
+- **Header counts:** Manually maintained — update whenever a concern is added or resolved. **They are reproducible:** `Total` = count of `^### C-`; `Resolved` = count of those with `— RESOLVED`; `Open` = the difference. *(Audited 2026-08-14: the convention above previously named three resolved-in-place entries while the counts honoured only two — C-10 was described as counted resolved and was not. Two numbers that must agree, compared to each other and to nothing else, is **C-53's own shape**, and it had gone unnoticed in the register that registers it. Fixed by giving C-10 the heading suffix so the count and the sentence are derived from the same thing.)*
 - **Note:** Many concerns reference locations in external repos (`views-pipeline-core`, `views-faoapi`) because this repository is a roadmap for a package not yet extracted. Confirm those locations when extraction (Phase 1) begins. **As of 2026-07-28 several are external by *ownership*, not merely by location** (C-13, C-26, C-27, C-28): this repo tracks them because it hosts `PLATFORM-001`, but cannot fix them — the fix belongs to a lineage owner or to the operator.
 - **Governed by:** ADR-010 (`docs/ADRs/010_technical_risk_register.md`).
