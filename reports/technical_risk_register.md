@@ -5,8 +5,8 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
-| Total Concerns    | 63                                   |
-| Open Concerns     | 51 — of which **36 live, 15 dormant** (see *Dormancy*) |
+| Total Concerns    | 64                                   |
+| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
 | Resolved Concerns | 12                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -52,7 +52,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 |---------|-----------|---------|--------------|--------------|
 | **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ *C-09's vacuity half belonged here; resolved 2026-08-14*) · *resolved members, kept as the cluster's evidence: C-09, C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
-| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82, C-84** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
 | **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
@@ -2764,6 +2764,80 @@ Cross-refs: **C-292** (views-pipeline-core — the code-level entry, Tier 3 and 
 which this entry supersedes in severity), **C-82** (the operator concentration this fix routed
 around — it needed no console action, which is itself worth noticing), seam contract **§5.5** (the
 neighbouring decision), views-models `tools/credentials/close_resource_permissions.py`.
+
+---
+
+### C-84: This repository publishes a complete map of the substrate, so a resource's own permissions are the only control left
+
+| Field | Value |
+|-------|-------|
+| ID | C-84 |
+| Tier | **2** |
+| Source | `manual` — split out of C-83's investigation (2026-08-14), at the request of the seat that ran it; premise re-checked against the contract before writing |
+| Trigger | **When any Appwrite resource is created — a collection or a bucket — verify its permission list before the coordinate is recorded here.** `views-models/tools/credentials/close_resource_permissions.py` is the executable form. **Secondary:** adding a coordinate to `coordinate_registry.toml` for a resource nobody has audited. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` (tracked on the public default branch: `[connection]` endpoint and project id, every `[target]` bucket, collection and database id); seam contract **§4** (the bootstrap invariant) and **§4.1**; external: `views-pipeline-core` register **C-292**, public |
+
+**What this repository publishes.** `APPWRITE_ENDPOINT`, `APPWRITE_DATASTORE_PROJECT_ID` and every
+container id on the seam are tracked on a public default branch, by design — that is what makes the
+registry the canonical source consumers read. The `e939b3a` *"production coordinates stripped"*
+cleanup removed them from the README only.
+
+**Why that is a register entry rather than a fact.** Publishing coordinates corrupts nothing and is
+not a defect. What it does is **remove the interval between a resource being misconfigured and that
+misconfiguration being exploitable.** It is an amplifier. Tier 2 names exactly that — structural
+fragility that will cause failures under realistic change scenarios — and the realistic scenario is
+*a new resource created carrying the wrong default*, which is precisely what **C-83** was.
+
+**The pairing is not hypothetical, and neither half is wrong alone.** views-pipeline-core's register
+is also public and states at **C-292** that the CLI *"creates collections readable, writable and
+deletable by anyone."* Coordinates in one public repository, the vulnerability class in another.
+Together they were a complete set of instructions, and C-83 is what that produced: two production
+collections answering an unauthenticated `listDocuments` with 572 rows.
+
+**So the resource ACL is the only control left — and it is undeclared and unenforced.** No document
+on this platform states what a collection's `$permissions` must be. C-83 closed two resources by
+console action; nothing prevents the third, or the next partner's. **This is what gives the proposed
+seam-contract clause a reason to exist that a reader can act on**: it is not tidy-up, it is the single
+thing standing between a public map and an open door. That clause needs a version bump and a §10.1
+obligation declaration — a governance act, routed to the operator, deliberately not taken by either
+session that found this.
+
+**GOING PRIVATE IS AN OPEN OPTION, NOT A FORECLOSED ONE — and the first draft of this entry got that
+wrong.** It justified permanent-accepted-risk with *"the charter requires the registry to be public"*.
+Checked rather than recalled:
+
+| | |
+|---|---|
+| **§4:161** | *"The registry is **readable without holding a secret** (bootstrap invariant)."* |
+| **§4.1:176** | *"…the registry is public, so the asymmetry never has to be crossed."* |
+
+Those are different claims and only the first is a rule. It forbids a chicken-and-egg — needing an
+Appwrite credential to discover where the credential points. **A repository private to the
+`views-platform` org satisfies it completely**: cloning with ordinary GitHub auth is not "holding a
+secret" in the seam's sense, and if it were, `views-faoapi` would violate the invariant. The
+publicness sentence lives in §4.1 and is doing passing work in an argument about the `[contract.*]`
+mechanism.
+
+**Checked mechanically too, not just textually.** Nothing anywhere fetches the registry over
+unauthenticated HTTP — zero hits for `raw.githubusercontent`, `curl` or `wget` against
+`coordinate_registry.toml` across the workspace. Every reader path is a **local sibling checkout**
+(`views-models/tools/credentials/platform_env.sh` resolves `$root/../views-appwrite/docs/...`), which
+an org-private repo serves unchanged.
+
+**This entry does not recommend going private.** VIEWS is a public research platform and open
+coordinates may be a deliberate posture with real value; that is the operator's call and neither
+session that found this has visibility into it. What is recorded is that the option **exists, has a
+known cost, and has never been decided** — because writing it down as impossible would be a soft fact
+hardening into a hard one and then being planned against, which is **cluster H**, and this register
+has five entries about exactly that.
+
+Part of causal cluster **I** (credential lifecycle) by subject, and **H** by the premise it nearly
+carried. Cross-refs: **C-83** (the incident this was split out of — its *"no obscurity barrier"*
+paragraph is the narrative that surfaced this and stays there), **C-292** in views-pipeline-core
+(the other half of the pairing), **C-30** / **C-67** / **C-69** (adjacent but distinct: those govern
+secret *scanning*, this is non-secret coordinates functioning as a targeting aid), **C-21** (the
+hazard class of production coordinates reachable without a deliberate choice), seam contract §4,
+§4.1, §5.5.
 
 ---
 
