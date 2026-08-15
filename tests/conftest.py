@@ -26,11 +26,14 @@ It would also mis-classify silently. A guard added later under a name the glob
 does not match joins no gate and runs nowhere -- a new blind guard, introduced by
 the epic written to remove blind guards (C-70, cluster G).
 
-So the kind is declared. `--strict-markers` is set below too -- but see C-78:
-setting it from `pytest_configure` does NOT reach pytest's strictness check, and a
-typo'd marker only warns. The mechanism that actually catches a typo is
-`test_test_kinds.py`, which fails when a module declares neither kind. Do not
-delete that test on the strength of the line below.
+So the kind is declared. `--strict-markers` is set below too -- and it does NOT
+work (C-78): setting the option from `pytest_configure` is too late for pytest to
+honour, so an unknown marker warns and passes. Measured, not assumed.
+
+THE MECHANISM THAT ACTUALLY CATCHES A TYPO is
+`test_test_kinds.py::test_no_module_declares_an_unknown_marker`, which asserts
+every module-level marker is one this repository defines. Do not delete it on the
+strength of the line below -- the line below is the thing that does nothing.
 
 AND THE CI LANE IS DECLARED TOO (C-77). The kind said a module blocks merge; it
 never said which JOB could run it, and that was left to a hand-written list of
@@ -91,5 +94,13 @@ def pytest_configure(config: pytest.Config) -> None:
         "crossrepo: this guard needs sibling repositories checked out; it runs in "
         "the `guards (cross-repo)` job. Absent = self-contained.",
     )
-    # A typo'd marker is exactly the silent no-op this repo keeps finding.
+    # INERT HERE, AND KEPT ANYWAY (C-78). Setting this from `pytest_configure` is
+    # too late for pytest to honour: a module marked `pytest.mark.guardd` warns
+    # (`PytestUnknownMarkWarning`) and PASSES. It was written believing otherwise,
+    # and the docstring said so for weeks.
+    #
+    # Left in place because it is harmless, because other pytest versions may read
+    # it, and because deleting it would remove the only pointer to why the real
+    # check exists. The real check is
+    # `test_test_kinds.py::test_no_module_declares_an_unknown_marker`.
     config.option.strict_markers = True

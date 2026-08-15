@@ -5,9 +5,9 @@
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
 | Last Updated      | 2026-08-14                           |
-| Total Concerns    | 62                                   |
+| Total Concerns    | 64                                   |
 | Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
-| Resolved Concerns | 10                                   |
+| Resolved Concerns | 12                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -50,9 +50,9 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 
 | Cluster | Root cause | Members | Highest tier | Fix strategy |
 |---------|-----------|---------|--------------|--------------|
-| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-78, C-79, C-80** (+ **C-09**, whose vacuity half belongs here and whose staleness half stays in A) · *resolved members, kept as the cluster's evidence: C-52, C-53, C-70, C-77* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
+| **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ *C-09's vacuity half belonged here; resolved 2026-08-14*) · *resolved members, kept as the cluster's evidence: C-09, C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
-| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82, C-84** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
 | **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
@@ -254,7 +254,7 @@ Migrating `views-pipeline-core` to depend on `views-appwrite` requires buy-in fr
 
 ---
 
-### C-09: `validate_docs.sh` checks are narrower than a green run implies — and a green run cannot show which of them looked at anything
+### C-09: `validate_docs.sh` checks are narrower than a green run implies — and a green run cannot show which of them looked at anything — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -308,6 +308,74 @@ Part of causal cluster **G** (guards that are green and blind) for the vacuity h
 **A** (corpus freshness) for the `ADR-00[0-9]` half. Cross-refs: **C-55** (the same skip-into-dormancy
 shape), **C-70** (what made this a required gate), **C-77** (the same defect one layer up, in the
 workflow rather than the script).
+
+---
+
+### RESOLVED 2026-08-14 — widened, made auditable, and put under test
+
+**Four changes to `docs/validate_docs.sh`, and a test file that did not exist.**
+
+**Check 3 now sees ADR-010+.** Pattern widened `ADR-00[0-9]` → `ADR-0[0-9][0-9]`, with three
+exclusions declared in the script rather than inferred: lines naming a `views-*` repo (foreign
+ADRs), lines marked `(candidate)` (ADR-012–015 deliberately do not exist), and the `ADRs/platform/`
+tier. A green run now reads **`OK: 127 reference(s) checked against 12 ADR file(s)`** where it
+previously printed a bare header.
+
+**Why the platform tier is excluded, which was the real decision.** Measured before writing: without
+that exclusion the rule produces **11 errors, all in `appwrite_seam_contract.md` and
+`consumer_api_deployment_pattern.md`** — bare citations like *"Their ADR-017 §5"* where the owning
+repo is established in surrounding prose. Those are not defects. Fixing them means editing a
+**versioned contract**, which under §10 forces a version bump, an edition, a tag, and a re-pin
+decision for six consumers — **the exact cost C-73 registers** — for a cosmetic citation change. The
+platform tier is not part of this repository's constitutional series; ADR-011 draws that distinction
+explicitly. The reasoning is in the script, not only here.
+
+**Check 2 stops iterating over nothing.** C-55's remedy — an always-runs companion — applied to the
+one file C-55 did not examine: the check now compares the `CICs/README.md` list against the
+`docs/CICs/` directory **in both directions**. Today that is 0 and 0, which passes while genuinely
+comparing two things, and the reverse direction is the likelier Phase-1 defect: a CIC written and
+never added to the index ADR-006 points readers at.
+
+**Every check reports what it scanned.** Checks 1, 2, 3, 4 and 6 now emit `OK:` lines carrying
+counts, matching the style checks 7–9 already used. A narrowed check no longer looks like a passing
+one.
+
+**Check 1 includes `Deferred`.** The Status filter read `Accepted|Active`, so ADR-004 was never
+scanned for placeholders. No behaviour change today; the gap the entry named is closed.
+
+**AND THE SCRIPT IS NOW TESTED — `tests/test_validate_docs.py`, 18 tests.** It was 361 lines, a
+required check on every pull request, with no coverage at all; only checks 8 and 9 had ever been
+shown to fail, both by hand, both once. Each test builds a complete doc-tree in `tmp_path`, copies
+the **real** script into it, and introduces the fault that check exists to catch.
+
+**Proven non-vacuous, which is the part that matters.** Run against the pre-fix script from `HEAD`,
+**5 of the 18 fail** — and exactly the right five:
+
+| Test | Against the old script |
+|---|---|
+| `test_every_check_reports_what_it_scanned` | **RED** — no `OK:` lines existed |
+| `test_check1_now_scans_deferred_files` | **RED** — Deferred was filtered out |
+| `test_check2_fires_when_a_contract_exists_but_is_unlisted` | **RED** — no reverse direction |
+| `test_check3_fires_on_a_reference_to_a_nonexistent_adr` | **RED** — `ADR-099` was outside the pattern |
+| `test_check3_sees_the_010_plus_range` | **RED** — the headline defect |
+
+The other 13 pass against both, because they cover behaviour that already worked. **A harness that
+only asserted its author's own diff would have failed all 18 or none.**
+
+**The most valuable single test is `test_a_check_that_cannot_run_skips_locally_but_fails_under_ci`.**
+It runs the script with no git repository at all — the strongest form of "cannot run" — and asserts
+it skips visibly without `CI` and **exits 1 with `CI=1`**. That property is what C-53, C-55 and C-70
+were all about, `actions/checkout` makes the skip path the *default* on a runner, and until now it
+rested entirely on a comment.
+
+**Deliberately not asserted: exact wording.** The tests pin exit codes and short load-bearing
+substrings — the coordinate, the filename, the word `ERROR`. Pinning sentences would make every prose
+improvement a failure, and a guard that cries wolf at rewording gets deleted.
+
+Cross-refs: **C-55** (whose always-runs remedy check 2 now uses), **C-77** (the same defect one layer
+up — and this new module is the live proof its fix works: a brand-new guard joined the blocking lane
+with no workflow edit), **C-53**, **C-70**, **C-73** (the consumer cost that justified excluding the
+platform tier), **C-76** (check 9, which this harness now covers).
 
 ---
 
@@ -2353,7 +2421,7 @@ cluster **G**.
 
 ---
 
-### C-78: `strict_markers` is set where pytest does not read it, so a typo'd marker only warns
+### C-78: `strict_markers` is set where pytest does not read it, so a typo'd marker only warns — RESOLVED
 
 | Field | Value |
 |-------|-------|
@@ -2408,10 +2476,46 @@ source. Recorded here rather than as its own entry because it is evidence for th
 one — and because it upgrades the concern from "someone might believe this" to "something already
 did."
 
-Cross-refs: **C-77** (the other half of the marker scheme, also inert at a different layer), **C-64**
+---
+
+### RESOLVED 2026-08-14 — the check is written in Python, where it works
+
+**Not fixed by making `--strict-markers` work.** The obvious repair — a `pytest.ini` carrying
+`addopts = --strict-markers` — was considered and declined: it adds a config file to a repository
+that has deliberately avoided them (C-18, D-04), and it moves pytest's rootdir. The cheaper fix uses
+machinery that already exists.
+
+**`test_test_kinds.py::test_no_module_declares_an_unknown_marker`** asserts every module-level
+marker is one this repository defines, reusing the `_module_level_marks()` AST parser already in that
+file. `KNOWN_MARKERS` is `{guard, falsification, crossrepo}`.
+
+**The inert line is kept, not deleted**, with a comment saying plainly that it does nothing here,
+why, and where the real check lives. Deleting it would remove the only pointer to why the Python
+check exists — and this entry's whole subject is a mechanism believed to work.
+
+**Mutation-proven, reverted.** The second row is the one that matters:
+
+| Mutation | Old kind check | New check |
+|---|---|---|
+| `guard` → `guardd` (the kind) | red (module declares no valid kind) | **RED**, naming `['guardd']` |
+| `crossrepo` → `crossrepoo` (**the lane**) | **1 passed** — satisfied | **RED**, naming the typo |
+
+**The lane row is why this needed its own check.** A module marked `guard` plus a mistyped
+`crossrepoo` declares a perfectly valid kind, so `test_every_test_module_declares_exactly_one_kind`
+passes — while the lane marker means nothing and the module lands in the wrong CI job. **That is
+C-77's failure re-entering through a spelling mistake**, and it became reachable the moment C-77
+introduced a third marker.
+
+**Known limit, stated in the test rather than discovered later.** It reads module-level `pytestmark`
+only. A custom marker on a single test function is invisible to it. None exists today — the one
+function-level marker in this suite is `_D05`, which wraps the builtin `xfail` — and closing that
+would need either the `pytest.ini` declined above or walking every decorator. Not worth it until a
+custom function-level marker exists.
+
+Cross-refs: **C-77** (the other half of the marker scheme — the lane this now protects), **C-64**
 (a docstring citing a verdict that did not say what it claimed — the same propagation, by hand),
 **C-68**, **C-55**, **C-81** (the same extraction run, the opposite failure — what it could not see),
-cluster **G**.
+**C-18** / **D-04** (why a `pytest.ini` was declined), cluster **G**.
 
 ---
 
@@ -2576,6 +2680,164 @@ one does not fix the other.
 Cross-refs: **C-65** (the dated deadline this is measured against), **C-27**, **C-28**, **C-56**,
 **C-66**, **C-69**, seam contract §5.3 (the floor that governs who may hold what), §7 and issue #8
 (the test-project decision, blocked behind the same person).
+
+---
+
+### C-83: Two production collections were readable and writable by anyone, and no document on this platform had ever considered the question
+
+| Field | Value |
+|-------|-------|
+| ID | C-83 |
+| Tier | **1** |
+| Source | `manual` — targeted investigation from the views-models seat (2026-08-14), commissioned after a delivery-path audit noticed `crafd` had `$permissions: []` while its two siblings did not |
+| Trigger | **Before provisioning any collection for a new partner**, run `views-models/tools/credentials/close_resource_permissions.py` and require an empty permission list. **Also:** when views-pipeline-core changes the `provisioning.py` default, close this entry rather than the symptom. |
+| Location | live Appwrite state — `file_metadata/unfao`, `file_metadata/production_forecasts`; root cause at `views-pipeline-core/views_pipeline_core/modules/appwrite/provisioning.py` (the `Role.any()` argument list); guard at `views-models/tools/credentials/close_resource_permissions.py` |
+
+**Measured, not inferred.** An unauthenticated `listDocuments` carrying only the project ID — no key,
+no session:
+
+| collection | with key | anonymous | `$permissions` |
+|---|---|---|---|
+| `unfao` | 111 | **HTTP 200, all 111 rows** | `read/create/update/delete("any")` |
+| `production_forecasts` | 461 | **HTTP 200, all 461 rows** | `read/create/update/delete("any")` |
+| `crafd` | 111 | HTTP 401 — refused | `[]` |
+
+`documentSecurity` was `false` on all three, so the collection grant governed. **Closed 2026-08-14**:
+both set to `permissions: []`, `documentSecurity` and `enabled` untouched; re-verified at 111 / 461 /
+111 with the key and 401 without. All three buckets were already closed (`permissions=[]`,
+`fileSecurity=True`) and were not touched.
+
+**Tier 1, on the silent-corruption criterion rather than on the reading.** `delete("any")` is loud —
+a missing row is noticed. `update("any")` is not: `file_hash` is present on 100% of rows and was
+attacker-writable, so rewriting `fileId` and `file_hash` in one call repoints a metadata record at
+substituted content **and repairs the only integrity control that would have caught it**. That is
+corruption with no error signal, which is what Tier 1 names. Counts matched expectations at discovery
+(461/461, 111/111, 111/111), so there is no evidence of tampering — but a matching count is exactly
+what a successful `update` would leave behind, and no hash was re-derived from bucket bytes. **That
+verification has not been done and this entry does not claim it.**
+
+**There was no obscurity barrier, and this repository supplied the map.** `APPWRITE_ENDPOINT` and
+`APPWRITE_DATASTORE_PROJECT_ID` are tracked on the public default branch at
+`docs/ADRs/platform/coordinate_registry.toml`, along with every collection and bucket id; the
+`e939b3a` "production coordinates stripped" cleanup removed them from the README only.
+views-pipeline-core's register — also public — states at **C-292** that the CLI *"creates collections
+readable, writable and deletable by anyone."* Coordinates in one public repo, the vulnerability class
+in another. Neither is wrong on its own; together they were a complete set of instructions.
+
+**Why nothing broke when it was closed.** `AuthMethod` is a single-member enum (`API_KEY`); session
+auth was deleted platform-wide (þing-01 #274 / C-255, 2026-08-01); there is no JS or web client on the
+platform; FAO's shipped notebooks call `faoapi.viewsforecasting.org` with `X-API-Key` and never import
+`appwrite`. API keys bypass resource permissions entirely. **`crafd` was the proof and not the
+outlier** — it has served at `permissions: []` throughout while the delivery read and wrote it under
+the datastore key, so an empty list was already known-good in production before anything was changed.
+
+**The governance finding, which is the larger half of this entry.** Seam contract §5.5 and þing-01 D4
+decide **API-key scopes** in ratified detail: three tiers, exact scope lists, a named operator, a
+six-step ordering. They decide **nothing** about resource permissions, and the two are different
+objects on different planes — key scopes are console state, collection ACLs are arguments in
+pipeline-core's Python. A grep for `Role.`, `Permission.`, `document_security` or `file_security`
+across every `.md` and `.toml` in this repository returns **zero hits**: not in the seam contract, not
+in the registry, not in `joining_the_seam.md`, not in this register's previous 62 entries. Neither
+þing ruled on it. No ADR in any of the six repositories names it.
+
+`views-faoapi/docs/ADRs/active/027_authentication_and_per_key_isolation.md` records the reasoning that
+kept it hidden — *"an over-scoped key over-exposes data, and faoapi cannot tighten what Appwrite
+handed out."* Every sentence written about Appwrite exposure on this platform frames it as flowing
+from **key breadth**. Under `Role.any()`, no key is needed at all, so the framing had no shape for
+this to occupy.
+
+**Deliberately not filed under cluster I** (*credential lifecycle has no owner*), though it will look
+like it belongs there. Cluster I is about keys. Filing a resource-ACL entry inside it would reproduce
+the precise conflation that let this survive — the platform decided the neighbouring question in
+detail and inferred the answer to this one. If a cluster is warranted it is a new one, and that is
+`review-rr`'s call rather than this entry's.
+
+**Open, not resolved.** The live exposure is closed; the two things that produced it are not. (1) The
+upstream default is unchanged — `provisioning.py` grants `Role.any()` on collection creation while the
+sibling `ensure_bucket` in the same module defaults to `permissions=[]`, so one command still produces
+a locked bucket and an open collection, and the next partner bring-up reopens this. (2) No target
+state is declared anywhere, so there is nothing for a future contributor to violate knowingly. The
+guard script is a detector, not a fix: C-292's own wording is *"No test inspects the argument"*, and
+that is still true of everything except a script somebody has to remember to run.
+
+Cross-refs: **C-292** (views-pipeline-core — the code-level entry, Tier 3 and "consciously accepted",
+which this entry supersedes in severity), **C-82** (the operator concentration this fix routed
+around — it needed no console action, which is itself worth noticing), seam contract **§5.5** (the
+neighbouring decision), views-models `tools/credentials/close_resource_permissions.py`.
+
+---
+
+### C-84: This repository publishes a complete map of the substrate, so a resource's own permissions are the only control left
+
+| Field | Value |
+|-------|-------|
+| ID | C-84 |
+| Tier | **2** |
+| Source | `manual` — split out of C-83's investigation (2026-08-14), at the request of the seat that ran it; premise re-checked against the contract before writing |
+| Trigger | **When any Appwrite resource is created — a collection or a bucket — verify its permission list before the coordinate is recorded here.** `views-models/tools/credentials/close_resource_permissions.py` is the executable form. **Secondary:** adding a coordinate to `coordinate_registry.toml` for a resource nobody has audited. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` (tracked on the public default branch: `[connection]` endpoint and project id, every `[target]` bucket, collection and database id); seam contract **§4** (the bootstrap invariant) and **§4.1**; external: `views-pipeline-core` register **C-292**, public |
+
+**What this repository publishes.** `APPWRITE_ENDPOINT`, `APPWRITE_DATASTORE_PROJECT_ID` and every
+container id on the seam are tracked on a public default branch, by design — that is what makes the
+registry the canonical source consumers read. The `e939b3a` *"production coordinates stripped"*
+cleanup removed them from the README only.
+
+**Why that is a register entry rather than a fact.** Publishing coordinates corrupts nothing and is
+not a defect. What it does is **remove the interval between a resource being misconfigured and that
+misconfiguration being exploitable.** It is an amplifier. Tier 2 names exactly that — structural
+fragility that will cause failures under realistic change scenarios — and the realistic scenario is
+*a new resource created carrying the wrong default*, which is precisely what **C-83** was.
+
+**The pairing is not hypothetical, and neither half is wrong alone.** views-pipeline-core's register
+is also public and states at **C-292** that the CLI *"creates collections readable, writable and
+deletable by anyone."* Coordinates in one public repository, the vulnerability class in another.
+Together they were a complete set of instructions, and C-83 is what that produced: two production
+collections answering an unauthenticated `listDocuments` with 572 rows.
+
+**So the resource ACL is the only control left — and it is undeclared and unenforced.** No document
+on this platform states what a collection's `$permissions` must be. C-83 closed two resources by
+console action; nothing prevents the third, or the next partner's. **This is what gives the proposed
+seam-contract clause a reason to exist that a reader can act on**: it is not tidy-up, it is the single
+thing standing between a public map and an open door. That clause needs a version bump and a §10.1
+obligation declaration — a governance act, routed to the operator, deliberately not taken by either
+session that found this.
+
+**GOING PRIVATE IS AN OPEN OPTION, NOT A FORECLOSED ONE — and the first draft of this entry got that
+wrong.** It justified permanent-accepted-risk with *"the charter requires the registry to be public"*.
+Checked rather than recalled:
+
+| | |
+|---|---|
+| **§4:161** | *"The registry is **readable without holding a secret** (bootstrap invariant)."* |
+| **§4.1:176** | *"…the registry is public, so the asymmetry never has to be crossed."* |
+
+Those are different claims and only the first is a rule. It forbids a chicken-and-egg — needing an
+Appwrite credential to discover where the credential points. **A repository private to the
+`views-platform` org satisfies it completely**: cloning with ordinary GitHub auth is not "holding a
+secret" in the seam's sense, and if it were, `views-faoapi` would violate the invariant. The
+publicness sentence lives in §4.1 and is doing passing work in an argument about the `[contract.*]`
+mechanism.
+
+**Checked mechanically too, not just textually.** Nothing anywhere fetches the registry over
+unauthenticated HTTP — zero hits for `raw.githubusercontent`, `curl` or `wget` against
+`coordinate_registry.toml` across the workspace. Every reader path is a **local sibling checkout**
+(`views-models/tools/credentials/platform_env.sh` resolves `$root/../views-appwrite/docs/...`), which
+an org-private repo serves unchanged.
+
+**This entry does not recommend going private.** VIEWS is a public research platform and open
+coordinates may be a deliberate posture with real value; that is the operator's call and neither
+session that found this has visibility into it. What is recorded is that the option **exists, has a
+known cost, and has never been decided** — because writing it down as impossible would be a soft fact
+hardening into a hard one and then being planned against, which is **cluster H**, and this register
+has five entries about exactly that.
+
+Part of causal cluster **I** (credential lifecycle) by subject, and **H** by the premise it nearly
+carried. Cross-refs: **C-83** (the incident this was split out of — its *"no obscurity barrier"*
+paragraph is the narrative that surfaced this and stays there), **C-292** in views-pipeline-core
+(the other half of the pairing), **C-30** / **C-67** / **C-69** (adjacent but distinct: those govern
+secret *scanning*, this is non-secret coordinates functioning as a targeting aid), **C-21** (the
+hazard class of production coordinates reachable without a deliberate choice), seam contract §4,
+§4.1, §5.5.
 
 ---
 

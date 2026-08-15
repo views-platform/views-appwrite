@@ -33,51 +33,137 @@ while IFS= read -r file; do
         echo "  WARN: Unfilled ClassName placeholder in $file"
         warnings=$((warnings + 1))
     fi
-done < <(grep -rl 'Status:.*\(Accepted\|Active\)' --include='*.md' . 2>/dev/null || true)
+done < <(grep -rl 'Status:.*\(Accepted\|Active\|Deferred\)' --include='*.md' . 2>/dev/null || true)
+# `Deferred` added 2026-08-14 (C-09): the filter read Accepted|Active only, so
+# ADR-004 -- the one Deferred ADR -- was never scanned for placeholders. It has
+# none today, so this changes nothing now and closes the gap the entry named.
+scanned=$(grep -rl 'Status:.*\(Accepted\|Active\|Deferred\)' --include='*.md' . 2>/dev/null | wc -l)
 if [ "$warnings" -eq 0 ]; then
-    echo "  OK"
+    echo "  OK: ${scanned} accepted/active/deferred file(s) scanned, no placeholders"
 fi
 
-# 2. Verify CIC active contracts exist (skip blockquote/example lines)
+# 2. The CIC list and the CIC directory must agree — IN BOTH DIRECTIONS.
+#
+# C-09. This check only ever walked the LIST, and the list says "None yet", so it
+# iterated over zero items and had never executed its body. It could not fail, and
+# a green run said so in exactly the same words as a run that checked something.
+#
+# That is C-55's shape — a guard that stands down whenever there is nothing to
+# satisfy it — and C-55's remedy applies: an ALWAYS-RUNS COMPANION. Checking the
+# reverse direction gives this something to assert at all times, because the
+# directory can be enumerated whether or not the list has entries. Today both are
+# empty, which passes while genuinely comparing two things.
+#
+# The reverse direction is also the more likely defect once Phase 1 starts: a CIC
+# written and not listed is invisible to anyone reading CICs/README.md as the
+# index it advertises itself to be.
 echo "--- Checking CIC active contract references ---"
+cic_listed=0
+cic_files=0
 if [ -f "CICs/README.md" ]; then
+    # forward: everything listed must exist
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
         contract=$(echo "$line" | sed -n 's/^- `\(.*\.md\)`.*$/\1/p')
-        if [ -n "$contract" ] && [ ! -f "CICs/$contract" ]; then
-            echo "  ERROR: CIC contract listed but missing: CICs/$contract"
-            errors=$((errors + 1))
+        if [ -n "$contract" ]; then
+            cic_listed=$((cic_listed + 1))
+            if [ ! -f "CICs/$contract" ]; then
+                echo "  ERROR: CIC contract listed but missing: CICs/$contract"
+                errors=$((errors + 1))
+            fi
         fi
     done < <(grep -E '^- `[A-Z].*\.md`' CICs/README.md 2>/dev/null | grep -v '>' || true)
+
+    # reverse: everything that exists must be listed
+    while IFS= read -r f; do
+        [[ -z "$f" ]] && continue
+        base=$(basename "$f")
+        case "$base" in README.md|cic_template.md) continue ;; esac
+        cic_files=$((cic_files + 1))
+        if ! grep -qF "\`$base\`" CICs/README.md 2>/dev/null; then
+            echo "  ERROR: CIC contract exists but is not listed in CICs/README.md: $base"
+            echo "         That index is what ADR-006 points readers at; an unlisted contract is invisible."
+            errors=$((errors + 1))
+        fi
+    done < <(find CICs -maxdepth 1 -name '*.md' 2>/dev/null || true)
+
+    echo "  OK: ${cic_listed} listed, ${cic_files} contract file(s) — the two agree"
+else
+    echo "  ERROR: CICs/README.md is missing; ADR-006 requires it as the contract index"
+    errors=$((errors + 1))
 fi
 
 # 3. Cross-ADR reference integrity (constitutional ADRs 000-009 only;
 #    higher numbers are project-specific and not expected in the template repo)
-echo "--- Checking cross-ADR references (constitutional: 000-009) ---"
+# 3. Cross-ADR reference integrity.
+#
+# C-09. This read `ADR-00[0-9]` for two months, so it could not see ADR-010 or
+# ADR-011 -- both of which exist and are cited 14 times between them. It reported
+# a clean run over a set it could not reach.
+#
+# WIDENED to ADR-0[0-9][0-9], with three exclusions. All three are DECLARED here
+# rather than inferred, and each was measured before being written:
+#
+#   (a) FOREIGN ADRs. `views-postprocessing ADR-017`, `views-faoapi ADR-019` and
+#       the like belong to other repositories and must not resolve locally. A
+#       reference is foreign if its line names one of the repos below.
+#   (b) CANDIDATES. `docs/ADRs/README.md` lists ADR-012..015 as candidates that
+#       deliberately do not exist yet. Marked `(candidate)` at the point of use.
+#   (c) THE PLATFORM TIER, and this is the load-bearing one. `ADRs/platform/`
+#       cites foreign ADRs constantly and mostly WITHOUT naming the repo on the
+#       same line -- "Their ADR-017 §5", where the owner is established in
+#       surrounding prose. Measured: 11 such lines across the seam contract and
+#       the deployment pattern.
+#
+#       Those are not defects to fix. The platform tier is not part of this
+#       repository's constitutional series -- ADR-011 draws exactly that
+#       distinction -- and editing a VERSIONED contract to satisfy a local linter
+#       would force a version bump, a new edition, a tag, and a re-pin decision
+#       for six consumers (§10), which is the cost C-73 registers. A cosmetic
+#       citation change is not worth an edition.
+#
+# So this check governs the constitutional tier and the docs around it. The
+# platform tier's own citations are governed by §10's supersession discipline.
+FOREIGN_ADR_REPOS='views-models\|views-faoapi\|views-crafdapi\|views-postprocessing\|views-pipeline-core\|views-datafactory'
+echo "--- Checking cross-ADR references (constitutional 000-011; platform tier excluded) ---"
+adr_refs_checked=0
 while IFS= read -r ref; do
     [[ -z "$ref" ]] && continue
     file=$(echo "$ref" | cut -d: -f1)
-    adr_num=$(echo "$ref" | grep -oP 'ADR-00\K[0-9]' | head -1)
+    adr_num=$(echo "$ref" | grep -oP 'ADR-0\K[0-9]{2}' | head -1)
     if [ -n "$adr_num" ]; then
-        match_count=$(find ADRs -name "00${adr_num}_*.md" 2>/dev/null | wc -l)
+        adr_refs_checked=$((adr_refs_checked + 1))
+        match_count=$(find ADRs -maxdepth 1 -name "0${adr_num}_*.md" 2>/dev/null | wc -l)
         if [ "$match_count" -eq 0 ]; then
-            echo "  ERROR: $file references ADR-00${adr_num} but no matching file found"
+            echo "  ERROR: $file references ADR-0${adr_num} but no matching file found"
+            echo "         If it belongs to another repo, name the repo on the same line."
+            echo "         If it does not exist yet, mark it (candidate)."
             errors=$((errors + 1))
         fi
     fi
-done < <(grep -rn 'ADR-00[0-9]' --include='*.md' . 2>/dev/null || true)
+done < <(grep -rn 'ADR-0[0-9][0-9]' --include='*.md' . 2>/dev/null \
+         | grep -v '^\./ADRs/platform/' \
+         | grep -v "$FOREIGN_ADR_REPOS" \
+         | grep -v '(candidate)' || true)
+adr_files=$(find ADRs -maxdepth 1 -name '0[0-9][0-9]_*.md' | wc -l)
+echo "  OK: ${adr_refs_checked} reference(s) checked against ${adr_files} ADR file(s)"
 
 # 4. Check that referenced protocol files exist
 echo "--- Checking protocol file references ---"
+proto_refs=0
 while IFS= read -r ref; do
     [[ -z "$ref" ]] && continue
     file=$(echo "$ref" | cut -d: -f1)
     proto=$(echo "$ref" | grep -oP 'contributor_protocols/[a-z_]+\.md' | head -1)
-    if [ -n "$proto" ] && [ ! -f "$proto" ]; then
-        echo "  ERROR: $file references $proto but file does not exist"
-        errors=$((errors + 1))
+    if [ -n "$proto" ]; then
+        proto_refs=$((proto_refs + 1))
+        if [ ! -f "$proto" ]; then
+            echo "  ERROR: $file references $proto but file does not exist"
+            errors=$((errors + 1))
+        fi
     fi
 done < <(grep -rn 'contributor_protocols/' --include='*.md' . 2>/dev/null || true)
+echo "  OK: ${proto_refs} protocol reference(s) resolved"
 
 # 5. Report template status markers
 echo "--- Checking template status markers ---"
@@ -126,6 +212,8 @@ else
         errors=$((errors + 1))
     done < <(grep -rn 'PLATFORM-001_identity_secrets_configuration_contract\.md' \
              --include='*.toml' --include='*.sh' . 2>/dev/null || true)
+    _vd_p1_cites=$(grep -rl 'PLATFORM-001' --include='*.md' . 2>/dev/null | wc -l)
+    echo "  OK: seam contract resolves; ${_vd_p1_cites} file(s) still cite PLATFORM-001, alias intact"
 fi
 
 # 7. Contract/registry version coherence
