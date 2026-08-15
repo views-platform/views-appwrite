@@ -2713,8 +2713,46 @@ attacker-writable, so rewriting `fileId` and `file_hash` in one call repoints a 
 substituted content **and repairs the only integrity control that would have caught it**. That is
 corruption with no error signal, which is what Tier 1 names. Counts matched expectations at discovery
 (461/461, 111/111, 111/111), so there is no evidence of tampering — but a matching count is exactly
-what a successful `update` would leave behind, and no hash was re-derived from bucket bytes. **That
-verification has not been done and this entry does not claim it.**
+what a successful `update` would leave behind, and no hash was re-derived from bucket bytes. ~~**That
+verification has not been done and this entry does not claim it.**~~
+
+> **VERIFIED 2026-08-15 — no evidence of tampering, on two independent lines of evidence.**
+> Run by the operator against the live project; script read-only, `GET` only, key never leaving their
+> shell. Story **#158**, output recorded there in full.
+>
+> | collection | rows | updated after creation |
+> |---|---|---|
+> | `unfao` | 111 | **0** |
+> | `production_forecasts` | 461 | 11 |
+> | `crafd` | 111 | **0** |
+>
+> **The two delivery collections — the ones an external partner reads — are untouched since
+> creation.** All 11 flagged rows in `production_forecasts` were then checked two ways: every one
+> **matched its recorded `file_hash`**, and every one points at a file the bucket created **before**
+> the row itself, by between 0.16s and 51s.
+>
+> **The provenance half is what settles it, because a matching hash alone would not.** This entry's
+> own scenario is rewriting `fileId` *and* `file_hash` in one call — which leaves the hash matching.
+> What that cannot fake is the file's `$createdAt`, which Appwrite sets server-side: substituted
+> content means a *newer* file. Not one of the eleven is newer. The eleven are also monthly and
+> explained by a real code path, `update_file_metadata()` at
+> `views-pipeline-core/.../modules/appwrite/file.py:1193`.
+>
+> **Why triage was sufficient rather than partial, which turns on a fact recorded above.** All three
+> buckets were already closed and were never touched. So **file bytes could not be substituted at
+> all** — only metadata rows were writable, every row alteration moves `$updatedAt`, and every row
+> whose `$updatedAt` moved has now been verified. The surface that was open is fully covered;
+> re-deriving hashes for the remaining 572 rows would add nothing, because it defends against swapped
+> bytes and the buckets never permitted that.
+>
+> **THE RESIDUAL, which does not go away and is not claimed closed.** A **count-preserving
+> delete-and-recreate** — delete one row, create one, total unchanged — resets `$createdAt` and leaves
+> no trace this method can see. It is not ruled out, and it is **not falsifiable by any means
+> available**: it would need an audit log reaching back to 2025-11-17 and none exists.
+>
+> So the verdict is **"no evidence of tampering, twice over, with one permanently unfalsifiable
+> residual"** — *not* "verified clean". The original sentence above is struck rather than deleted
+> because the distinction it drew is the one this update preserves.
 
 **There was no obscurity barrier, and this repository supplied the map.** `APPWRITE_ENDPOINT` and
 `APPWRITE_DATASTORE_PROJECT_ID` are tracked on the public default branch at
@@ -2823,6 +2861,17 @@ unauthenticated HTTP — zero hits for `raw.githubusercontent`, `curl` or `wget`
 `coordinate_registry.toml` across the workspace. Every reader path is a **local sibling checkout**
 (`views-models/tools/credentials/platform_env.sh` resolves `$root/../views-appwrite/docs/...`), which
 an org-private repo serves unchanged.
+
+> **DECIDED 2026-08-15 — THE REGISTRY STAYS PUBLIC.** Operator decision, on the recommendation
+> below and its reasoning: the coordinates are useless without a key, the defect was an unlocked
+> resource rather than a published address, and hiding the map would treat the symptom while the
+> cause is fixed upstream. VIEWS is a public research platform and the openness has value.
+>
+> **This closes the question rather than deferring it.** The option to go org-private remains
+> available and is now documented as *available and declined*, not as impossible — which was the
+> error the first draft of this entry made. If the reasoning ever changes, §4 permits it: the
+> bootstrap invariant asks only that the registry be readable without holding a secret, and an
+> org-private repository satisfies that.
 
 **This entry does not recommend going private.** VIEWS is a public research platform and open
 coordinates may be a deliberate posture with real value; that is the operator's call and neither
