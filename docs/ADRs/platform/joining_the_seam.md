@@ -95,13 +95,42 @@ value; a request bearing key A never serves content cached for key B.
 post-salt implementation. Written earlier it would encode the current fused behaviour as the
 reference, and every clone would conform to the bug.
 
-## 5. Turn on scanning and push protection at creation
+## 5. Close your collection and bucket permissions — before the first delivery
+
+Every Appwrite container you create must end up with an **empty permission list**:
+
+```
+permissions: []          # on the collection AND the bucket
+documentSecurity / fileSecurity — leave alone
+```
+
+**An empty list is not "no access".** A server API key bypasses container permissions entirely, so
+`[]` means *only key-holders*, which is what you want. `crafd` has served at `[]` throughout while its
+delivery read and wrote it under the datastore key — that is the proof, not an exception.
+
+Check it, do not assume it:
+
+```
+views-models/tools/credentials/close_resource_permissions.py     # dry-run by default
+```
+
+Expected result: an anonymous request carrying only the project id returns **401**; the same request
+with the key returns your rows.
+
+**Why this step exists.** On 2026-08-14 two production collections were found granting
+`read/create/update/delete("any")` — readable *and writable* by anyone with no credentials, 572 rows
+in total. The tooling that created them defaulted to that grant while the sibling bucket call beside
+it defaulted to `[]`. See **C-83** in this repo's register, and views-pipeline-core's **ADR-061** for
+the target state. **A bring-up that follows every other step here can still produce an open
+collection**, which is exactly why this one is not optional.
+
+## 6. Turn on scanning and push protection at creation
 
 Before the first push, not after. Retrofitting is what this platform is doing now, and it is worse.
 Include `secret_scanning_non_provider_patterns` and `.ipynb`-cell scanning — those two flags each
 catch a class of real finding already present in this platform's history that the defaults miss.
 
-## 6. Then read the full runbook
+## 7. Then read the full runbook
 
 The remaining preconditions — including the two that **gate the clone itself** — are in the þing-02
 verdict, `§III` of:
