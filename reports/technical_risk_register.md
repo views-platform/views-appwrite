@@ -2753,6 +2753,28 @@ verification has not been done and this entry does not claim it.**~~
 > So the verdict is **"no evidence of tampering, twice over, with one permanently unfalsifiable
 > residual"** — *not* "verified clean". The original sentence above is struck rather than deleted
 > because the distinction it drew is the one this update preserves.
+>
+> **AMENDMENT 2026-08-21 — full-population sweep. It narrows the residual; it does not correct the
+> triage.** Every row in both delivery collections was re-downloaded and re-hashed, not only the
+> eleven: `unfao` **111/111** and `production_forecasts` **461/461** match their recorded
+> `file_hash`. sha256, confirmed empirically across all 572 rather than assumed. Read-only, `GET`
+> only.
+>
+> The triage argument above is sound and the prediction it made — that hashing the rest would add
+> nothing *against substituted bytes* — held exactly. What the sweep added is a different fact,
+> which a sampled method could not reach: **rows and files are a perfect bijection. 0 files without
+> a row, 0 rows without a file, in both buckets.**
+>
+> That bounds the residual. A count-preserving delete-and-recreate has to point its new row at a
+> file that already exists, because the buckets were never writable. Pointing it at a file some
+> other row already claims leaves the displaced file referenced by nothing — an orphan. There are
+> no orphans, and there were no unreferenced files available to point at, so **no file-level
+> substitution is reachable by that route either.**
+>
+> **What survives is smaller and still unfalsifiable:** a delete-and-recreate preserving `fileId`
+> and `file_hash` while altering only descriptive fields — `targets`, `name`, `description`. No
+> method available can exclude it, for the reason already given. The verdict stands as written; its
+> residual is now bounded to **metadata semantics rather than to file bytes**.
 
 **There was no obscurity barrier, and this repository supplied the map.** `APPWRITE_ENDPOINT` and
 `APPWRITE_DATASTORE_PROJECT_ID` are tracked on the public default branch at
