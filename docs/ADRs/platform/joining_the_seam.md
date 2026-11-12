@@ -82,8 +82,18 @@ What you consume instead:
 
 ## 4. Run the conformance vector against your own copy
 
-Once it exists ([#13](https://github.com/views-platform/views-appwrite/issues/13)), it asserts one
-invariant that every independently written client must satisfy:
+It exists. Two files, in the directory you are already reading:
+
+| File | What it is |
+|---|---|
+| `conformance_vector_cache_partition_isolation.py` | 10 tests, `VECTOR_VERSION 1.0.0` |
+| `conformance_vector.md` | the spec, and how to adopt it — **start here** |
+
+Copy the vector into your own suite and supply the `adapter` and `other_adapter` fixtures. **A bare
+copy errors with 10 errors** — that is documented behaviour, not a defect: it fails loudly rather
+than skipping silently. It was validated against two reference implementations before publication.
+
+It asserts one invariant that every independently written client must satisfy:
 
 > Two distinct callers never share a cache partition, and a partition label is neither the key value
 > nor derivable from it.
@@ -91,9 +101,27 @@ invariant that every independently written client must satisfy:
 Pass/fail: two distinct keys yield two distinct partitions; the label cannot be derived from the key
 value; a request bearing key A never serves content cached for key B.
 
-**It does not exist yet** — it is blocked on `views-faoapi#323`, and must be authored from the
-post-salt implementation. Written earlier it would encode the current fused behaviour as the
-reference, and every clone would conform to the bug.
+> **Corrected 2026-11-12 (views-appwrite#169).** This step previously read *"It does not exist
+> yet — it is blocked on `views-faoapi#323`, and must be authored from the post-salt
+> implementation."* **Both halves had been false since 2026-08-01:** the vector shipped that day in
+> `47172af` (views-appwrite#13, closed COMPLETED) and sits two files away in this directory;
+> views-faoapi#323 closed 2026-08-18 and its reference run, faoapi#324, on 2026-08-12. The ordering
+> the struck sentence protected was honoured, so the sentence has served its purpose.
+>
+> **Why this mattered more than a stale line.** This file is the checklist a new consumer follows,
+> and a step that says its own artifact does not exist is a step that gets skipped — which is the
+> one outcome the vector exists to prevent, since its invariant is that two callers never share a
+> cache partition. views-crafdapi#22 was open in exactly that position while this sentence stood.
+>
+> **Why nothing caught it.** `validate_docs.sh` reads no prose claim about whether a sibling file
+> exists, and that guard is deliberately not being built — a checker that parses English
+> assertions is a bad trade, and views-pipeline-core built one on 2026-11-12 and deleted it the
+> same hour after three false positives (negation, qualification, quotation; their C-355). What
+> *is* mechanical is the citation: the two issue numbers in the struck sentence were both closed,
+> and *"every issue a governed document cites as blocking is still open"* needs no prose parsing
+> and would have caught this on the day faoapi#323 closed. Not built here either, and tracked
+> rather than assumed — see #169. The sentence survived an edit to its own file on 2026-08-15
+> (`1839109` inserted a new §5 and renumbered below it) without anyone reading §4.
 
 ## 5. Close your collection and bucket permissions — before the first delivery
 

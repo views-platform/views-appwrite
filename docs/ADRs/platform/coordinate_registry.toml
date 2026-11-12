@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.7.1"                          # Versions in lockstep with the contract (§10);
+version = "1.8.0"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -27,7 +27,15 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-08-13"                     # Newest first. v1.4.x are OBSERVATION-DRIVEN in §10's sense —
+amended = "2026-11-12"                     # Newest first.
+                                           #
+                                           # v1.8.0 (2026-11-12): þing-04 D3. Names CRAF'd's own Appwrite project and
+                                           #   the non-production project, both created by the operator 2026-11-11.
+                                           #   ADDITIVE: no existing name, value or class changes. OBLIGES NOBODY —
+                                           #   obliges_consumers_since stays at 1.5.2. views-crafdapi re-pins in order
+                                           #   to read the new row; nothing is asked of any other consumer.
+                                           #
+                                           # v1.4.x are OBSERVATION-DRIVEN in §10's sense —
                                            # they record state the operator created in the console and impose
                                            # no new obligation. v1.5.0 is NOT: it changes what this file may
                                            # contain, and carries a clause (contract §4.1).
@@ -153,6 +161,30 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
 
+[edition."1.8.0"]
+obliges_consumers = false
+summary = """þing-04 D3, ratified by the operator 2026-11-11 (þingit 3eace22). Names
+[connection.APPWRITE_CRAFD_PROJECT_ID] and the non-production project in [test_environment],
+both created in the console by the operator. PURELY ADDITIVE: no existing name, value or class
+changes, so a consumer that ignores this edition behaves exactly as before. views-crafdapi
+re-pins because it wants the new row; nothing compels anyone else, which is the point —
+the assembly withdrew a proposed 1.9.0 precisely to avoid obliging six consumers at once.
+The one-project statements this edition contradicts (contract §2's superseded paragraph,
+þing-02 A3(h), the old [test_environment] block) are corrected with a dated supersession
+rather than deleted: the record of what was true is the part that matters.
+
+ALSO IN THIS EDITION, and still obliging nobody:
+  - Contract §5.5's prohibition list CORRECTED. It named four scopes, two of them Appwrite's
+    retired vocabulary (`collections.write`, `attributes.write`), so a key could satisfy the
+    clause word for word and still create tables, columns and indexes. It now names both
+    generations, and §5.5's acceptance test no longer bakes in a count. Obliges nobody because
+    the sequencing gate has never been cleared and no tier key has been issued — had one been
+    narrowed first, this would have revoked a completion claim instead of a sentence.
+  - Contract §8 gains three measured substrate facts: the filterable-attribute list corroborated
+    (and `loa` recorded as never filterable), attributes created ASYNCHRONOUSLY with Appwrite
+    returning before one is usable, and the index-key size ceiling with its page-size
+    precondition. All three measured by views-pipeline-core and views-crafdapi, 2026-11-11/12."""
+
 [edition."1.7.1"]
 obliges_consumers = false
 summary = """Strikes §4.2, added one day earlier. It had already been proposed, reviewed
@@ -192,6 +224,13 @@ value = "https://fra.cloud.appwrite.io/v1"
 [connection.APPWRITE_DATASTORE_PROJECT_ID]
 class = "connection"
 value = "691b14fc0024f568fb42"
+
+[connection.APPWRITE_CRAFD_PROJECT_ID]
+class = "connection"
+value = "6af4d7fa00255ed9cc67"   # project named `crafdapi`; created by the operator 2026-11-11.
+                                 # NOT secret (§4: coordinates are non-secret identifiers).
+                                 # Flat [connection], not a [project.*] table — þing-04 D3, after
+                                 # views-faoapi measured the unscanned-table alternative away.
 
 # ------------------------------------------------------------------- targets
 [target.APPWRITE_PROD_FORECASTS_BUCKET_ID]
@@ -883,7 +922,21 @@ note = "views-forecasts store credentials (retire with the store) and W&B keys �
 
 # ------------------------------------------------------------------ test column
 [test_environment]
-status = "none"
-fact = """No non-production Appwrite project exists (þing-01 S23, five-seat testimony).
-Until the operator creates one: integration tests against the production project are
-FORBIDDEN by the seam contract; read-only preflight validation is the only permitted live check."""
+status = "exists"
+project_id = "6af4dac9002e8cbc234c"
+project_name = "test"
+created = "2026-11-11"
+fact = """A non-production Appwrite project EXISTS, created by the operator 2026-11-11 after
+þing-04 answered views-appwrite#171 yes. This SUPERSEDES þing-01 S23 and þing-02 A3(h), both of
+which recorded that none existed and were true when written.
+
+What it unblocks: the provisioning drill (views-postprocessing#18), the torn-run rehearsal
+(views-postprocessing C-105), and the reference validator the contract defers behind
+`operator AND test project` (§7).
+
+What has NOT changed: integration tests against the PRODUCTION project remain FORBIDDEN.
+
+Why the id sits in an unscanned table: no canonical reader resolves [test_environment], so no
+production consumer can pick up a non-production project by accident — the same reasoning as
+þing-04 D4 (a delivery does not span projects). A repo that needs to resolve it asks for a
+reader change in its own PR, where the change is visible."""

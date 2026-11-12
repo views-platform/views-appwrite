@@ -343,6 +343,38 @@ one.
 **Check 1 includes `Deferred`.** The Status filter read `Accepted|Active`, so ADR-004 was never
 scanned for placeholders. No behaviour change today; the gap the entry named is closed.
 
+> **CORRECTED 2026-11-12. The gap was NARROWED, not closed, and the file it still missed was the
+> seam contract.** Adding `Deferred` to the list left the selector enumerating status *values*, and
+> the next file it skipped was skipped on an axis no enumeration reaches: `appwrite_seam_contract.md`
+> writes `**Status: ACCEPTED.`, and `grep` is case-sensitive, so `ACCEPTED` never matched `Accepted`.
+> Measured 2026-11-12 from the script's own working directory (it `cd`s to `SCRIPT_DIR`, so the scope
+> is `docs/`): **19 files carry a status line, 17 were selected, 2 skipped** — `CICs/README.md` and
+> the seam contract, this repository's only live artifact. Both scan clean, which is the point: the
+> silence was indistinguishable from correctness.
+>
+> **Adding `Deferred` could not have caught this, and neither could adding `Superseded`.** The list
+> was never one word short; it was one *axis* short, and nobody enumerating values finds that axis.
+> The fix now in the script stops enumerating: it selects on the **presence** of a status line,
+> case-insensitively on the key, and a companion assertion fails the run if the selector ever names
+> status values again. That second half is what this resolution lacked — a widened list has no guard
+> against being narrowed by the next person who finds a word it does not have.
+>
+> **This is one defect copied across the platform's scripts, not a local one.** views-pipeline-core
+> measured every sibling checkout: **86 governed documents across 12 repositories** are skipped by
+> their own placeholder scans, 68 of them ADRs or CICs, every run printing `PASSED: no issues found`
+> (their **C-356**; views-hydranet is worst at 28/24 depending on whether the count is the scan's
+> root or `docs/ADRs` + `docs/CICs`). Five more repos come out clean only because every governed
+> document in them happens to be Accepted or Active — not because their copy is fixed. Filed as
+> issues in the owning repositories; this repository does not edit them.
+>
+> **Related, and the generalisation worth keeping:** the same enumerate-the-values defect appears in
+> seam contract §5.5, whose prohibition list named two of Appwrite's *retired* scope names, so a key
+> could satisfy the clause and still create tables and columns (corrected in **v1.8.0**). Across the
+> instances found on 2026-11-11/12 — here, §5.5, and three self-caught faults in views-pipeline-core's
+> own register — **the failing artefact was in every case the one doing the checking**, and each read
+> as checked because it sat beside something that was. Nothing self-catches unless something is
+> actually comparing.
+
 **AND THE SCRIPT IS NOW TESTED — `tests/test_validate_docs.py`, 18 tests.** It was 361 lines, a
 required check on every pull request, with no coverage at all; only checks 8 and 9 had ever been
 shown to fail, both by hand, both once. Each test builds a complete doc-tree in `tmp_path`, copies
