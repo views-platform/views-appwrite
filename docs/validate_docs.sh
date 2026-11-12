@@ -9,6 +9,11 @@ cd "$SCRIPT_DIR"
 
 errors=0
 
+# C-09 / views-pipeline-core C-356. Matches the KEY of a status line, not its value,
+# and case-insensitively (`-i` at every use site) so `**Status:**` and `**status:**`
+# both select. The assertion after check 1 fails the run if this ever names a value.
+STATUS_SELECTOR='status:'
+
 echo "=== base_docs validation ==="
 echo ""
 
@@ -33,13 +38,45 @@ while IFS= read -r file; do
         echo "  WARN: Unfilled ClassName placeholder in $file"
         warnings=$((warnings + 1))
     fi
-done < <(grep -rl 'Status:.*\(Accepted\|Active\|Deferred\)' --include='*.md' . 2>/dev/null || true)
-# `Deferred` added 2026-08-14 (C-09): the filter read Accepted|Active only, so
-# ADR-004 -- the one Deferred ADR -- was never scanned for placeholders. It has
-# none today, so this changes nothing now and closes the gap the entry named.
-scanned=$(grep -rl 'Status:.*\(Accepted\|Active\|Deferred\)' --include='*.md' . 2>/dev/null | wc -l)
+done < <(grep -ril "$STATUS_SELECTOR" --include='*.md' . 2>/dev/null || true)
+# SELECTION IS BY PRESENCE OF A STATUS LINE, NEVER BY WHICH WORD IT USES.
+#
+# History, because the second fix is only legible beside the first. 2026-08-14 (C-09)
+# added `Deferred` to a filter that read `Accepted|Active`, so ADR-004 was no longer
+# skipped, and the entry recorded the gap as closed. It was narrowed, not closed:
+# the next file it skipped was `ADRs/platform/appwrite_seam_contract.md`, which writes
+# `**Status: ACCEPTED.` -- and grep is case-sensitive, so ACCEPTED never matched
+# Accepted. Measured 2026-11-12: 19 files carried a status line, 17 were selected,
+# 2 were skipped (the other being CICs/README.md). Both scan clean, which is why
+# nobody noticed: the silence was indistinguishable from correctness.
+#
+# Adding `Deferred` could not have caught that, and neither could adding
+# `Superseded`. The list was never one word short, it was one AXIS short, and no
+# amount of adding values finds a renamed or recased vocabulary. So this does not
+# enumerate values at all, and the assertion below fails the run if it ever does
+# again -- a widened list has no guard against the next person narrowing it.
+#
+# Platform-wide: views-pipeline-core measured 86 governed documents across 12
+# repositories skipped by their own copies of this script (their C-356). Filed as
+# issues in the owning repos; this repo does not edit them.
+scanned=$(grep -ril "$STATUS_SELECTOR" --include='*.md' . 2>/dev/null | wc -l)
 if [ "$warnings" -eq 0 ]; then
-    echo "  OK: ${scanned} accepted/active/deferred file(s) scanned, no placeholders"
+    echo "  OK: ${scanned} status-bearing file(s) scanned, no placeholders"
+fi
+
+# The companion assertion. C-09's first fix lacked this, which is why it could be
+# re-narrowed. Written to compare a STRING against a list of words -- a structure,
+# not a reading of prose -- because that is the only kind of check that held up on
+# 2026-11-12 (views-pipeline-core deleted a prose-matching guard the same day after
+# three false positives: negation, qualification and quotation).
+if printf '%s' "$STATUS_SELECTOR" | grep -qiE 'accepted|active|deferred|implemented|retired|superseded|proposed|draft|planned'; then
+    echo "  ERROR: the placeholder scan's selector names status VALUES again."
+    echo "         It is \$STATUS_SELECTOR = '$STATUS_SELECTOR'."
+    echo "         Select on the PRESENCE of a status line. Enumerating values is the"
+    echo "         defect (C-09): the list is never one word short, it is one axis"
+    echo "         short -- a new status word, or a different casing, reopens the gap"
+    echo "         silently and the run still prints PASSED."
+    errors=$((errors + 1))
 fi
 
 # 2. The CIC list and the CIC directory must agree — IN BOTH DIRECTIONS.
