@@ -10,8 +10,8 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1; v1.7.0's §4.2 struck by v1.7.1** |
-| Version | **1.7.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-08-13 — **v1.7.1**: **§4.2 STRUCK one day after it was added.** It had already been proposed, reviewed and **withdrawn** as §5.9 (views-appwrite#27 / PR #30, 2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it was a failure to open the story's own issue. `obliges_consumers_since` returns to **1.5.2** and v1.7.0 is reclassified `obliges_consumers = false`: nobody should inherit an obligation from a withdrawn clause. 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Version | **1.8.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-11-12 — **v1.8.0**: **þing-04 D3.** Names CRAF'd's own Appwrite project (`APPWRITE_CRAFD_PROJECT_ID`) and the non-production project, both created in the console by the operator 2026-11-11. **Additive; OBLIGES NOBODY** — `obliges_consumers_since` stays at **1.5.2**, and a proposed v1.9.0 that would have obliged all six consumers was withdrawn by this repo at rýni (þingit `9fe463a`) when the arithmetic turned against it. Corrects the three places this contract and its registry said the organisation holds exactly one project — by dated supersession, not deletion. **Also corrects §5.5's prohibition list**, which named four scopes, two of them Appwrite's retired vocabulary, so a key could satisfy the clause and still create tables, columns and indexes; it now names both generations and its acceptance test no longer bakes in a count. **Also adds three measured facts to §8:** the filterable-attribute list corroborated (`loa` was never filterable), attributes created asynchronously with Appwrite returning before one is usable, and the index-key size ceiling with its page-size precondition. Nothing here obliges a consumer: every registry name is new, and §5.5's gate has never been cleared, so no repo loses a passed test. 2026-08-13 — **v1.7.1**: **§4.2 STRUCK one day after it was added.** It had already been proposed, reviewed and **withdrawn** as §5.9 (views-appwrite#27 / PR #30, 2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it was a failure to open the story's own issue. `obliges_consumers_since` returns to **1.5.2** and v1.7.0 is reclassified `obliges_consumers = false`: nobody should inherit an obligation from a withdrawn clause. 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -96,6 +96,13 @@ alone.
 > checked. The standing rule survives its own gate closing — **anything here not carrying a console
 > read-date is still testimony.** The non-production project question (§þing-02 A3(h)) was answered
 > the same day: **there is none**; the organisation holds exactly one project, `Datastore`.
+>
+> **Superseded again 2026-11-11 (v1.8.0).** The organisation now holds **three** projects:
+> `Datastore`, `crafdapi` (þing-04 D1 — CRAF'd's own entitlement set) and a non-production
+> project (views-appwrite#171, answered yes). Their ids are in the registry — `Datastore` and
+> `crafdapi` under `[connection]`, the test project under `[test_environment]`, which no reader
+> scans. The sentence above is kept because the warning it carries outlived its own answer
+> twice: **anything here not carrying a console read-date is still testimony.**
 
 **Four corrections, adopted 2026-07-31 (þing-02 D1).** Each was supplied by the seat it cost:
 
@@ -314,8 +321,33 @@ work. Until **O1** (§9) is designed, rotation is manual and operator-coordinate
 
 ### 5.5 Least privilege — with teeth, and with a sequencing gate
 
-> **No key held by a long-running process carries `buckets.write`, `databases.write`,
-> `collections.write`, or `attributes.write`.**
+> **No key held by a long-running process carries any scope that can CREATE a container or
+> alter structure. As Appwrite names them today:** `buckets.write`, `databases.write`,
+> `tables.write`, `columns.write`, `indexes.write` — **and the deprecated aliases still ticked
+> on every live key:** `collections.write`, `attributes.write`.
+
+**Corrected 2026-11-12 (v1.8.0), and the correction is the interesting part.** This clause
+previously read *"`buckets.write`, `databases.write`, `collections.write`, or `attributes.write`"* —
+**four names, two of them Appwrite's retired vocabulary.** `collections` and `attributes` were
+renamed `tables` and `columns`, and §2's scope enumeration records that **both generations are
+ticked on both platform keys**. So a key could satisfy this clause word for word and still create
+tables, columns and indexes. The clause claimed to make provisioning *impossible* while naming
+neither current-generation scope.
+
+Two things follow, and both are worth stating rather than quietly fixing:
+
+- **It was never one name short; it was one AXIS short.** No amount of adding names finds a
+  renamed vocabulary — the same failure shape that let this repo's own documentation validator
+  skip the seam contract by matching `Accepted` against a file that says `ACCEPTED` (C-09, and
+  views-pipeline-core's C-356 for the platform-wide count). Enumerating values is the defect.
+- **Nothing was ever narrowed against the short list**, so no repo loses a passed gate: §5.5's
+  sequencing gate has never been cleared and **no tier key has been issued**. This correction
+  therefore obliges nobody. Had a key been narrowed first, this edition would have revoked a
+  completion claim instead of a sentence.
+
+Found by views-pipeline-core while making the provisioner bring up an empty project
+(`indexes.*` had never been exercised because every index on the shared project was created by
+hand in the console years ago), and sharpened here against the registry's own scope tables.
 
 This is the **substrate-level enforcement of §6**. §6 binds *code* not to auto-provision — a
 discipline enforceable only by review. This clause makes the phantom-bucket failure
@@ -361,7 +393,8 @@ delivery on 2026-07-27, harmlessly, because the files were readable. This is a *
 issuing scoped writer keys**, not a line in a priority list.
 
 **Narrowing is the acceptance test.** A lineage's §6 change is declared done when its delivery
-runtime completes an upload under a key lacking the four provisioning scopes — a substrate-enforced
+runtime completes an upload under a key lacking **every provisioning scope named in §5.5's clause
+above, in both generations of Appwrite's vocabulary** — a substrate-enforced
 proof that supersedes code review as evidence of completion. **Narrowing does not begin until the
 20 scopes have been enumerated** (operator gate): nothing can be narrowed against a privilege set
 nobody has listed.
@@ -467,6 +500,33 @@ The shared substrate's own properties are contract surface. Authoritative source
   contract's pathology in dependency clothes.
 - **Schema limits:** the metadata collection's filterable attributes (`name`/`category`/`type`)
   and constraints — notably `description ≤ 255` (learned from a production ERROR, run-0).
+  **Corroborated 2026-11-12:** views-crafdapi measured its own serving queries and filters on
+  `{category, type}` and `{name, category, type}` — exactly this list. The useful negative is that
+  `loa`, which views-pipeline-core's own docstring examples filtered on, is reached by nothing
+  serving; it is a real attribute written into every delivery document, but was never a filterable
+  one. An example whose parameter is passed through to a query **is** the specification a new
+  consumer reads, so a wrong example is a wrong contract.
+- **Attributes are created ASYNCHRONOUSLY, and Appwrite returns before one is usable**
+  (views-pipeline-core, 2026-11-11, PR #586). A document referencing an attribute that is still
+  building is **rejected**. Every consumer that provisions and then immediately writes is exposed.
+  Nothing on this platform ever waited — invisible for years because every collection's attributes
+  predated every delivery by years, and **load-bearing the moment an empty project is brought up**.
+  The reference implementation polls until each declared attribute reports available, treats a
+  missing `status` field as available so it cannot invent a failure, and **waits** for
+  "created but not yet listed" rather than failing on it: that is the same propagation window seen
+  through a listing, and a bring-up that refused during normal propagation would be worse than the
+  defect it guards. **Unconfirmed against a live instance:** whether the deployed Appwrite exposes
+  the `status` field at all. Testable now that a non-production project exists.
+- **Index keys have a size ceiling, and three filterable attributes very nearly exhaust it.**
+  These attributes are `string(255)`; at utf8mb4's four bytes per character a compound index over
+  three of them is **3060 bytes against InnoDB's 3072-byte limit — it fits by twelve bytes**, before
+  any column Appwrite adds to its own indexes. A fourth cannot be added at all without capping
+  lengths. The reference implementation caps at 64 and pins the arithmetic in a test.
+  **The limit carries a precondition, stated here because `description ≤ 255` lacked one:** 3072 is
+  the ceiling for **16K InnoDB pages**. At 8K it halves to 1536, where even *two* uncapped
+  attributes (2040 bytes) would exceed it. Nobody has read Appwrite Cloud's page size, so the
+  reference test asserts the **conservative 1536** — a declaration that fits only on 16K pages is
+  one hosting change away from a bring-up that dies while creating an index.
 
 ## 9. Open items — named, owned, not pretended solved
 
@@ -920,7 +980,7 @@ deleted** — it was right, and the figure it hedged proved thirteen days wrong.
 
 | | |
 |---|---|
-| **A3(h) answered** | **There is no non-production Appwrite project.** The `VIEWS Platform` organisation holds exactly one project, `Datastore`. This blocks views-postprocessing#18 and the þing-01 provisioning drill outright — not "pending", *absent* |
+| **A3(h) answered** | **There is no non-production Appwrite project.** The `VIEWS Platform` organisation holds exactly one project, `Datastore`. This blocks views-postprocessing#18 and the þing-01 provisioning drill outright — not "pending", *absent*. **SUPERSEDED 2026-11-11 (v1.8.0): the operator created one** (views-appwrite#171 answered yes at þing-04 G2). #18 and the drill are unblocked; neither has been run |
 | **C-66** | `crafd-caller-read` **never expires**. The only key held by an external party is the only one that cannot be forced to rotate — while both keys under this platform's sole control expire on 2026-11-17 |
 | **C-56 closed at source** | the console shows `6 Scopes` on that key, confirming the correction rather than relaying it |
 
