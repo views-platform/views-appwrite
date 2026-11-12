@@ -230,12 +230,19 @@ will demand. Only the substrate does.**
 
 ## 6. What is still owed
 
-| Item | Owner | By when |
-|---|---|---|
-| **The faoapi box's env file.** þing-04 G2-1 closed every part of the key question but one: *"whether the FAO server box's env file holds one [of the retired keys]. The operator has a read-only check."* Blast radius is the smoke and warm-up path, not serving — views-faoapi is a pure proxy and its `_REQUIRED_APPWRITE_ENV_VARS` (`managers/api.py:146-155`) holds no key at all — but it is unresolved | operator | **before 2026-11-17 16:10**, after which the answer stops being recoverable from the box |
-| **`pipeline-core-writer`'s `files.write` and `documents.write` are unproven.** Proving them needs a real producer write to the production store. The retained old key that could cover a missing scope **dies 2026-11-17**. After that, a missing write scope is fixed by a console scope edit, not a revert — `test_credential_expiry.py` says so, and says the fallback *"is a convenience with a deadline, not a dependency"* | operator | prove before **2026-11-17**, or accept knowingly |
-| **`crafd-caller-read` has no expiry**, so nothing will ever force it to be reviewed (**C-66**). Both an expiry-with-renewal and a deliberate no-expiry are defensible; *only the absence of a decision is not*. Decide before `PRODUCTIONAPI_API_KEY` is issued, or the default propagates to a third external party by inheritance | operator | before the next external key |
-| **Scope counts and `faoapi-caller-fao`'s actual three scopes** — §2's caveats. One console sitting closes all of it | operator | opportunistic |
+| Item | Owner | By when | Tracked |
+|---|---|---|---|
+| **The faoapi box's env file.** þing-04 G2-1 closed every part of the key question but one: *"whether the FAO server box's env file holds one [of the retired keys]. The operator has a read-only check."* Blast radius is the smoke and warm-up path, not serving — views-faoapi is a pure proxy and its `_REQUIRED_APPWRITE_ENV_VARS` (`managers/api.py:146-155`) holds no key at all — but it is unresolved | operator | **before 2026-11-17 16:10**, after which the answer stops being recoverable from the box | [views-faoapi#568](https://github.com/views-platform/views-faoapi/issues/568) — carries the mtime screen and the value-free fingerprint comparison |
+| **`pipeline-core-writer`'s `files.write` and `documents.write` are unproven.** Proving them needs a real producer write to the production store. The retained old key that could cover a missing scope **dies 2026-11-17**. After that, a missing write scope is fixed by a console scope edit, not a revert — `test_credential_expiry.py` says so, and says the fallback *"is a convenience with a deadline, not a dependency"* | operator | prove before **2026-11-17**, or accept knowingly | [views-postprocessing#332](https://github.com/views-platform/views-postprocessing/issues/332) |
+| **`crafd-caller-read` has no expiry**, so nothing will ever force it to be reviewed (**C-66**). Both an expiry-with-renewal and a deliberate no-expiry are defensible; *only the absence of a decision is not*. Decide before `PRODUCTIONAPI_API_KEY` is issued, or the default propagates to a third external party by inheritance | operator | before the next external key | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12), **C-66** |
+| **Scope counts and `faoapi-caller-fao`'s actual three scopes** — §2's caveats. One console sitting closes all of it | operator | opportunistic | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12); `faoapi-caller-fao`'s three at [views-faoapi#543](https://github.com/views-platform/views-faoapi/issues/543) |
+
+> **Each row above is tracked somewhere a date can fire, added 2026-11-12.** Written in a
+> table here, "still owed" is prose in a document nobody is obliged to re-read — the failure
+> mode **C-85** exists to name. The two dated rows now have issues in the repositories that
+> would feel them, filed because an unknown that is not tracked does not survive the session
+> that found it. Neither issue asks for a code change: both are operator actions with a
+> deadline, and the deadline is the point.
 
 ## 7. What this document is not
 
