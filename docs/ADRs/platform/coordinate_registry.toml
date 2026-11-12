@@ -171,7 +171,19 @@ re-pins because it wants the new row; nothing compels anyone else, which is the 
 the assembly withdrew a proposed 1.9.0 precisely to avoid obliging six consumers at once.
 The one-project statements this edition contradicts (contract §2's superseded paragraph,
 þing-02 A3(h), the old [test_environment] block) are corrected with a dated supersession
-rather than deleted: the record of what was true is the part that matters."""
+rather than deleted: the record of what was true is the part that matters.
+
+ALSO IN THIS EDITION, and still obliging nobody:
+  - Contract §5.5's prohibition list CORRECTED. It named four scopes, two of them Appwrite's
+    retired vocabulary (`collections.write`, `attributes.write`), so a key could satisfy the
+    clause word for word and still create tables, columns and indexes. It now names both
+    generations, and §5.5's acceptance test no longer bakes in a count. Obliges nobody because
+    the sequencing gate has never been cleared and no tier key has been issued — had one been
+    narrowed first, this would have revoked a completion claim instead of a sentence.
+  - Contract §8 gains three measured substrate facts: the filterable-attribute list corroborated
+    (and `loa` recorded as never filterable), attributes created ASYNCHRONOUSLY with Appwrite
+    returning before one is usable, and the index-key size ceiling with its page-size
+    precondition. All three measured by views-pipeline-core and views-crafdapi, 2026-11-11/12."""
 
 [edition."1.7.1"]
 obliges_consumers = false
