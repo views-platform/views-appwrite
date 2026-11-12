@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.8.0"                          # Versions in lockstep with the contract (§10);
+version = "1.8.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -28,6 +28,17 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
 amended = "2026-11-12"                     # Newest first.
+                                           #
+                                           # v1.8.1 (2026-11-12): THE KEYS IN THIS FILE WERE THREE WEEKS OUT OF DATE.
+                                           #   Both platform keys were rotated to least-privilege successors
+                                           #   (`pipeline-core-writer`, `faoapi-server`, `faoapi-caller-fao`) on
+                                           #   2026-10-20 and 2026-10-29, expiring 2027. This file still said both
+                                           #   expire 2026-11-17 with "no stagger and no fallback", and a session
+                                           #   read that and reported a five-day emergency to the operator.
+                                           #   The old keys exist but nothing authenticates with them.
+                                           #   OBSERVATION-DRIVEN: no clause, no name, no coordinate changes, and
+                                           #   obliges_consumers_since stays at 1.5.2. See the new companion doc
+                                           #   `key_inventory_and_rotation.md` §1, and C-65 / C-85 in the register.
                                            #
                                            # v1.8.0 (2026-11-12): þing-04 D3. Names CRAF'd's own Appwrite project and
                                            #   the non-production project, both created by the operator 2026-11-11.
@@ -160,6 +171,26 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.8.1"]
+obliges_consumers = false
+summary = """The key inventory was three weeks stale, and this file is the inventory.
+Both platform keys were rotated on 2026-10-20 and 2026-10-29 to least-privilege successors
+expiring in 2027; `[secret.*]` here still named the predecessors and asserted a 2026-11-17
+outage with "no stagger and no fallback". On 2026-11-12 a session read that and reported a
+five-day emergency. The operator had already answered it from the console — twice, on
+2026-11-11 (þing-04 G2-1) and 2026-11-12 (views-faoapi C-259) — and the answer never
+reached this file.
+
+OBSERVATION-DRIVEN in §10's sense: no clause, no coordinate, no slot NAME and no class
+changes, so a consumer that ignores this edition behaves exactly as before and
+obliges_consumers_since stays at 1.5.2. What changes is which key each slot describes and
+when it dies. Every superseded figure is kept with its read-date rather than deleted.
+
+The inventory defect itself is C-85. The new companion `key_inventory_and_rotation.md`
+carries what no single repo could see: every surface that holds a key value, keyed by
+CONSOLE KEY rather than by variable name — because one variable name holds four different
+keys (views-crafdapi C-256)."""
 
 [edition."1.8.0"]
 obliges_consumers = false
@@ -545,8 +576,47 @@ the two read different editions and both pass while disagreeing."""
 class = "secret"
 carrier = "env var"
 issued_by = "operator"
-console_key_name = "VIEWS Pipeline Core"
-scopes_enumerated = """2026-08-05, read from the operator console at last — the þing-02 A3(i) gate,
+console_key_name = "pipeline-core-writer"   # ROTATED 2026-10-29. Was `VIEWS Pipeline Core` (retired,
+                                            # see `rotation_2026_10` below). v1.8.1.
+console_key_name_history = """`VIEWS Pipeline Core` until 2026-10-29. The predecessor still EXISTS in
+the console, retained as a fallback, and dies 2026-11-17 12:35 — but NOTHING AUTHENTICATES WITH IT.
+
+⚠ THIS SLOT NAME IS NOT ONE KEY, PLATFORM-WIDE. The env var `APPWRITE_DATASTORE_API_KEY` carries
+`pipeline-core-writer` on the producer side (this slot), `faoapi-server` on the faoapi box and in
+views-faoapi's Actions secrets, `crafdapi-probe` in views-crafdapi, and FAO's own
+`faoapi-caller-fao` in the .env they build from our delivery bundle. A rotation that updates
+"everywhere this name appears" with one value cross-wires three identities — views-crafdapi C-256
+records it costing real time twice. The per-key surface inventory is in
+`key_inventory_and_rotation.md` §4, keyed by CONSOLE KEY, never by variable name."""
+rotation_2026_10 = """ROTATED 2026-10-29 to a least-privilege successor, and this file did not learn
+it for three weeks (C-85).
+
+  pipeline-core-writer   created 2026-10-29, ONE-YEAR term -> expires 2027-10-29
+                         six load-bearing scopes
+                         holders: views-models, views-pipeline-core, views-postprocessing
+
+⚠ THE DATE IS ARITHMETIC, THE TIME IS NOT KNOWN. The key was created 2026-10-29 with a one-year
+expiry, so the DATE is declared, not read back from the console. views-postprocessing's record
+puts a time on it (22:00) and says in the same breath that the time is creation-order guesswork,
+not a reading. DO NOT QUOTE A TIME. Inventing precision a source does not have is exactly the
+failure C-65 punishes, and this correction must not repeat it while fixing it.
+
+STILL UNPROVEN: `files.write` and `documents.write` on the successor. Proving them needs a real
+write to the production store, so the proof waits for a producer run. The retained predecessor is
+what would cover a missing write scope, and it dies 2026-11-17 — after which the remedy is a
+console scope edit, not a revert. Source and the "convenience with a deadline, not a dependency"
+framing: views-postprocessing/tests/test_credential_expiry.py:40-79.
+
+SCOPE COUNT UNRECONCILED: this file read 20 scopes on the predecessor (2026-08-05); the same repo
+calls the retired pair "36-scope keys" in October. Both may be right — Appwrite has split the
+vocabulary into further generations since — but nobody has reconciled them, and a count without a
+date is worth nothing. One console sitting closes it."""
+scopes_enumerated = """⚠ THIS BLOCK DESCRIBES THE RETIRED PREDECESSOR, not the key this slot now
+holds. Kept because the equality it establishes is still the basis of `scopes_finding`, and
+because what was true is the part that matters (§10: supersession, never erasure). The
+successor's six scopes have not been enumerated here from a console read.
+
+2026-08-05, read from the operator console at last — the þing-02 A3(i) gate,
 open since 2026-07-31. Twenty scopes:
 
 DATABASES (16 of 17 ticked):
@@ -574,7 +644,25 @@ TWO CAVEATS ON THIS RECORD, both deliberate:
     block belongs on a different slot.
   - EXPIRY read 2026-08-05, one day later: EXACT EXPIRY 2026-11-17 12:35. See `expiry`
     below. A3(i) is now closed for this key on both counts."""
-expiry = """EXACT: 2026-11-17 12:35 (read from the console 2026-08-05, supersedes the
+expiry = """2027-10-29 (date declared from a one-year term, time not read — see `rotation_2026_10`).
+
+⚠ EVERYTHING BELOW THIS LINE IS SUPERSEDED. It describes the RETIRED predecessor and it was
+left standing for three weeks after the rotation that falsified it. On 2026-11-12 a session read
+it and reported a five-day platform-wide emergency to the operator, who had already answered the
+question from the console twice. Corrected in v1.8.1; the defect is C-85; the reading is kept
+because the reasoning built on it is still sound and still cited.
+
+WHAT IS ACTUALLY TRUE, with read-dates:
+  pipeline-core-writer   2027-10-29   console 2026-11-11 (þing-04 G2-1)
+  faoapi-server          2027-10-29   console 2026-11-11 (þing-04 G2-1)
+  faoapi-caller-fao      2027-10-20   console 2026-11-12, IN USE (views-faoapi C-259 resolved)
+  crafdapi-probe         never        console 2026-10-20
+  crafd-caller-read      never        console 2026-11-11 (þing-04 G2)
+The two keys dying 2026-11-17 are the retired predecessors. Nothing authenticates with them.
+
+--- SUPERSEDED 2026-11-12, reading of 2026-08-05 ---
+
+EXACT: 2026-11-17 12:35 (read from the console 2026-08-05, supersedes the
 "~2026-11-30" relay carried since 2026-07-31 — that guess was THIRTEEN DAYS LATE).
 
 ⚠ BOTH PLATFORM KEYS EXPIRE ON THE SAME AFTERNOON.
@@ -597,7 +685,15 @@ it was a relayed approximation that hardened into a planning figure.
 
 CONSEQUENCE FOR ROTATION ORDER: the two keys cannot cover for each other, because they
 die together. Whatever D4's sequencing produces, it must complete before 2026-11-17,
-not straddle it. Tracked as C-65."""
+not straddle it. Tracked as C-65.
+
+--- HOW IT RESOLVED (added 2026-11-12) ---
+
+It completed, ten days early, and the paragraph above is the reason it was done at all. The
+route was þing-02 E5: a LIKE-FOR-LIKE reissue is not a scoped key, so it sits outside D9's gate
+and needed none of D4's tail. What the split bought is REVOCABILITY, which is what §5.3's floor
+was always about; the successors are also narrower, but narrowing proper is still owed
+(views-pipeline-core#489 — "#331 was done so it could be, and it never was")."""
 scopes_finding = """THIS KEY AND THE UN FAO CALLER KEY CARRY IDENTICAL PERMISSIONS. Scope for
 scope, including both omissions (dedicatedDatabases.execute, tokens.*). Twenty each.
 
@@ -633,11 +729,21 @@ serves_identities = [
   "preflights / validators",
   "crafd delivery -> sole writer of crafd_bucket (ADDED v1.4.0 — see below)",
 ]
-observed = """2026-07-31, operator console: 20 scopes. Expiry read 2026-08-05 —
+observed = """⚠ DESCRIBES THE RETIRED PREDECESSOR (v1.8.1). The §5.3 violation below was the
+reason for the split, and the split HAPPENED: FAO and the faoapi server now hold their own keys
+(`faoapi-caller-fao`, `faoapi-server`), so no key is shared with an external party any more.
+What survives is the FOUR-IDENTITY problem on the producer side: `pipeline-core-writer` still
+serves every item in `serves_identities`, so §5.3's floor is met for parties and not for
+identities. C-57's warning is unchanged and still live — size any cutover from CODE, not from
+this list.
+
+2026-07-31, operator console: 20 scopes. Expiry read 2026-08-05 —
 EXACT 2026-11-17 12:35, see `expiry` below (the "~2026-11-30" relay was 13 days late).
 VIOLATES seam contract §5.3 — one key, FOUR identities (three until v1.4.0). Read by
 views-pipeline-core/views_pipeline_core/configs/prediction_store.py:16 and
-views-postprocessing/views_postprocessing/unfao/managers/unfao.py:187, so the
+views-postprocessing/views_postprocessing/unfao/managers/unfao.py:65 and :104
+(CORRECTED 2026-11-12 — this said `:187`, which is unrelated code about fabricated months;
+measured across the workspace in the v1.8.1 sweep), so the
 publisher into FAO's outbound bucket runs under a key named for another service.
 
 THE FOURTH IDENTITY ARRIVED WITHOUT ANYONE DECIDING IT (C-57). While the four
@@ -665,8 +771,37 @@ begin before the 20 scopes are enumerated."""
 [secret.FAO_CALLER_API_KEY]
 class = "secret"
 carrier = "X-API-Key request header (presented by the caller to views-faoapi, re-used by it)"
-console_key_name = "UN FAO"
+console_key_name = "faoapi-caller-fao"      # SPLIT 2026-10-20. Was `UN FAO`, which served FAO AND
+                                            # dev/ops at once; renamed `faoapi-legacy-shared-RETIRING`
+                                            # and retired. v1.8.1.
 issued_by = "operator"
+split_2026_10 = """THE §5.3 VIOLATION ON THIS SLOT IS CLOSED. The one key that served FAO, the
+server and dev/ops simultaneously was split on 2026-10-20 into:
+
+  faoapi-caller-fao   FAO's own, 3 scopes, expires 2027-10-20
+                      IN USE — operator console read 2026-11-12, views-faoapi C-259 RESOLVED:
+                      "FAO are on faoapi-caller-fao and the console shows it in use"
+  faoapi-server       the Hetzner box AND views-faoapi's daily-monitor Actions secret,
+                      4 scopes all reads, expires 2027-10-29
+
+  faoapi-legacy-shared-RETIRING   the predecessor. Dies 2026-11-17 16:10. Nothing
+                                  authenticates with it.
+
+⚠ THE THREE SCOPES ARE NOT ESTABLISHED ANYWHERE THIS REPO CAN READ, and copying them would
+repeat the defect that caused C-282. The runbook that nominally defines them
+(views-faoapi/deployment/KEY_SPLIT_AND_ROTATION_RUNBOOK.md:52) grants
+`files.read, documents.read, databases.read` — and a key built to exactly that table returned
+`401 ... missing scopes (["buckets.read"])` on EVERY request, because the auth probe runs on
+every request and `databases.read` serves no route. The table is wrong; the key works
+(verified 28/28, 2026-10-20); therefore the key does not carry what the table says. Recorded
+as UNKNOWN pending a console read. views-faoapi#543 asks for the ADR that fixes both.
+
+WHY THE SPLIT WAS LEGAL BEFORE D4's TAIL: þing-02 E5 — "FAO's key is reissued LIKE-FOR-LIKE
+(scopes unchanged); any dev/ops key produced by the split is a scoped key and falls under D9's
+gate." A like-for-like reissue is not a scoped key.
+
+The deliverable half of the lead time D10 demanded was spent as designed: FAO were sent the key,
+asked to confirm one successful call, and the old key kept working until they did."""
 owning_contract = "views-faoapi (local ADR) — the compromise and its remediation are that repo's"
 scopes_enumerated = """2026-08-02, read from the console by the operator — the FIRST time any
 seat has seen this list. þing-02 recorded it as unknowable from evidence (S22, S36) and
@@ -711,9 +846,14 @@ verify which generation is in use before removing either.
 A read-only consumer needs roughly four: files.read, rows.read (or
 documents.read), databases.read, tables.read (or collections.read). Twenty is
 five times the requirement."""
-observed = """2026-07-31, operator console: 20 scopes, EXACT EXPIRY 2026-11-17 16:10
+observed = """⚠ SUPERSEDED (v1.8.1) — describes `faoapi-legacy-shared-RETIRING`, this slot's
+retired predecessor. The §5.3 violation it records is CLOSED by the 2026-10-20 split; see
+`split_2026_10` above. The 20 scopes and the deletion powers in `scopes_finding` below were
+real and are the reason the split was worth doing, but they are not what FAO holds today.
+
+2026-07-31, operator console: 20 scopes, EXACT EXPIRY 2026-11-17 16:10
 (supersedes the earlier "~2026-11-30" relay). Serves FAO + developer/ops
-simultaneously — a seam contract §5.3 violation, still open."""
+simultaneously — a seam contract §5.3 violation, CLOSED 2026-10-20."""
 history_leak = """CLOSED 2026-07-31 — the leaked value is DEAD. Tested live against
 the project by the operator; the key in views-faoapi's notebook history is
 indistinguishable from a fabricated one, so it is not a valid key.
@@ -726,8 +866,9 @@ Evidence (three-way discrimination on GET /v1/storage/buckets):
 
 Timeline: pasted 2025-10-24, re-added 2025-10-27 (views-faoapi d7988a8, 1d9867f,
 49fd655); removed from the TREE 2026-06-26 (1930280) but retained in history.
-Current keys expire 2026-11-17, so on a 12-month expiry they were issued
-~2025-11-17 — three weeks after the paste, which is what retired it.
+The keys current when this was written expire 2026-11-17, so on a 12-month expiry
+they were issued ~2025-11-17 — three weeks after the paste, which is what retired
+it. (Those keys were themselves retired 2026-10-20/29; the inference is unaffected.)
 
 Consequence: this NO LONGER GATES THE CLONES. A history scrub of the three
 notebooks is optional hygiene, not remediation — a dead key in history is a wart,
@@ -749,7 +890,15 @@ console_key_name = "crafd-caller-read"
 carrier = "X-API-Key request header (presented by the caller, re-used by the API)"
 consumer = "views-crafdapi"
 issued_by = "operator"
-scopes = """databases.read, tables.read, rows.read, documents.read, files.read, buckets.read
+scopes = """FOURTEEN, all `.read` — operator console read 2026-11-11, relayed at þing-04 G2.
+CORRECTED 2026-11-12 (v1.8.1): this said SIX, and had since 2026-08-03. Still read-tier only,
+still zero write, so the finding below is unchanged in substance — but the count was wrong by
+more than a factor of two, and the individual fourteen have not been enumerated here. The
+plausible explanation is Appwrite's further vocabulary generations (the same effect corrected
+in contract §5.5 at v1.8.0), which is a hypothesis, not a reading. One console sitting closes
+it; until then treat the fourteen as un-enumerated.
+
+SUPERSEDED: databases.read, tables.read, rows.read, documents.read, files.read, buckets.read
 — read tier only, zero write (§5.2). Six scopes as of 2026-08-03; the first four were
 ticked at creation, buckets.read and tables.read added after C-56 (see scopes_corrected)."""
 scopes_enumerated = """2026-08-02, ticked in the console at creation. The read tier, plus
@@ -763,7 +912,10 @@ expiry = """NEVER. Read from the console 2026-08-05: the Expiration date column 
 and Last accessed reads `never` (consistent with views-crafdapi not being deployed).
 
 ⚠ THE ONLY KEY HELD BY AN EXTERNAL PARTY IS THE ONLY ONE THAT CANNOT BE FORCED TO ROTATE.
-The two platform keys expire 2026-11-17 (C-65). This one does not expire at all, so:
+The platform keys expire; this one does not, so:
+(v1.8.1: `crafdapi-probe` turns out not to expire either — console 2026-10-20 — so the
+asymmetry is now between the PRODUCER keys, which expire 2027-10-29, and both CRAF'd-side
+keys, which never do. The point below is strengthened, not weakened.)
 
   - a leak has no natural end. The UN FAO key's leaked value died because the key was
     REISSUED on a 12-month term before anyone noticed the paste (see FAO_CALLER_API_KEY
