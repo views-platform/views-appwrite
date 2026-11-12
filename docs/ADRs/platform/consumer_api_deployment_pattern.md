@@ -8,7 +8,8 @@
 | Field | Value |
 |---|---|
 | Status | **Accepted** — operator decision, 2026-08-05 |
-| Version | **1.0.0** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Version | **1.0.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-11-12 — **v1.0.1**: §"Rotation is a property of this pattern" named a 2026-11-17 key expiry and a re-bootstrap owed before it. **Both happened** (2026-10-20 / 2026-10-29); the sentence outlived the event by three weeks (**C-85**). Corrected by dated supersession. **No clause changes** — the pattern's actual claim, that a bootstrap-time secret does not reach a running service and re-running bootstrap is the only propagation mechanism, is unaffected and still correct. Nothing to re-pin unless a consumer quotes the expiry date. |
 | Companion | [`appwrite_seam_contract.md`](appwrite_seam_contract.md) — governs *identity and credentials*; this document governs *how a box is built*. Related, **separately versioned** (§7) |
 | Applies to | `views-faoapi`, `views-crafdapi`, `views-publicapi` (planned), and every future clone |
 | Requested by | views-appwrite#54, from the views-crafdapi seat, after the ADR-035 review (views-crafdapi#34) |
@@ -122,9 +123,21 @@ a running service.** Re-running bootstrap on each box is the propagation mechani
 other.
 
 That is an accepted consequence, not a defect — but it must be stated, because it sets the cost of
-every rotation. As of this version, both platform keys expire on **2026-11-17** within a
-three-and-a-half-hour window (views-appwrite C-65), and every box provisioned under this pattern must
-be re-bootstrapped before then.
+every rotation.
+
+> **Corrected 2026-11-12.** This paragraph continued: *"both platform keys expire on **2026-11-17**
+> within a three-and-a-half-hour window (views-appwrite C-65), and every box provisioned under this
+> pattern must be re-bootstrapped before then."* **That was done** — on 2026-10-20 and 2026-10-29,
+> and the re-bootstrap is what moved the boxes onto `faoapi-server` and `crafdapi-probe`. The keys
+> in use now expire **2027-10-29** (producer and server) and **2027-10-20** (FAO's own); the two
+> dying on 2026-11-17 are retired and nothing authenticates with them. The sentence stood for three
+> weeks after the event it demanded, which is the defect recorded as **C-85**.
+>
+> **The claim this paragraph actually makes is unaffected and still correct:** a secret baked in at
+> bootstrap does not reach a running service, re-running bootstrap is the only propagation
+> mechanism, and that is the cost of every rotation. The current inventory of keys and of every
+> surface that holds one is
+> [`key_inventory_and_rotation.md`](ADRs/platform/key_inventory_and_rotation.md).
 
 ---
 

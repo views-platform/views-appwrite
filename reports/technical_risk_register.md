@@ -4,10 +4,10 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-08-14                           |
-| Total Concerns    | 64                                   |
+| Last Updated      | 2026-11-12                           |
+| Total Concerns    | 65                                   |
 | Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
-| Resolved Concerns | 12                                   |
+| Resolved Concerns | 13                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
 
@@ -52,7 +52,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 |---------|-----------|---------|--------------|--------------|
 | **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ *C-09's vacuity half belonged here; resolved 2026-08-14*) · *resolved members, kept as the cluster's evidence: C-09, C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
-| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-65, C-66, C-69, C-82, C-84** | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier). **2026-11-17 is the forcing date** |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-66, C-69, C-82, C-84, C-85** · *resolved member, kept as evidence: C-65* | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier) — **and a fourth time for three weeks (C-85), where the wrong figure was this file's own, and five sibling repos were right.** **The forcing date passed on 2026-10-29: the rotation was executed and the cluster's root cause is untouched by it.** The lifecycle still has no owner; what it no longer has is a deadline to hide behind |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
 | **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
@@ -1585,12 +1585,42 @@ Cross-refs: D-05, ADR-011, C-51.
 
 ---
 
-### C-65: Both platform keys expire on the same afternoon, and the recorded date was 13 days late
+### C-65: Both platform keys expire on the same afternoon, and the recorded date was 13 days late — RESOLVED
+
+> **RESOLVED 2026-11-12 — the rotation happened on 2026-10-20 and 2026-10-29, ten days inside the
+> deadline, and this entry did not know for three weeks.**
+>
+> Both keys were replaced by least-privilege successors: `pipeline-core-writer` (producer) and
+> `faoapi-server` (the faoapi box and its daily monitor), both expiring **2027-10-29**, and
+> `faoapi-caller-fao` for FAO, expiring **2027-10-20**. FAO were confirmed in use by an operator
+> console read on **2026-11-12** (views-faoapi C-259). The predecessors still exist, retained as a
+> fallback, and nothing authenticates with them.
+>
+> **This entry did its job.** The thirteen-day correction is why the work was sized against
+> 2026-11-17 rather than 2026-11-30, and it completed with ten days to spare. The route was þing-02
+> **E5** — a like-for-like reissue is not a scoped key, so it sits outside D9's gate and needed none
+> of D4's tail. What the split bought is **revocability**, exactly as the entry's own finding
+> predicted; narrowing is still owed (views-pipeline-core#489).
+>
+> **And then the failure this entry exists to prevent happened to this entry.** The register, the
+> registry and the contract all went on asserting the outage for three weeks. On 2026-11-12 a
+> session read them and reported a five-day emergency to the operator — who had already answered it
+> from the console twice. *"A soft fact quoted until it reads as a hard one"* is this entry's own
+> diagnosis of C-64 and C-53; a **hard fact kept past its event** is the same defect with the sign
+> reversed, and nothing here distinguishes them. Recorded as **C-85**.
+>
+> **What survives, and is not resolved by this:** **C-27** (no propagation mechanism — the rotation
+> was manual multi-surface surgery), **C-57** (the holder inventory is known-stale; size a cutover
+> from code), **C-66** (`crafd-caller-read` still never expires), **C-82** (one person on every
+> credential path — see its own update), and §5.5's narrowing. Two residuals carry the old date:
+> `pipeline-core-writer`'s write scopes are unproven and the fallback that would cover them dies
+> 2026-11-17, and the faoapi box's env file has not been read. Both are in
+> `docs/ADRs/platform/key_inventory_and_rotation.md` §6 with owners.
 
 | Field | Value |
 |-------|-------|
 | ID | C-65 |
-| Tier | 2 |
+| Tier | 2 — **resolved** |
 | Source | operator console read, 2026-08-05 — þing-02 A3(i), the gate that had been open since 2026-07-31 |
 | Trigger | **2026-11-17 12:35.** Not a hypothetical — a scheduled, certain, dated total loss of Appwrite access. Also triggered earlier by any rotation plan sized against the old `~2026-11-30` figure. |
 | Location | `docs/ADRs/platform/coordinate_registry.toml` — `APPWRITE_DATASTORE_API_KEY.expiry`, `FAO_CALLER_API_KEY.observed` |
@@ -1626,6 +1656,13 @@ and removes thirteen days from it.
 
 **Ordering consequence for D4.** Whatever sequence is chosen must **complete** before 2026-11-17 —
 it cannot straddle the date, because there is no surviving key on the far side.
+
+**How that resolved (2026-11-12):** it completed on 2026-10-29, and D4's sequence was not what did
+it. þing-02 **E5** had already carved the route — *"FAO's key is reissued **like-for-like** (scopes
+unchanged); any dev/ops key produced by the split is a scoped key and falls under D9's gate"* — and
+a like-for-like reissue is not a scoped key, so none of probe → tier keys → declare schema →
+relocate → narrow was required. **D4's sequence is therefore still entirely unexecuted**, and
+nothing above should be read as saying otherwise.
 
 Recorded in registry **v1.4.3** / `appwrite-seam-v1.4.3`. Cross-refs: C-27 (rotation has no
 propagation mechanism — that gap now has a date), C-28, views-appwrite#12 (e-caller), views-faoapi#338
@@ -2659,6 +2696,26 @@ Cross-refs: cluster **G** (an instrument reporting success without having looked
 | Trigger | **By 2026-09-17 — sixty days before the keys die — establish whether the 2026-11-17 rotation can be executed if the operator is unavailable for two weeks.** Concretely: is there a second Appwrite console holder, or a written handover naming what to do? If neither, that is the answer and it should be recorded as an accepted risk rather than left unasked. **Also:** when `PRODUCTIONAPI_API_KEY` or any further external-party key is issued, record who besides the operator can revoke it. |
 | Location | organizational — Appwrite console custody; `docs/ADRs/platform/appwrite_seam_contract.md` (the `Operator` header row, §5.1–§5.5, §7, §9 O1/O2); `coordinate_registry.toml` `[secret.*]` (`issued_by = "operator"` on every slot); cluster **I** in this register |
 
+> **The trigger's question was answered by events, 2026-11-12 — and the answer is the one this
+> entry said should be recorded rather than left unasked.** The 2026-11-17 rotation **was executed**,
+> on 2026-10-20 and 2026-10-29, by the one operator, single-handed, across the Appwrite console, a
+> Hetzner box, two GitHub Actions secrets, a password manager, `views-models/.env` and a message to
+> FAO. It worked. **There is still no second console holder and no written handover**, so the answer
+> to *"can this be executed if the operator is unavailable for two weeks"* is **no**, and it is now
+> an **accepted risk** rather than an open question. The deadline that made it acute has passed; the
+> concentration has not changed.
+>
+> Two things the execution taught, which belong here rather than in C-65:
+> - **The 2026-09-17 obligation lapsed unanswered and nothing noticed.** This entry set its own
+>   dated trigger, sixty days out, and that date passed in silence — the same failure mode as the
+>   trigger it was written to replace. A date in a register entry is not a mechanism either.
+> - **The successful rotation makes the concentration harder to see, not easier.** It is now
+>   evidence that one person is sufficient, which is exactly the inference C-85 shows this register
+>   is bad at resisting. What it demonstrates is that one person was sufficient *while available*.
+>
+> **Still owed and unchanged:** record who besides the operator can revoke `PRODUCTIONAPI_API_KEY`
+> or any further external-party key, before it is issued.
+
 **The concentration, counted rather than asserted.** One named person holds Appwrite console custody,
 key issuance, key rotation, scope narrowing, and the non-production-project decision. Every one of the
 following routes to that person and to nobody else:
@@ -2668,7 +2725,7 @@ following routes to that person and to nobody else:
 | **C-27** (O1) | designing the secret-value propagation path — no mechanism exists |
 | **C-28** (O2) | issuing and scoping any further external-party key |
 | **C-56** | the console action that fixed the CRAFD key's scopes |
-| **C-65** | the rotation of **both** platform keys before **2026-11-17** |
+| **C-65** | ~~the rotation of **both** platform keys before **2026-11-17**~~ — **DONE 2026-10-20/29, single-handed, by the one holder. This row is now the evidence rather than the ask** |
 | **C-66** | deciding whether `crafd-caller-read` gets an expiry at all |
 | **C-69** | buying, or declining to buy, GitHub Secret Protection |
 | seam contract §7 | creating a test project, which blocks the reference validator, the scaffold (#8), C-21's fixture guard and D-04 |
@@ -2944,6 +3001,82 @@ hazard class of production coordinates reachable without a deliberate choice), s
 
 ---
 
+### C-85: The seam's canonical key inventory was three weeks stale while five sibling repos were current, and nothing anywhere compares the two
+
+| Field | Value |
+|-------|-------|
+| ID | C-85 |
+| Tier | **2** |
+| Source | this repository, 2026-11-12 — found by acting on its own registry and being wrong in front of the operator |
+| Trigger | **The next time any `[secret.*]` fact in `coordinate_registry.toml` is read in order to plan something** — a rotation, a key issuance, a partner bring-up, a þing turn. Concretely: when a seat cites a key name, scope count or expiry from this repo rather than from a console read-date, treat it as testimony. **Also fires** when a sibling repo records a credential event (a rotation, a rename, a revocation) and no change lands here within the same week. |
+| Location | `docs/ADRs/platform/coordinate_registry.toml` `[secret.*]`; `docs/ADRs/platform/appwrite_seam_contract.md` §2; `docs/ADRs/platform/consumer_api_deployment_pattern.md` (the rotation paragraph); `reports/technical_risk_register.md` C-65, cluster **I** |
+
+**What happened.** Both platform keys were rotated on **2026-10-20** (the FAO split) and
+**2026-10-29** (the producer and server keys) to least-privilege successors expiring in 2027. This
+repository's registry, contract §2, deployment pattern and register all went on stating that both
+keys expire **2026-11-17** with *"no stagger and no fallback … every Appwrite identity on this seam
+is dead."* On 2026-11-12 a session read that, believed it, and reported a five-day platform-wide
+emergency to the operator — who had already answered the question from the console **twice**:
+2026-11-11 (þing-04 **G2-1**) and 2026-11-12 (views-faoapi **C-259**).
+
+**The asymmetry is the finding.** Five repositories were current — views-postprocessing in an
+*executing* tripwire, views-faoapi in a resolved entry and a post-mortem, views-crafdapi in a
+release runbook, and the þing record in the operator's own relayed answer. **The one artefact whose
+documented purpose is to be the inventory was the only one wrong**, and it is the one every other
+repo pins. `coordinate_registry.toml`'s own header says it is *"THE canonical source"*.
+
+**Why nothing caught it, and this is the part worth keeping.** Every guard on this seam compares a
+citation to a machine-readable source of truth — `validate_docs.sh` checks version lockstep, tag
+resolution, the obligation floor. **There is no source of truth for a key.** The console is the
+authority and nothing in any repository can read it, so a `[secret.*]` fact can only ever be
+testimony with a date on it. The registry already knows this — it carries `observed`,
+`scopes_enumerated` and read-dates precisely because of cluster **H** — and it still went stale,
+because *a read-date tells you when a fact was true and nothing tells you when it stopped being
+true.* This is the gap þing-04's `aðgát §1` could not close a day earlier: it found both dates,
+could not adjudicate between them, and escalated correctly. The answer existed and had **no path
+back to this file**.
+
+**Tier 2, with the justification the tier demands.** Structural fragility with a demonstrated
+failure under an ordinary change scenario — the scenario occurred, and the consequence was an agent
+and a seat planning against a spent deadline, which is the same class of waste C-65 recorded when
+the figure was thirteen days *early*. **Not Tier 1:** nothing is silently corrupted; the staleness
+produces false urgency, which is loud, self-correcting on contact with a console, and costs time
+rather than data. **Not Tier 3:** it misdirected the platform's own governance process, and the
+register entry that exists to prevent exactly this (C-65) was itself one of the stale artefacts.
+
+**The inverse of C-65, and they should be read together.** C-65 diagnosed *a soft fact quoted until
+it reads as a hard one* — a relayed approximation hardening into a planning figure. This is **a hard
+fact kept past its event**: correct when read, correctly sourced, correctly dated, and false three
+weeks later. **Nothing in the register's conventions distinguishes the two**, because both present
+as a well-sourced statement with a date. The practical rule this yields, and the only one that
+survived scrutiny: **a credential fact is current only if its read-date is newer than the most
+recent credential event anywhere on the platform** — which means the events have to be visible here,
+and today they are not.
+
+**What was done about it.** `key_inventory_and_rotation.md` was added as the inventory, with a
+read-date and an establishing source on **every** row, the softness of three specific figures stated
+in the table itself (the 2027 times are arithmetic, `faoapi-caller-fao`'s scopes are unknown, the
+scope counts disagree), and the surface list keyed by console key because one variable name holds
+four different keys (views-crafdapi **C-256**). Registry → v1.8.1, contract → v1.8.1, deployment
+pattern → v1.0.1, all by dated supersession.
+
+**What was deliberately not done.** No guard was built. A checker that parses prose for staleness is
+the thing views-pipeline-core built and deleted the same hour on 2026-11-12 after three false
+positives (their C-355), and a second expiry tripwire here would duplicate
+views-postprocessing's — whose own docstring names the trap: *"a date to act on, not a mechanism to
+build, and inventing a mechanism would be building the wrong thing to feel busy."* The honest
+mechanical candidate is **a notification path from a credential event to this file**, which is
+organisational, not a script, and belongs to **C-27**/views-appwrite#9 where rotation design already
+sits. Stated rather than built, and that is the accepted gap.
+
+Cross-refs **C-65** (resolved; the inverse defect, and one of the stale artefacts), **C-27** (no
+propagation mechanism — the same missing path, for values instead of facts), **C-57** (the holder
+inventory wrong by one holder: the same file, the same class), **C-82** (the single operator, whose
+own dated trigger lapsed unanswered in the same way), **C-53**/**C-54**/**C-64** (cluster **H**,
+soft facts hardening), cluster **I**, þing-04 `aðgát §1`, `baton.md:116`.
+
+---
+
 ## Disagreements
 
 ### D-01: Decomposition granularity — eight modules vs depth-driven boundaries
@@ -3131,7 +3264,7 @@ hazard class of production coordinates reachable without a deliberate choice), s
 
 - **ID format:** `C-xx` for concerns, `D-xx` for disagreements. IDs are permanent — gaps in numbering indicate merged or resolved entries.
 - **Sources:** `repo-assimilation`, `expert-review`, `test-review`, `falsification-audit`, `clean-architecture-review`, `pr-review`, `tech-debt-audit`, `incident`, `manual`, **`þing-01`** (cross-repo assembly testimony — entries sourced here carry another seat's sworn account of its own code; treat the seat as the authority for its repo, and cite the `orð`/`sáttmál` item).
-- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. **Six entries (C-10, C-52, C-53, C-54, C-70, D-02) are marked resolved *in place*** rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved, and each carries `— RESOLVED` in its heading so the count can be reproduced by `grep`. C-70 additionally anchors Cluster G and is cross-referenced by C-52, C-53 and C-68 — moved to the bottom, the cluster stops reading as one story.
+- **Resolution:** Move to "Resolved Concerns" with resolution date and summary when addressed. **Seven entries (C-10, C-52, C-53, C-54, C-65, C-70, D-02) are marked resolved *in place*** — C-65 added 2026-11-12, because its narrative is the evidence that the rotation it demanded was sized correctly, and because C-85 is unreadable without it directly above — rather than moved, because their narratives carry the amendment history that made them resolvable; the header counts treat them as resolved, and each carries `— RESOLVED` in its heading so the count can be reproduced by `grep`. C-70 additionally anchors Cluster G and is cross-referenced by C-52, C-53 and C-68 — moved to the bottom, the cluster stops reading as one story.
 - **Dormancy:** an entry whose trigger cannot fire until a deferred event may carry a `> **Dormant**` marker beneath its field table (see *Dormancy* under Causal Clusters). **It does not change the tier**, which states severity if the trigger fires. Dormant entries are open and counted as open.
 - **Header counts:** Manually maintained — update whenever a concern is added or resolved. **They are reproducible:** `Total` = count of `^### C-`; `Resolved` = count of those with `— RESOLVED`; `Open` = the difference. *(Audited 2026-08-14: the convention above previously named three resolved-in-place entries while the counts honoured only two — C-10 was described as counted resolved and was not. Two numbers that must agree, compared to each other and to nothing else, is **C-53's own shape**, and it had gone unnoticed in the register that registers it. Fixed by giving C-10 the heading suffix so the count and the sentence are derived from the same thing.)*
 - **Note:** Many concerns reference locations in external repos (`views-pipeline-core`, `views-faoapi`) because this repository is a roadmap for a package not yet extracted. Confirm those locations when extraction (Phase 1) begins. **As of 2026-07-28 several are external by *ownership*, not merely by location** (C-13, C-26, C-27, C-28): this repo tracks them because it hosts `PLATFORM-001`, but cannot fix them — the fix belongs to a lineage owner or to the operator.
