@@ -8,8 +8,8 @@
 | Field | Value |
 |---|---|
 | Status | **Accepted** — operator decision, 2026-08-05 |
-| Version | **1.0.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-11-12 — **v1.0.1**: §"Rotation is a property of this pattern" named a 2026-11-17 key expiry and a re-bootstrap owed before it. **Both happened** (2026-10-20 / 2026-10-29); the sentence outlived the event by three weeks (**C-85**). Corrected by dated supersession. **No clause changes** — the pattern's actual claim, that a bootstrap-time secret does not reach a running service and re-running bootstrap is the only propagation mechanism, is unaffected and still correct. Nothing to re-pin unless a consumer quotes the expiry date. |
+| Version | **1.0.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-11-12 — **v1.0.2**: fixes the relative link v1.0.1 added — it was written `ADRs/platform/key_inventory_and_rotation.md` from a file already inside `docs/ADRs/platform/`, so it resolved nowhere. **No prose changes.** Caught by a link check run after `appwrite-seam-v1.8.1` was published, which is why it is a version of its own rather than a quiet amend: the tag is not moved (§10 — the mismatch is not between that tag's name and its content, so the delete-and-re-cut exception does not apply and the first rule governs). A consumer pinning v1.0.1 has a dead link and nothing else. 2026-11-12 — **v1.0.1**: §"Rotation is a property of this pattern" named a 2026-11-17 key expiry and a re-bootstrap owed before it. **Both happened** (2026-10-20 / 2026-10-29); the sentence outlived the event by three weeks (**C-85**). Corrected by dated supersession. **No clause changes** — the pattern's actual claim, that a bootstrap-time secret does not reach a running service and re-running bootstrap is the only propagation mechanism, is unaffected and still correct. Nothing to re-pin unless a consumer quotes the expiry date. |
 | Companion | [`appwrite_seam_contract.md`](appwrite_seam_contract.md) — governs *identity and credentials*; this document governs *how a box is built*. Related, **separately versioned** (§7) |
 | Applies to | `views-faoapi`, `views-crafdapi`, `views-publicapi` (planned), and every future clone |
 | Requested by | views-appwrite#54, from the views-crafdapi seat, after the ADR-035 review (views-crafdapi#34) |
@@ -137,7 +137,7 @@ every rotation.
 > bootstrap does not reach a running service, re-running bootstrap is the only propagation
 > mechanism, and that is the cost of every rotation. The current inventory of keys and of every
 > surface that holds one is
-> [`key_inventory_and_rotation.md`](ADRs/platform/key_inventory_and_rotation.md).
+> [`key_inventory_and_rotation.md`](key_inventory_and_rotation.md).
 
 ---
 
