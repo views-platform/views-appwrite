@@ -4,9 +4,9 @@
 |-------------------|--------------------------------------|
 | Project           | views-appwrite                       |
 | Owner             | Polichinl                            |
-| Last Updated      | 2026-11-12                           |
-| Total Concerns    | 65                                   |
-| Open Concerns     | 52 — of which **37 live, 15 dormant** (see *Dormancy*) |
+| Last Updated      | 2026-11-17                           |
+| Total Concerns    | 66                                   |
+| Open Concerns     | 53 — of which **38 live, 15 dormant** (see *Dormancy*) |
 | Resolved Concerns | 13                                   |
 | Disagreements     | 5 (3 open — 2 of them dormant; 2 resolved — D-02, D-05) |
 | Also hosts        | `PLATFORM-001` — the platform seam contract (`docs/ADRs/platform/`) |
@@ -52,7 +52,7 @@ Clusters group open concerns by shared root cause; fixing the root cause resolve
 |---------|-----------|---------|--------------|--------------|
 | **G. Guards that are green and blind** | A check is written to confirm a state, never to detect its absence. Nobody asks *"what input would make this fail?"* before trusting it | **C-55, C-62, C-67, C-68, C-74, C-75, C-79, C-80** (+ *C-09's vacuity half belonged here; resolved 2026-08-14*) · *resolved members, kept as the cluster's evidence: C-09, C-52, C-53, C-70, C-77, C-78* | 2 | **One rule, applied retroactively: a guard is not finished until it has been shown to fail.** **C-70 closed 2026-08-11** — every guard *that existed then* runs on every PR and the blocking ones are required, each proven by mutation in CI. **That sentence was written as "every guard" and C-77 narrowed it on 2026-08-14**: the workflow selects by filename, so the next guard module added joins no job. Corrected here rather than left standing, because the unqualified version is the one people quote. **The rule is now written down** — `docs/contributor_protocols/carbon_based_agents.md`, *"A Guard Is Not Finished Until It Has Been Shown to Fail"* (S6, #72) — together with the two recurring vacuity shapes this cluster is made of and the controls rule C-67 nearly failed. Every entry here was found by a person looking, not by the check failing; that is what the cluster is about, and the section is the correction. This is the largest cluster and the most preventable |
 | **H. Soft facts hardening into hard ones** | Nothing checks prose, so a relayed or once-true statement survives indefinitely and is then planned against | **C-59, C-64, C-65, C-71** · *resolved members, kept as evidence: C-53, C-54* | 2 | Dated provenance on every factual claim. The registry's own `observed` / `scopes_enumerated` fields are the working model: they carry a read-date and say who read them. C-65 is the cost — a relayed expiry was 13 days wrong on the platform's only hard deadline |
-| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-66, C-69, C-82, C-84, C-85** · *resolved member, kept as evidence: C-65* | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier) — **and a fourth time for three weeks (C-85), where the wrong figure was this file's own, and five sibling repos were right.** **The forcing date passed on 2026-10-29: the rotation was executed and the cluster's root cause is untouched by it.** The lifecycle still has no owner; what it no longer has is a deadline to hide behind |
+| **I. Credential lifecycle has no owner** | Keys are created, recorded and reasoned about ad hoc; no inventory stays true and no lifecycle is defined | **C-27, C-28, C-30, C-56, C-57, C-58, C-66, C-69, C-82, C-84, C-85, C-86** · *resolved member, kept as evidence: C-65* | 2 | Not fixable in this repo — operator + views-faoapi#338. But this repo holds the inventory, and the inventory was wrong three times in a week (a key that could not authenticate, a fourth holder nobody listed, a destination contradicting its own carrier) — **and a fourth time for three weeks (C-85), where the wrong figure was this file's own, and five sibling repos were right.** **The forcing date passed on 2026-10-29: the rotation was executed and the cluster's root cause is untouched by it.** The lifecycle still has no owner; what it no longer has is a deadline to hide behind |
 | **J. The registry's contract with its readers is unsettled** | One data file, three hand-copied readers, no agreed semantics for the edge cases | **C-29, C-51, C-61, C-63** (+ **D-05**) | 1 | Settle D-05 first — everything else here is downstream of it. views-models#327 carries the proposal; C-63 (no reader checks `[meta] version`) is the general form and deserves its own decision |
 | **K. Consumers cannot tell what they consume** | This repo publishes by tag; consumers reference by hand; nothing verifies the reference | **C-60, C-72** | 2 | views-pipeline-core's `test_seam_contract_pin_is_coherent.py` is the reference implementation and the only one that exists. Two repos currently carry internally inconsistent pins |
 | **L. The publisher cannot see its readers** | Every gate here verifies this repository's INTERNAL consistency, and nothing verifies what it tells anyone else. The three instances below each fired with every check green — ruff, validate_docs, pytest, three required CI jobs — because the failing thing lives in someone else's repo or in prose about this one | **C-73, C-76**, and **C-72** as the consumer-side mirror; **C-51** is the reader this repo structurally cannot see | 2 | **All three fired inside one week (2026-08-11 → 08-13), which is why this is a cluster and not three entries.** C-73: three editions shipped asserting "consumers pinned at earlier tags are unaffected" — true of the one consumer checked, false of the one that compares against a moving branch. C-76: the front page told six repositories to pin an edition seven versions stale. Both were found by accident — one by a third repo's request, one by an audit — never by a check. **Partly addressed:** `validate_docs.sh` check 9 now covers the pinning claim, mutation-proven four ways. **Not addressed:** this repo still has no publisher-side observation of whether a consumer broke, which is C-73's open half and the cluster's real subject. Cross-cutting with **G**: G is a guard that cannot see its own invariant; L is a repository that cannot see its own audience |
@@ -3074,6 +3074,83 @@ propagation mechanism — the same missing path, for values instead of facts), *
 inventory wrong by one holder: the same file, the same class), **C-82** (the single operator, whose
 own dated trigger lapsed unanswered in the same way), **C-53**/**C-54**/**C-64** (cluster **H**,
 soft facts hardening), cluster **I**, þing-04 `aðgát §1`, `baton.md:116`.
+
+### C-86: "Unproven" was recorded where "nobody has looked" was meant, so a cheap instrument went unused for nineteen days and the fallback kept for it expired
+
+| Field | Value |
+|-------|-------|
+| ID | C-86 |
+| Tier | **3** |
+| Source | this repository, 2026-11-17 — found when a console read settled, in one line, a question this file had carried as needing a production write |
+| Trigger | **The next time any record on this seam states that a credential fact is "unproven", "unverified" or "needs a live run"** — before scheduling the live action, ask which cheaper instrument would narrow it, and say in the record whether that instrument was used or merely not used. **Also fires** when a key, a credential or a fallback is *retained* because something is unproven: name the date the retention expires and what is lost if the question is still open then. |
+| Location | `docs/ADRs/platform/key_inventory_and_rotation.md` §6 (the struck row) and §2; `docs/ADRs/platform/coordinate_registry.toml` `[secret.APPWRITE_DATASTORE_API_KEY].rotation_2026_10`; `views-postprocessing/tests/test_credential_expiry.py:40-79` (where the framing originated, accurately) |
+
+**What happened.** From the 2026-10-29 rotation until 2026-11-17, every record on this platform
+carried `pipeline-core-writer`'s `files.write` and `documents.write` as **unproven**, on the stated
+grounds that *"verifying them means writing to the production store, so the proof waits for a real
+producer run."* The retired predecessor `VIEWS Pipeline Core` was deliberately **retained as their
+fallback** and allowed to expire **unused** at 12:35 on 2026-11-17. That same day, an operator
+console read showed the key carries **nine** scopes including all three write scopes. They had been
+ticked the whole time, and a console read would have shown it on any of those nineteen days.
+
+**The defect is a conflation, and it is in the words.** *"It needs a live write"* and *"nobody has
+looked"* are different claims about different instruments. The first is true and remains true — a
+scope set is proven by a request, never by inspection (contract §8). The second was the actual
+state. Because the record stated the first, every reader — including two sessions of this
+repository, a þing seat and the operator's own prioritisation — treated the question as **blocked on
+a production action** rather than as **open and cheaply narrowable**. A console read does not prove
+a scope authorises a request; it does prove whether the scope is *absent*, which was the question
+anybody actually cared about.
+
+**Tier 3, with the justification the tier demands.** Process and maintainability cost with a
+concrete trigger. **Not Tier 2:** no structural fragility was demonstrated — the system did not fail
+and could not have failed from this alone, because the remedy for a genuinely missing scope was
+always a console edit, which the records correctly said. **Not Tier 4:** it is not a code-quality
+observation and not single-developer scope. It consumed the platform's only deliberately retained
+safety margin on a non-question, it propagated through four repositories' records, and the thing it
+cost — knowing nineteen days earlier that a TablesDB migration needs no new producer scopes — turned
+out to be on the critical path of a blocked delivery (views-postprocessing#327) by the time it was
+read.
+
+**The near-miss worth stating, because the tier argument depends on it.** Had a write scope
+genuinely been missing, the fallback retained to cover it would have expired before anyone looked.
+The outcome would still have been recoverable — a console scope edit — but the margin that was
+deliberately paid for would have been spent without ever being available. **A fallback retained
+against an unexamined question is not a fallback; it is a deadline nobody is working toward.**
+
+**Why it is not C-85, and why they belong together.** C-85 is *a hard fact kept past its event* —
+the record was true when written and false later. This is *a soft question described in hard terms* —
+the record was accurate about the world and misleading about itself, and it never went stale. C-85's
+rule (a credential fact is current only if its read-date is newer than the most recent credential
+event) would not have caught this: there was no newer event, and the figure was not stale. What was
+wrong was the **cost estimate embedded in the wording**, which no date can check. Together they say
+that a credential record must carry two things, not one: when it was read, and what it would take to
+read it again.
+
+**What was done about it.** Contract **§8** gains the rule — *a credential question answerable by
+reading a key's own scope list must never be queued behind a production action* — beside the two
+Appwrite findings of the same edition, so it is read by the people issuing keys rather than only by
+whoever opens this register. The nine scopes are enumerated in `key_inventory_and_rotation.md` §2
+and in the registry's `scopes_successor`, the §6 row is struck as closed with the reason, and the
+registry's `rotation_2026_10` records the lesson at the place the wrong framing sat. Registry →
+v1.8.2, contract → v1.8.2, `appwrite-seam-v1.8.2`.
+
+**What was deliberately not done.** No guard, and for a sharper reason than C-85's. There is nothing
+here a script can read: the defect is a sentence meaning one thing and being read as another, and a
+checker that flagged every occurrence of *"unproven"* would fire on correct uses — which are the
+majority, and which this seam depends on. The trigger above is the whole mechanism, and it is a
+question to ask rather than a job to run.
+
+**One thing this does not excuse.** views-postprocessing's record and its tripwire were both right:
+the register entry stated the residual accurately and the tripwire correctly declined to guard a key
+nothing authenticates with, saying so in its own docstring. The conflation was in how everyone read
+an accurate sentence, not in the sentence's author. Recorded because blaming the clearest record on
+the platform would be the wrong lesson.
+
+Cross-refs **C-85** (its pair; the inverse failure), **C-65** (soft facts hardening — the same family,
+one layer up), **C-27** (no propagation mechanism), **C-82** (the single operator, who was the only
+party who could have run either instrument), cluster **I**, views-postprocessing#332,
+views-pipeline-core#598.
 
 ---
 
