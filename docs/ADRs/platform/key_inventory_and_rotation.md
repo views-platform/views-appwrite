@@ -39,7 +39,7 @@ date and a reader is a soft fact, and this platform plans against those.**
 
 | Console key | Who holds it | Scopes | Expires | Last established |
 |---|---|---|---|---|
-| `pipeline-core-writer` | the producer: `views-models`, `views-pipeline-core`, `views-postprocessing` | 6, "load-bearing" | **2027-10-29** | console, 2026-11-11 (þing-04 G2-1) |
+| `pipeline-core-writer` | the producer: `views-models`, `views-pipeline-core`, `views-postprocessing` | **9**, both vocabularies — enumerated below | **2027-10-29** | console, **2026-11-17** (scopes); 2026-11-11 (expiry) |
 | `faoapi-server` | the `views-faoapi` box **and** its daily monitor | 4, all reads | **2027-10-29** | console, 2026-11-11 (þing-04 G2-1) |
 | `faoapi-caller-fao` | **UN FAO** — they present it as `X-API-Key` | 3 | **2027-10-20** | console, 2026-11-12 — *in use* |
 | `crafdapi-probe` | `views-crafdapi` smoke, notebooks, integration tests, daily monitor | per views-crafdapi ADR-038 | **never** | console, 2026-10-20 |
@@ -47,8 +47,8 @@ date and a reader is a soft fact, and this platform plans against those.**
 
 | Retired key | Was | Scopes | Dies | State |
 |---|---|---|---|---|
-| `VIEWS Pipeline Core` | the producer key | 20 as read 2026-08-05 | **2026-11-17 12:35** | nothing authenticates with it; kept as fallback |
-| `faoapi-legacy-shared-RETIRING` | the `UN FAO` key — FAO *and* server *and* dev/ops at once | 20 as read 2026-08-02 | **2026-11-17 16:10** | renamed 2026-10-20; nothing authenticates with it |
+| `VIEWS Pipeline Core` | the producer key | 20 as read 2026-08-05 | **EXPIRED 2026-11-17 12:35** | gone. Kept as a fallback for write scopes that turned out to be present all along |
+| `faoapi-legacy-shared-RETIRING` | the `UN FAO` key — FAO *and* server *and* dev/ops at once | 20 as read 2026-08-02 | **EXPIRED 2026-11-17 16:10** | gone. Renamed 2026-10-20; nothing authenticated with it |
 
 **Sources, so the next reader can re-verify rather than re-trust:**
 
@@ -63,6 +63,33 @@ date and a reader is a soft fact, and this platform plans against those.**
   `views-crafdapi/deployment/RELEASE_RUNBOOK.md:367-369`, console read 2026-10-20.
 - The split that produced the FAO pair — `views-faoapi/deployment/KEY_SPLIT_AND_ROTATION_RUNBOOK.md`
   and `views-faoapi/reports/post_mortems/2026-10-20_the_night_the_key_was_proven.md`.
+
+### `pipeline-core-writer`'s nine scopes, read 2026-11-17
+
+Operator console read, relayed through views-crafdapi and views-pipeline-core
+(**views-pipeline-core#598**). Console list only — **not a live call.**
+
+| Group | Scopes |
+|---|---|
+| Databases, old vocabulary | `collections.read` · `documents.read` · `documents.write` |
+| Databases, TablesDB-era | `tables.read` · `rows.read` · `rows.write` |
+| Storage | `buckets.read` · `files.read` · `files.write` |
+
+**This answers the question §6 carried for nineteen days.** `documents.write`, `rows.write` and
+`files.write` are all present, so the producer's write scopes exist. It also means
+**views-pipeline-core's migration to TablesDB needs no new scopes** — this key already carries both
+vocabularies. That is a property of *this* key, not of the platform: a key created in the console
+after Appwrite 1.8 is offered only the new vocabulary (see §5).
+
+**Two things it does not settle.** A console reading is not a request, so seam contract §8's rule
+stands and the proof is views-pipeline-core's pre-merge read-only live call. And it says nothing
+about the deprecated endpoints continuing to work — they are the retired half of a renamed API
+called by a pinned SDK.
+
+**The recorded count was six.** The six are exactly one database vocabulary plus storage; the three
+missed are the TablesDB twins the console ticked beside them. Same shape as `crafd-caller-read`'s
+6 → 14. The working hypothesis, which fits the numbers and is not a proven cause: **every scope
+count on this platform taken at rotation time undercounts by one generation.**
 
 ### Three figures in this table are not as solid as they look
 
@@ -81,7 +108,9 @@ three need a console read. Recorded as unknown rather than copied.
 **The scope *counts* disagree across records.** This repo read 20 scopes on each old key
 (2026-07-31 / 2026-08-02); views-postprocessing calls the same pair "36-scope keys" in October. Both
 may be right — Appwrite has since split the vocabulary into further generations — but nobody has
-reconciled them, and a count without a date is worth nothing.
+reconciled them, and a count without a date is worth nothing. **Partly closed 2026-11-17** by
+`pipeline-core-writer`'s 6 → 9 above, which explains the mechanism without reconciling the 20
+against the 36. `crafd-caller-read`'s fourteen are still un-enumerated.
 
 ## 3. One variable name holds four different keys
 
@@ -228,15 +257,47 @@ modern-looking ones are inert (views-faoapi#543). Seam contract §5.5 was correc
 grounds a day later, independently. **Reading the code does not tell you which scope the substrate
 will demand. Only the substrate does.**
 
+**A third trap, and it is the live one: a key issued today cannot call the API your code calls.**
+Appwrite 1.8 renamed the Databases API to **TablesDB** (collections → tables, documents → rows), and
+a key created in the console *after* that rename is offered **only** `tables.*`/`rows.*`. Such a key
+answers `databases.list_documents` with `401 general_unauthorized_scope` and `tablesDB.list_rows`
+with success — measured by views-crafdapi in the crafdapi project, **2026-11-13**. Before 1.8 the
+generations were **additive**: the console ticked both vocabularies, so any key could call either
+API, which is why nobody noticed which API they were calling. **So the rule is not that the
+deprecated names authorise. The rule is that the API surface you call must match the scope
+generation your key carries.** Seam contract **§8** carries this with its three consequences.
+
+**What this means when you issue the next key.** Ask which API the consuming code calls *before*
+ticking scopes, and if the answer is "the old one", note that the key you are about to create may
+not be offered the scopes it needs at all. The platform's existing keys are fine because they
+predate the rename and carry both vocabularies — `pipeline-core-writer`'s nine are enumerated in
+§2. The next key will not be.
+
 ## 6. What is still owed
 
 | Item | Owner | By when | Tracked |
 |---|---|---|---|
-| **The faoapi box's env file.** þing-04 G2-1 closed every part of the key question but one: *"whether the FAO server box's env file holds one [of the retired keys]. The operator has a read-only check."* Blast radius is the smoke and warm-up path, not serving — views-faoapi is a pure proxy and its `_REQUIRED_APPWRITE_ENV_VARS` (`managers/api.py:146-155`) holds no key at all — but it is unresolved | operator | **before 2026-11-17 16:10**, after which the answer stops being recoverable from the box | [views-faoapi#568](https://github.com/views-platform/views-faoapi/issues/568) — carries the mtime screen and the value-free fingerprint comparison |
-| **`pipeline-core-writer`'s `files.write` and `documents.write` are unproven.** Proving them needs a real producer write to the production store. The retained old key that could cover a missing scope **dies 2026-11-17**. After that, a missing write scope is fixed by a console scope edit, not a revert — `test_credential_expiry.py` says so, and says the fallback *"is a convenience with a deadline, not a dependency"* | operator | prove before **2026-11-17**, or accept knowingly | [views-postprocessing#332](https://github.com/views-platform/views-postprocessing/issues/332) |
+| **The faoapi box's env file.** þing-04 G2-1 closed every part of the key question but one: *"whether the FAO server box's env file holds one [of the retired keys]. The operator has a read-only check."* Blast radius is the smoke and warm-up path, not serving — views-faoapi is a pure proxy and its `_REQUIRED_APPWRITE_ENV_VARS` (`managers/api.py:146-155`) holds no key at all | operator | **no deadline — the earlier "before 2026-11-17 16:10" was wrong**, see below | [views-faoapi#568](https://github.com/views-platform/views-faoapi/issues/568) — carries the mtime screen and the value-free fingerprint comparison |
+| ~~**`pipeline-core-writer`'s `files.write` and `documents.write` are unproven.**~~ **ANSWERED 2026-11-17 by a console read** — all three write scopes are present (§2). No production write was needed, and none was ever needed; see the note below | — | **closed** | [views-postprocessing#332](https://github.com/views-platform/views-postprocessing/issues/332) — to close there |
 | **`crafd-caller-read` has no expiry**, so nothing will ever force it to be reviewed (**C-66**). Both an expiry-with-renewal and a deliberate no-expiry are defensible; *only the absence of a decision is not*. Decide before `PRODUCTIONAPI_API_KEY` is issued, or the default propagates to a third external party by inheritance | operator | before the next external key | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12), **C-66** |
 | **Scope counts and `faoapi-caller-fao`'s actual three scopes** — §2's caveats. One console sitting closes all of it | operator | opportunistic | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12); `faoapi-caller-fao`'s three at [views-faoapi#543](https://github.com/views-platform/views-faoapi/issues/543) |
 
+> **The first row's deadline was my error, corrected 2026-11-17.** This table and
+> views-faoapi#568 both said the env-file question *"stops being recoverable from the box"* after the
+> retired key expired at 16:10. That is wrong: **expiry removes the key, not the file.** The file
+> still holds whatever string it holds, so the mtime screen and the hash comparison both work today
+> and will work next month. Nothing was lost by not acting before 16:10, and the row keeps its owner
+> and loses its deadline. Recorded rather than quietly edited, because a manufactured deadline is the
+> same defect as a missed one in the opposite direction.
+>
+> **The second row closed in the cheapest possible way, nineteen days late.** It was carried as
+> *unproven* on the stated grounds that only a write to the production store could settle it — so a
+> retired key was retained as its fallback and allowed to expire unused at 12:35 today. A **console
+> read** settled it the same day: the write scopes were ticked the whole time. *"It needs a live
+> write"* and *"nobody has looked"* are different claims, and this table stated the first while
+> meaning the second. Seam contract §8 now carries the rule: a credential question answerable by
+> reading a key's own scope list must never be queued behind a production action.
+>
 > **Each row above is tracked somewhere a date can fire, added 2026-11-12.** Written in a
 > table here, "still owed" is prose in a document nobody is obliged to re-read — the failure
 > mode **C-85** exists to name. The two dated rows now have issues in the repositories that

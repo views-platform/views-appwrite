@@ -10,8 +10,8 @@
 |---|---|
 | **Former name** | **`PLATFORM-001`** — retired 2026-07-31 by [ADR-011](../011_naming_of_cross_repo_contracts.md). Historical text, amendment-log entries and þing records keep the old name deliberately; renaming history is erasure. Citations reaching this document as `PLATFORM-001` are correct and resolve here. |
 | Status | **Accepted** — ratified as amended by þing-02, 2026-07-31; v1.4.0–v1.4.4 were observation-driven; **v1.5.0 adds §4.1; v1.6.0 adds §10.1; v1.7.0's §4.2 struck by v1.7.1** |
-| Version | **1.8.1** (changes by supersession + version bump; **never silent edit** — consumers pin) |
-| Amended | 2026-11-12 — **v1.8.1**: **§2's observed-state table was three weeks out of date, and it is the table everything else reads.** Both platform keys were rotated on 2026-10-20 and 2026-10-29 to least-privilege successors (`pipeline-core-writer`, `faoapi-server`, `faoapi-caller-fao`) expiring in 2027; §2 still listed the predecessors and declared a total outage on 2026-11-17, and on 2026-11-12 a session read that and reported a five-day emergency to the operator — who had already answered it from the console twice (2026-11-11 þing-04 G2-1; 2026-11-12 views-faoapi C-259). **Observation-driven: no clause changes and `obliges_consumers_since` stays at 1.5.2.** §2 gains the current table beside the superseded one; §5.4's expiry note is corrected; **§8 gains a fourth measured fact** — Appwrite's *deprecated* scope names are the authorising ones on `appwrite==19.2.0`, measured by a live 401 during the rotation after two independent source traces predicted the modern namespaced scopes and both were wrong, which is independent corroboration of v1.8.0's §5.5 correction. The companion `key_inventory_and_rotation.md` is added as the seam's key inventory. The inventory defect is **C-85**. 2026-11-12 — **v1.8.0**: **þing-04 D3.** Names CRAF'd's own Appwrite project (`APPWRITE_CRAFD_PROJECT_ID`) and the non-production project, both created in the console by the operator 2026-11-11. **Additive; OBLIGES NOBODY** — `obliges_consumers_since` stays at **1.5.2**, and a proposed v1.9.0 that would have obliged all six consumers was withdrawn by this repo at rýni (þingit `9fe463a`) when the arithmetic turned against it. Corrects the three places this contract and its registry said the organisation holds exactly one project — by dated supersession, not deletion. **Also corrects §5.5's prohibition list**, which named four scopes, two of them Appwrite's retired vocabulary, so a key could satisfy the clause and still create tables, columns and indexes; it now names both generations and its acceptance test no longer bakes in a count. **Also adds three measured facts to §8:** the filterable-attribute list corroborated (`loa` was never filterable), attributes created asynchronously with Appwrite returning before one is usable, and the index-key size ceiling with its page-size precondition. Nothing here obliges a consumer: every registry name is new, and §5.5's gate has never been cleared, so no repo loses a passed test. 2026-08-13 — **v1.7.1**: **§4.2 STRUCK one day after it was added.** It had already been proposed, reviewed and **withdrawn** as §5.9 (views-appwrite#27 / PR #30, 2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it was a failure to open the story's own issue. `obliges_consumers_since` returns to **1.5.2** and v1.7.0 is reclassified `obliges_consumers = false`: nobody should inherit an obligation from a withdrawn clause. 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
+| Version | **1.8.2** (changes by supersession + version bump; **never silent edit** — consumers pin) |
+| Amended | 2026-11-17 — **v1.8.2**: **The scope vocabulary's third generation is not additive, and that is why an upstream rename became a platform incident.** Appwrite 1.8 renamed the Databases API to TablesDB; a key created in the console *after* that rename is offered only `tables.*`/`rows.*` and gets `401 general_unauthorized_scope` from `databases.list_documents` while `tablesDB.list_rows` succeeds (views-crafdapi, measured in the crafdapi project 2026-11-13). Every generation observed before this one was **additive** — the console ticked both vocabularies and one key could call either API — so §8's rule is restated as **the API surface you call must match the scope generation your key carries**, and v1.8.1's bullet is corrected: the *deprecated* names authorise only the keys that still carry them. **Also:** `pipeline-core-writer` reads **NINE** scopes spanning both vocabularies, not the six recorded at rotation (operator console read 2026-11-17, relayed via views-pipeline-core#598), which settles that its write scopes exist and that the producer's TablesDB migration needs no new scopes. **Observation-driven: no clause changes and `obliges_consumers_since` stays at 1.5.2.** 2026-11-12 — **v1.8.1**: **§2's observed-state table was three weeks out of date, and it is the table everything else reads.** Both platform keys were rotated on 2026-10-20 and 2026-10-29 to least-privilege successors (`pipeline-core-writer`, `faoapi-server`, `faoapi-caller-fao`) expiring in 2027; §2 still listed the predecessors and declared a total outage on 2026-11-17, and on 2026-11-12 a session read that and reported a five-day emergency to the operator — who had already answered it from the console twice (2026-11-11 þing-04 G2-1; 2026-11-12 views-faoapi C-259). **Observation-driven: no clause changes and `obliges_consumers_since` stays at 1.5.2.** §2 gains the current table beside the superseded one; §5.4's expiry note is corrected; **§8 gains a fourth measured fact** — Appwrite's *deprecated* scope names are the authorising ones on `appwrite==19.2.0`, measured by a live 401 during the rotation after two independent source traces predicted the modern namespaced scopes and both were wrong, which is independent corroboration of v1.8.0's §5.5 correction. The companion `key_inventory_and_rotation.md` is added as the seam's key inventory. The inventory defect is **C-85**. 2026-11-12 — **v1.8.0**: **þing-04 D3.** Names CRAF'd's own Appwrite project (`APPWRITE_CRAFD_PROJECT_ID`) and the non-production project, both created in the console by the operator 2026-11-11. **Additive; OBLIGES NOBODY** — `obliges_consumers_since` stays at **1.5.2**, and a proposed v1.9.0 that would have obliged all six consumers was withdrawn by this repo at rýni (þingit `9fe463a`) when the arithmetic turned against it. Corrects the three places this contract and its registry said the organisation holds exactly one project — by dated supersession, not deletion. **Also corrects §5.5's prohibition list**, which named four scopes, two of them Appwrite's retired vocabulary, so a key could satisfy the clause and still create tables, columns and indexes; it now names both generations and its acceptance test no longer bakes in a count. **Also adds three measured facts to §8:** the filterable-attribute list corroborated (`loa` was never filterable), attributes created asynchronously with Appwrite returning before one is usable, and the index-key size ceiling with its page-size precondition. Nothing here obliges a consumer: every registry name is new, and §5.5's gate has never been cleared, so no repo loses a passed test. 2026-08-13 — **v1.7.1**: **§4.2 STRUCK one day after it was added.** It had already been proposed, reviewed and **withdrawn** as §5.9 (views-appwrite#27 / PR #30, 2026-08-02) — redundant with §4 where right, wrong where new. Re-adding it was a failure to open the story's own issue. `obliges_consumers_since` returns to **1.5.2** and v1.7.0 is reclassified `obliges_consumers = false`: nobody should inherit an obligation from a withdrawn clause. 2026-08-12 — **v1.7.0**: **§4.2 added** — *exactly one writer per class of value*. Coordinates are written by the registry, the secret by the operator, and a second writer must fail loudly rather than lose quietly. **This edition OBLIGES CONSUMERS** (`obliges_consumers_since` moves to 1.7.0): every launcher assembling this seam's environment is in scope. Epic views-appwrite#26 S1 — the story the other nine were meant to hang off, undone for eleven days while seven of them shipped. **v1.6.1**: **both `[contract.*]` rows are now two-sided authorities** — the "not yet an authority" caveats are lifted (ADR-017 D5, views-appwrite#86). All four independent readers landed: views-postprocessing#239 (producer, parametrised over both partners), views-faoapi#379 and views-crafdapi#53 (consumers); views-postprocessing#248 retired the last consumer-source read. **Verification status only — no value changed, nothing to re-pin.** Each row now also states what it still does *not* prove: the label is authoritative, end-to-end visibility is not (vpp register C-92). 2026-08-11 — **v1.6.0**: **§10.1 added** — editions declare whether they oblige a consumer; **§10 gains an exception** — a tag whose name and content disagree from the moment it is pushed may be deleted and re-cut, under three recorded conditions (written the day it was first needed, and published before it was used). `coordinate_registry.toml` gains an `[edition.*]` table and `[meta] obliges_consumers_since`, so a consumer can pin against *what asks something of it* rather than against every edit. Earned by views-postprocessing's measurement (views-appwrite#76): five editions in four days, **four of them console observations that obliged nobody**, each of which would have blocked an FAO delivery release. Additive and opt-in — `[meta] version` is unchanged in meaning and strict lockstep remains a legitimate consumer choice. **v1.5.2**: `[contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]` added — the second and last row #75 asked for, declaring a value **already in force in both repos** (read at views-crafdapi `d311e77`, views-postprocessing `2eb29f1`); views-crafdapi#9 was recorded as blocking it and does not — #9 is the *data* contract, not the document name. The UNFAO row's "neither side in place" caveat narrowed: **views-faoapi#379 landed**, so its consumer half is live; the producer half (vpp#238) is still open for both rows. **v1.5.1**: §9 **O3 CLOSED** by excision — views-pipeline-core deleted the email+password carrier; the registry's dangling citation removed (#24). **v1.5.0** (2026-08-10): §4.1 added — the `[contract.*]` table, widening the registry's charter to non-secret shared facts (views-appwrite#75). First substantive clause change since v1.2.0. **v1.4.4** (2026-08-05): §2's observed state read from the console; A3(h) answered (no non-production project); `crafd-caller-read` never expires (C-66). **v1.4.3**: both platform keys expire 2026-11-17, 3h35m apart (C-65). **v1.4.2**: `VIEWS Pipeline Core`'s 20 scopes read — identical to `UN FAO`'s. **v1.4.1**: CRAFD key scopes corrected. **v1.4.0**: no clause changed. Companion registry records four CRAFD coordinates as issued and the CRAFD caller key as created; §10 requires the two to version together. **v1.3.0**: renamed from `PLATFORM-001` (ADR-011); §1 points at the onboarding checklist. **v1.2.0**: §1 cites the admission test, §2's four corrections, §5.1 split, §5.3 defined, §5.5 amended twice, §5.7 struck, §10 gains tag immutability. See §11 Amendment Log. |
 | Ratified by | **þing-02**, all six seats + the unstaked doubter and lawspeaker; operator sign-off Simon Polichinel von der Maase. (v1.0.0 was ratified by þing-01; **v1.1.0 was proposed and never ratified** — it is superseded here, not by a decision of its author.) |
 | Operator | **Simon Polichinel von der Maase** — key issuance/rotation, Appwrite console custody, test-project decision |
 | Companion | `coordinate_registry.toml` (this directory) — THE canonical coordinate source, versioned in lockstep (§10) |
@@ -66,20 +66,20 @@ identity section therefore describes **callers and processes**:
 
 **Observed state, recorded so the contract is not read as describing reality.**
 
-> ### The keys, as of 2026-11-12 (v1.8.1)
+> ### The keys, as of 2026-11-17 (v1.8.2)
 >
 > **Every key in the 2026-08-05 table below has been retired or recounted.** The table is kept
 > because the three findings under it are still load-bearing, but **do not read it as current.**
 >
 > | Console key | Holder | Scopes | Expires | Established |
 > |---|---|---|---|---|
-> | `pipeline-core-writer` | the producer (views-models, views-pipeline-core, views-postprocessing) | 6 | **2027-10-29** | console 2026-11-11 |
+> | `pipeline-core-writer` | the producer (views-models, views-pipeline-core, views-postprocessing) | **9**, both vocabularies (the record said 6) | **2027-10-29** | console 2026-11-17 (v1.8.2) |
 > | `faoapi-server` | the views-faoapi box **and** its daily monitor | 4, all reads | **2027-10-29** | console 2026-11-11 |
 > | `faoapi-caller-fao` | **UN FAO** | 3, not established — see below | **2027-10-20** | console 2026-11-12, **in use** |
 > | `crafdapi-probe` | views-crafdapi smoke, notebooks, monitor | per views-crafdapi ADR-038 | **never** | console 2026-10-20 |
 > | `crafd-caller-read` | **CRAF'd** | **14**, all `.read` (the record said 6) | **never** | console 2026-11-11 |
-> | `VIEWS Pipeline Core` | — **retired** | 20 as read 2026-08-05 | 2026-11-17 12:35 | nothing authenticates with it |
-> | `faoapi-legacy-shared-RETIRING` | — **retired**, was `UN FAO` | 20 as read 2026-08-02 | 2026-11-17 16:10 | renamed 2026-10-20 |
+> | `VIEWS Pipeline Core` | — **retired**, **EXPIRED 2026-11-17 12:35** | 20 as read 2026-08-05 | expired | nothing authenticated with it |
+> | `faoapi-legacy-shared-RETIRING` | — **retired**, was `UN FAO`, **EXPIRED 2026-11-17 16:10** | 20 as read 2026-08-02 | expired | renamed 2026-10-20 |
 >
 > **Three figures here are softer than they look, and saying so is the point of this table.** The
 > 2027 *times* are not a console reading — each successor was created on a one-year term, so the
@@ -596,6 +596,47 @@ The shared substrate's own properties are contract surface. Authoritative source
   correction**, which was derived by reading a prohibition list rather than by calling anything: two
   routes, one day apart, to the same finding — *the vocabulary has generations and both are live.*
   The operational rule: **a scope set is proven by a request, never by a call-site trace.**
+- **The generations STOPPED being additive at Appwrite 1.8, and the bullet above is correct only
+  for keys that predate it** (added v1.8.2). Appwrite 1.8 renamed the Databases API to **TablesDB**
+  (collections → tables, documents → rows). A key created in the console **after** that rename is
+  offered **only** `tables.*`/`rows.*`; such a key answers `databases.list_documents` with
+  `401 general_unauthorized_scope` and `tablesDB.list_rows` with success — measured by
+  views-crafdapi in the crafdapi project, 2026-11-13, and the reason views-postprocessing#327's
+  CRAF'd delivery is blocked. So the rule is not "the deprecated names authorise"; that was a
+  property of **keys issued while both vocabularies were offered**. The rule is:
+
+  > **The API surface you call must match the scope generation your key carries.**
+
+  Old key + Databases API works (production today). New key + TablesDB works. **New key + Databases
+  API is a 401.** Old key + TablesDB was unmeasured until `pipeline-core-writer`'s nine scopes were
+  read (below), and is still unmeasured by a *request*.
+
+  **Three consequences worth stating, because each cost somebody a day.**
+
+  First, **the additive era hid the dependency.** This contract's own registry recorded
+  `crafd-caller-read` carrying `rows.read` beside `documents.read` in **August 2026**, annotated as
+  *"the TablesDB-era twin… so the key reads via either the classic documents API or the new rows
+  API"*. Both vocabularies being ticked by default is what let five repositories call a renamed API
+  for months without noticing which one they were calling.
+
+  Second, **a scope count taken at issuance is probably low.** `pipeline-core-writer` was recorded
+  with *six* scopes at its 2026-10-29 rotation and reads **nine** (operator console, 2026-11-17,
+  via views-pipeline-core#598): `collections.read`, `documents.read`, `documents.write`,
+  `tables.read`, `rows.read`, `rows.write`, `buckets.read`, `files.read`, `files.write`. The six are
+  exactly **one** database vocabulary plus storage; the three missed are the TablesDB twins the
+  console ticked alongside. That is the same shape as `crafd-caller-read`'s 6 → 14 correction, and
+  it predicts that **every** scope count on this platform taken at rotation time is an undercount of
+  one generation. A hypothesis that fits the numbers, not a proven cause.
+
+  Third, and this is the operational one: **a console read is an instrument nobody used for three
+  weeks.** `pipeline-core-writer`'s write scopes were carried as *unproven* from 2026-10-29 to
+  2026-11-17 on the stated grounds that proving them required a write to the production store — so a
+  retired key was retained as a fallback and allowed to expire unused. The scopes were ticked all
+  along, and a console read would have shown it on any of those days. **A credential question
+  answerable by reading a key's own scope list must never be queued behind a production action.**
+  The rule above still holds — a reading is not a request — but *"it needs a live write"* and
+  *"nobody has looked"* are different claims, and the record stated the first while meaning the
+  second. Related: **C-85**.
 - **A key's name, scopes and expiry can be updated in place, and the secret does not change**
   (Appwrite docs, read 2026-11-12): *"Updating a key changes its name, scopes, and expiry while
   keeping the same secret."* The secret itself is *"returned once, on creation, and never again"* —
@@ -745,6 +786,41 @@ immutable (above), and a consumer wanting strict lockstep may keep comparing aga
 that is a legitimate, more conservative choice. §10.1 offers a floor; it does not impose one.
 
 ## 11. Amendment Log
+
+### v1.8.2 — 2026-11-17 — the scope generations stopped being additive; no clause changed
+
+**Status: ACCEPTED** — observation-driven per §10. No clause changed, `obliges_consumers_since`
+stays at **1.5.2**.
+
+**What happened.** Appwrite 1.8 renamed the Databases API to TablesDB. views-crafdapi measured, in
+the crafdapi project on 2026-11-13, that a key created in the console after the rename is offered
+only the new vocabulary and is **refused** by the old endpoints: `databases.list_documents` returned
+`401 general_unauthorized_scope`, `tablesDB.list_rows` succeeded. That is a change in kind, not
+degree. Every earlier generation was additive — this contract's registry recorded a key carrying
+`rows.read` beside `documents.read` in August 2026 — and the additivity is precisely what allowed
+five repositories to go on calling a renamed API without discovering which one they called. The
+rename is now blocking the CRAF'd delivery (views-postprocessing#327) because views-pipeline-core
+still calls the Databases API at 31 sites.
+
+**What changed here.** §8's deprecated-scopes bullet is **corrected rather than replaced**: it is
+true for keys issued while both vocabularies were offered, and misleading for anything issued
+today, so the rule is restated as *the API surface you call must match the scope generation your key
+carries*. §2's table records `pipeline-core-writer` at **nine** scopes spanning both vocabularies,
+from an operator console read on 2026-11-17 (relayed via views-pipeline-core#598), correcting the
+six recorded at its rotation.
+
+**Two findings §8 now carries that are not about Appwrite.** A scope count taken at issuance is
+probably an undercount of one generation — the 6 → 9 correction here has the same shape as
+`crafd-caller-read`'s 6 → 14. And a credential question answerable by reading a key's own scope list
+must never be queued behind a production action: these write scopes were carried as *unproven* for
+nineteen days on the stated grounds that only a production write could settle them, a retired key
+was retained as their fallback and expired unused, and a console read answered it on the day the
+fallback died. Related: **C-85**.
+
+**What this does not settle.** A console read is not a request, so §8's standing rule is unchanged
+and views-pipeline-core's pre-merge read-only live call is still the proof. Nor does it settle that
+the deprecated endpoints keep working: they are the retired half of a renamed API being called by a
+pinned SDK, and the migration is the answer to that, not this key's generosity.
 
 ### v1.8.1 — 2026-11-12 — the key inventory was three weeks stale; no clause changed
 
