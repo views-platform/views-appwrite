@@ -36,10 +36,12 @@ views-faoapi, views-crafdapi, views-postprocessing and views-datafactory (counte
 > design, so blocking on them would make deleting one the fastest way to ship. It reports instead,
 > and shouts when a stub turns green.
 
-> **This repository ships no code today.**
+> **This repository ships no code today — and that changed status on 2026-11-17.**
 >
-> There is no `src/`, no `pyproject.toml`, no package to install or import. That is a recorded
-> decision, not neglect — see [Current posture](#current-posture).
+> There is no `src/`, no `pyproject.toml`, no package to install or import. Until 2026-11-17 that
+> was a recorded decision to **stay parked**; it is now a recorded decision to **start**, with the
+> code not yet written. The shared Appwrite client's trigger **T3 fired** — see
+> [Current posture](#current-posture).
 
 **What is live now:**
 
@@ -54,7 +56,9 @@ views-faoapi, views-crafdapi, views-postprocessing and views-datafactory (counte
 > **Are you still conformant? Compare against the floor, not the newest tag.**
 >
 > The registry carries `[meta] obliges_consumers_since`. Most editions ask nothing of you — of the
-> eleven published so far, **three oblige a consumer and eight do not**. So:
+> **sixteen** published so far, **three oblige a consumer and thirteen do not** (counted from the
+> registry's `[edition.*]` table, 2026-11-17; this page said *"eleven… three and eight"* while five
+> more shipped, which is **C-76** again on the same page that names it). So:
 >
 > ```
 > conformant  ⟺  your_pin >= obliges_consumers_since
@@ -72,18 +76,32 @@ views-faoapi, views-crafdapi, views-postprocessing and views-datafactory (counte
 
 ## Current posture
 
-> **Contract home: live. Code: parked.**
+> **Contract home: live. Code: activated 2026-11-17, not yet written.**
 
 **What is live here** is everything in the table above: the seam contract, the coordinate registry,
 and the deployment pattern. Six other repositories reference them **by URL at a pinned tag**.
 Changes come by supersession and a version bump, never by silent edit (§10).
 
-**What is parked** is a shared Appwrite client library. There is no `src/` and no `pyproject.toml`,
-**by recorded decision rather than neglect** — the plan is written, costed and ready, and its start
-is deferred behind a trigger that has not fired.
+**What is no longer parked** is a shared Appwrite client library. There is still no `src/` and no
+`pyproject.toml` — nothing has been written — but the deferral ended on **2026-11-17** when trigger
+**T3** fired and the operator activated Phase 1.
 
-→ **[The roadmap](docs/roadmap_shared_client.md)** — the full extraction plan, its decision log, and
-the two triggers that would wake it.
+**What fired it.** Appwrite 1.8 renamed the Databases API to TablesDB, and a key created in the
+console after that rename cannot call the old endpoints at all (measured by views-crafdapi,
+2026-11-13). The fix was applied in views-crafdapi and is still owed in four other repositories —
+**21 files across five repositories import the Appwrite SDK directly**. T3 is written as *"a bug fix
+that must be applied to both copies… a silent upload failure discovered in one copy and must be
+fixed in both"*, and under views-pipeline-core's ADR-047 a refused read can leave the run exiting 0.
+So it is T3's own named failure mode, at five copies rather than two.
+
+**No consumer is obliged by this.** Nothing moves `obliges_consumers_since`; a repository adopts the
+package when it chooses to. And nobody waits for this repo: views-pipeline-core's narrow TablesDB
+fix goes first, so Phase 1 extracts code that is already correct.
+
+→ **[The roadmap](docs/roadmap_shared_client.md)** — the full extraction plan and its decision log.
+Start with **[Phase 1 as activated](docs/roadmap_shared_client.md#phase-1-as-activated-2026-11-17)**
+and **Decision Log #12**: the older plan below them was written for two consumers and one SDK
+generation, and its sequencing and cost are superseded.
 
 Hosting a document creates no dependency edge on this repo's code maturity. That is precisely why
 the seam's contract lives in the platform's only leaf that depends on nothing.

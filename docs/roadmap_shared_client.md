@@ -1,8 +1,15 @@
-# Roadmap — the shared Appwrite client (not built, deferred behind a named trigger)
+# Roadmap — the shared Appwrite client (**trigger T3 fired 2026-11-17; Phase 1 activated**)
 
-> **This is a plan, not a description.** Nothing below exists. There is no `src/`, no
+> **This is a plan, not a description.** Nothing below exists yet. There is no `src/`, no
 > `pyproject.toml`, no package to install. Every class, module and migration phase here is
-> proposed work whose start is **deferred behind a trigger that has not fired**.
+> proposed work.
+>
+> **The deferral ended on 2026-11-17.** Trigger **T3** — *"a bug fix that must be applied to both
+> copies… a silent upload failure discovered in one copy and must be fixed in both"* — fired when
+> Appwrite 1.8's TablesDB rename was found in views-crafdapi, fixed there, and left owed in four
+> other repositories. The operator activated Phase 1 the same day. See **Decision Log #12**, which
+> also says plainly which parts of the plan below are now out of date. **Read #12 before Phase 1,
+> and read it before trusting any cost estimate on this page.**
 >
 > **Moved out of `README.md` on 2026-08-13.** It was 731 of that file's 807 lines — so the front
 > page of a public contract repo was, in the main, an implementation plan for a package with no
@@ -14,7 +21,9 @@
 1. **The trigger is not what §Triggers below says.** The operator ruled on 2026-08-02
    (views-appwrite#23) that extraction is reconsidered when **three consumer APIs** exist —
    views-faoapi, views-crafdapi and **views-publicapi** — not when three *copies* of the client
-   exist. `views-publicapi` does not exist. See **Decision Log #11**.
+   exist. `views-publicapi` does not exist. See **Decision Log #11**. **That ruling concerns T1
+   only** — #11 says so in its own last line — so T2 and T3 stand as written, and **T3 is what
+   fired** (Decision Log #12).
 
 2. **views-faoapi has already decomposed its monolith.** This document proposes extracting
    `managers/appwrite.py` (~2,000 lines) and splitting it into modules. That file is now a
@@ -35,12 +44,14 @@ drifted: the README said *six repositories* and *pinned tag*; this copy still sa
 *pinned commit*. A fact in two places is a fact that must agree, with nothing checking that it does
 — **C-53's shape**, produced while relocating a document rather than while writing one.
 
-The short version, so this page is readable on its own: **contract home live, code parked.** The
-trigger that would un-park it is Decision Log **#11**.
+The short version, so this page is readable on its own: **contract home live; code activated
+2026-11-17, not yet written.** The trigger that un-parked it is **T3**, recorded at Decision Log
+**#12**.
 ---
 
 ## Table of Contents
 
+0. **[Phase 1 as activated, 2026-11-17](#phase-1-as-activated-2026-11-17)** — read this before §7
 1. [Motivation](#motivation)
 2. [What This Package Contains](#what-this-package-contains)
 3. [What This Package Does NOT Contain](#what-this-package-does-not-contain)
@@ -56,6 +67,69 @@ trigger that would un-park it is Decision Log **#11**.
 9. [Testing Strategy](#testing-strategy)
 10. [Risks and Things to Be Mindful Of](#risks-and-things-to-be-mindful-of)
 11. [Decision Log](#decision-log)
+
+
+## Phase 1 as activated, 2026-11-17
+
+**This section supersedes §7.1's sequencing and cost, not its design.** It exists because the plan
+below was written for two consumers, one SDK generation and no live incident, and all three have
+changed. Decision Log **#12** records the activation; this is what to actually do.
+
+### What is different from §7.1's assumptions
+
+| §7.1 assumed | Today, checked 2026-11-17 |
+|---|---|
+| two consumers, one of them transitive | **five repositories import the `appwrite` SDK directly** — 21 files: views-crafdapi 5, views-faoapi 5, views-pipeline-core 7, views-postprocessing 2, views-models 2 (views-appwrite#184) |
+| extracting faoapi's ~2,000-line `managers/appwrite.py` is the central task | faoapi already decomposed it into a package of nine modules. **Phase 1's hardest task was done in someone else's repo**, and `managers/appwrite/` is the reference shape to copy, not the thing to extract |
+| "neither copy is broken" | one upstream rename is **blocking a delivery** (views-postprocessing#327) and must be applied five times |
+| the migration order follows repo size | the order now follows **who is already moving** |
+
+### The order, and the reason for it
+
+**Step 0 — do not block the narrow fix. views-pipeline-core migrates its 31 Databases call sites
+to TablesDB first, in its own repo, with no reference to this package.** WET-before-DRY is this
+repo's own recorded position (Decision Log #11: do not design an abstraction from examples you have
+not observed), and the CRAF'd delivery is waiting on it. Phase 1 then extracts code that is already
+correct, instead of extracting a bug and distributing it. Nobody waits for views-appwrite.
+
+**Step 1 — observe the surface before designing it.** The inventory already exists and was built by
+the repos that own the calls: views-pipeline-core counted 31 Databases API calls across
+`modules/appwrite/file.py` (11, the delivery path), `provisioning.py` (17), the audit package (2)
+and `tools/wipe_fao_shelf.py` (1); views-crafdapi enumerated its own in #201. **Phase 1's surface is
+the intersection of what the five repos actually call — not a wrapper over the SDK.** The expected
+shape, to be confirmed against the inventory rather than assumed: list files, read a file, upload a
+file, list and write metadata rows, and the auth/config seam.
+
+**Step 2 — build it here, with the substrate facts already paid for.** Seam contract **§8** is the
+specification nobody else has: scope generations and which one authorises, asynchronous attribute
+creation returning before an attribute is usable, the index-key size ceiling and its page-size
+precondition, `description ≤ 255`, and the SDK's parsed-dict return. Those cost this platform four
+separate incidents to learn. A shared client that does not encode them is not worth extracting.
+
+**Step 3 — migrate one repository at a time, smallest first.** views-postprocessing (2 files, and
+mostly transitive already) or views-crafdapi (5 files, just touched, so the code is fresh in a
+session's hands) before views-pipeline-core (7 files, 31 call sites, the producer). views-models'
+`podrun` (2 files) is a leaf and can go whenever.
+
+### The gate on every step, and it is not negotiable
+
+**Each migration proves itself with a live call before it merges, not with a trace.** This is seam
+contract §8's standing rule and this platform has now paid for it three times: two independent
+source traces predicted the wrong scope vocabulary in October and both were wrong; a `200` with
+`total=0` was indistinguishable from a refused request until views-models C-114 measured it; and a
+key issued after Appwrite 1.8 is refused by the endpoints the code calls. **A shared client makes
+this worse before it makes it better** — one wrong assumption now reaches five repositories instead
+of one. That is the cost of extraction, stated here rather than discovered later.
+
+### What is explicitly NOT in Phase 1
+
+- **No key handling, no console actions, no secret values.** Seam contract §5 and §9 keep issuance
+  with the operator; a shared client reads a secret from its caller and never sources one.
+- **No provisioning in the first release.** `provisioning.py` is 17 of the 31 calls and it is the
+  part that creates tables, columns and indexes — the privileges §5.5 exists to keep away from
+  long-running processes. It is a later phase with its own argument.
+- **No new obligation on any consumer.** Nothing in Phase 1 moves `obliges_consumers_since`. A repo
+  adopts the package when it chooses to; until then it keeps its own copy and nothing reddens.
 
 ---
 
@@ -672,6 +746,7 @@ Decisions made during planning and extraction. Updated as work progresses.
 | 9 | 2026-06-22 | Stay **parked** despite the sibling leaf `views-frames` shipping `v1.0.0` to PyPI. Adopt `views-frames` as the **scaffold template / proof-of-pattern** for this repo's eventual Phase 1, but do **not** start extraction and do **not** add `views-frames` as a dependency. | `views-frames` (numpy-only data-contract leaf, `views-platform` org) executed exactly this repo's extract→publish→shim playbook end-to-end — de-risking it and providing a copyable scaffold (hatchling+uv, `requires-python>=3.10`, MIT, single-dep + optional extras behind submodules, `type-floor` CI job, `py.typed`, in-package conformance suite, `GOVERNANCE.md` with a versioned conformance floor). But its publication is **not** one of the §Datafactory triggers, so the hold stands. The two are **sibling leaves**: neither imports the other; frame↔store integration is a *consumer* saver concern (pipeline-core/faoapi), never code in this repo. See `views-platform/views-frames/perspectives/round00/from_views-appwrite_perspective.md`. |
 | 10 | 2026-07-28 | Activation of the shared client remains **deferred**, now under a **platform-ratified two-component trigger**. **Demand:** a second incident whose root cause is auth/provision handling in a duplicated client path — *whether by divergence between copies or by a defect common to them*. **Supply:** `views-pipeline-core`'s **C-221** decomposition freeing the auth/config seam. **Either component alone triggers a revisit; both together activate Phase 1.** The three repo-local triggers in §Datafactory below are **retained and remain independently sufficient**; composition is: activate on `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)`, revisit on `demand ∨ supply`. | Ratified by **þing-01** (the cross-repo assembly on identity, secrets and configuration: `orð_dómr.md` D8 as amended by `dómr_endurmat.md`; six seats, human sign-off Simon Polichinel von der Maase). This **supersedes the unilateral character** of the hold recorded in #8/#9 — the deferral now belongs to the platform, not to this repo alone, and cannot be reversed here without returning to the þing. The demand component was deliberately widened from its original "divergence between copies" wording: þing-01 sáttmál S8 (amended) settled that the two lineages **do not diverge** on their write paths — they share the same defect — so a divergence-only trigger could not fire where the evidence actually lives. Recording it here also keeps **C-11** closed: no posture change of this repo goes unrecorded. |
 | 11 | 2026-08-02 | **T1 is superseded: the trigger counts three CONSUMER APIS, not three copies of the client.** Operator ruling, recorded on views-appwrite#23: *"Once we have views-faoapi, views-crafdapi, and **views-publicapi**, we will consider the abstraction again."* Extraction is **deferred behind that named trigger**; on 2026-08-13 the count stood at **two of three** — `views-publicapi` does not exist. | #10's T1 read *"second consumer API clone… at N=3 copies"*, and on that reading it **fired** when views-crafdapi was cut on 2026-08-01, carrying its own copy of the client. The ruling counts differently and more usefully: crafdapi is the *second consumer*, so the trigger is one clone away rather than here. It is the position views-faoapi#325 already records — *"extract-to-shared, not delete… WET-before-DRY"* — stated for the clone that actually happened. Blocking an in-flight clone to design a shared package from two examples, one of which does not exist, would be **guessing the abstraction rather than observing it**. #10 is superseded on T1 only and otherwise stands; §10's habit is supersession, never erasure. |
+| 12 | 2026-11-17 | **T3 FIRED. Phase 1 is ACTIVATED by operator decision, and no new þing is required.** Appwrite 1.8 renamed the Databases API to TablesDB; a key created in the console after the rename is offered only the new scope vocabulary and is refused by the old endpoints (views-crafdapi measured `401 general_unauthorized_scope` on `databases.list_documents` and success on `tablesDB.list_rows`, crafdapi project, 2026-11-13). The fix was applied in views-crafdapi (#201) and is still owed in **views-pipeline-core** (31 call sites), **views-faoapi**, **views-postprocessing** and **views-models**' `podrun`. The operator activated Phase 1 the same day. **The old plan's sequencing and cost are superseded by [Phase 1 as activated](#phase-1-as-activated-2026-11-17); its design is not.** | **T3 as written is *"a bug fix that must be applied to both copies… a cache TTL bug, a metadata race condition, or **a silent upload failure** discovered in one copy and must be fixed in both"*.** This is that, exactly, and worse than T3 imagined: five copies rather than two, and the failure mode is literally a silent upload failure, because under views-pipeline-core's ADR-047 a refused read can leave the run exiting 0. **Why no þing:** Decision #10 is þing-01-ratified and composes activation as `T1 ∨ T2 ∨ T3 ∨ (demand ∧ supply)`; #11 superseded **T1 only** and says so in its own final line. A trigger firing is the deferral's **pre-ratified exit**, so starting needs no new assembly. #10's clause that the hold *"cannot be reversed here without returning to the þing"* governs cancelling the deferral **without** a trigger, which is not what happened. What a þing could still usefully rule is the **sequencing** of five repositories migrating — an ordering question of the kind þing-02 handled for keys — and the operator declined one on 2026-11-17 in favour of starting. **The counter-argument, recorded because it is real:** T1's own ruling (#11) deliberately set the bar at three *consumer APIs* to avoid guessing an abstraction from too few examples, and `views-publicapi` still does not exist. T3 does not answer that objection; it makes it secondary. The abstraction is no longer being guessed from two examples — it is being extracted from five copies of a bug that has already been fixed once, which is observation rather than prediction. |
 
 ---
 
@@ -688,13 +763,20 @@ That said, **the recommendation is to hold off on building this package until a 
 
 ### Triggers that justify starting Phase 1
 
+> **T3 FIRED 2026-11-17.** Appwrite 1.8 renamed the Databases API to TablesDB; a key issued after
+> the rename cannot call the old endpoints. Found in views-crafdapi and fixed there
+> (views-crafdapi#201); still owed in views-pipeline-core (31 call sites), views-faoapi,
+> views-postprocessing and views-models' `podrun`. Under ADR-047 a refused read can leave the run
+> exiting 0, so the failure mode is **literally T3's own named example, a silent upload failure** —
+> at five copies rather than the two this trigger was written for. Decision Log **#12**.
+
 Start this work when any of these happen:
 
 1. **Second consumer API clone.** The moment you clone `views-faoapi` to build a World Bank or UNHCR API, you are copying the Appwrite client a third time. At N=3, extraction pays for itself immediately. This is the strongest trigger.
 
 2. **SDK 14 upgrade in pipeline-core.** If `views-pipeline-core` needs to upgrade to Appwrite SDK 14+, the missing `_as_dict()`/`_get()` compat layer becomes a blocking problem. Rather than backporting the fix from faoapi (creating a fourth divergent copy of the compat code), extract it once into `views-appwrite`.
 
-3. **Bug fix that must be applied to both copies.** If a cache TTL bug, a metadata race condition, or a silent upload failure is discovered in one copy and must be fixed in both, the fix-it-twice cost is the signal that shared code is overdue.
+3. **Bug fix that must be applied to both copies.** If a cache TTL bug, a metadata race condition, or a silent upload failure is discovered in one copy and must be fixed in both, the fix-it-twice cost is the signal that shared code is overdue. — **FIRED 2026-11-17, see above.**
 
 ### Why not now
 
