@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.8.1"                          # Versions in lockstep with the contract (§10);
+version = "1.8.2"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -27,7 +27,15 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-11-12"                     # Newest first.
+amended = "2026-11-17"                     # Newest first.
+                                           #
+                                           # v1.8.2 (2026-11-17): APPWRITE 1.8 RENAMED THE DATABASES API TO
+                                           #   TablesDB, AND A KEY MADE AFTER THAT RENAME CANNOT CALL THE OLD
+                                           #   ENDPOINTS AT ALL. Measured by views-crafdapi 2026-11-13. Also:
+                                           #   `pipeline-core-writer` was read in the console 2026-11-17 and carries
+                                           #   NINE scopes in BOTH vocabularies, not the six recorded here — which
+                                           #   settles that its write scopes exist. OBSERVATION-DRIVEN: no clause,
+                                           #   no name and no coordinate changes; obliges_consumers_since stays 1.5.2.
                                            #
                                            # v1.8.1 (2026-11-12): THE KEYS IN THIS FILE WERE THREE WEEKS OUT OF DATE.
                                            #   Both platform keys were rotated to least-privilege successors
@@ -171,6 +179,27 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.8.2"]
+obliges_consumers = false
+summary = """The scope vocabulary has a THIRD generation, and it is no longer additive.
+Appwrite 1.8 renamed the Databases API to TablesDB (collections -> tables, documents -> rows).
+A key created in the console after that rename is offered ONLY `tables.*`/`rows.*`, and such a
+key gets `401 general_unauthorized_scope` from `databases.list_documents` while
+`tablesDB.list_rows` succeeds — measured by views-crafdapi in the crafdapi project 2026-11-13.
+Until now every generation observed here was ADDITIVE: the console ticked both vocabularies and
+a key could call either API (this file recorded that for `crafd-caller-read` in August 2026).
+That is what has changed, and it is why an upstream rename became a platform incident.
+
+Also corrected: `pipeline-core-writer`'s scope count, 6 -> NINE, from an operator console read
+on 2026-11-17 relayed via views-pipeline-core#598. The nine span BOTH vocabularies, which
+settles two separate open questions — the key's write scopes exist, and a TablesDB migration
+needs no new scopes for the producer. Still a console reading and not a live request, so §8's
+rule stands: a scope set is proven by a request.
+
+No clause, no name and no coordinate changes. A consumer that ignores this edition behaves
+exactly as before — but a consumer that calls Appwrite with a key issued after 1.8 does not,
+which is a property of Appwrite, not of this file."""
 
 [edition."1.8.1"]
 obliges_consumers = false
@@ -578,8 +607,10 @@ carrier = "env var"
 issued_by = "operator"
 console_key_name = "pipeline-core-writer"   # ROTATED 2026-10-29. Was `VIEWS Pipeline Core` (retired,
                                             # see `rotation_2026_10` below). v1.8.1.
-console_key_name_history = """`VIEWS Pipeline Core` until 2026-10-29. The predecessor still EXISTS in
-the console, retained as a fallback, and dies 2026-11-17 12:35 — but NOTHING AUTHENTICATES WITH IT.
+console_key_name_history = """`VIEWS Pipeline Core` until 2026-10-29. The predecessor was retained in the console as a
+fallback and EXPIRED 2026-11-17 12:35 (v1.8.2). Nothing ever authenticated with it after the
+rotation, and the write scopes it was being kept for turned out to be present on the successor
+all along — read in the console the same day it died, three weeks after it could have been.
 
 ⚠ THIS SLOT NAME IS NOT ONE KEY, PLATFORM-WIDE. The env var `APPWRITE_DATASTORE_API_KEY` carries
 `pipeline-core-writer` on the producer side (this slot), `faoapi-server` on the faoapi box and in
@@ -592,7 +623,8 @@ rotation_2026_10 = """ROTATED 2026-10-29 to a least-privilege successor, and thi
 it for three weeks (C-85).
 
   pipeline-core-writer   created 2026-10-29, ONE-YEAR term -> expires 2027-10-29
-                         six load-bearing scopes
+                         NINE scopes, both vocabularies (see `scopes_successor`; v1.8.2
+                         corrects the "six" recorded here at rotation)
                          holders: views-models, views-pipeline-core, views-postprocessing
 
 ⚠ THE DATE IS ARITHMETIC, THE TIME IS NOT KNOWN. The key was created 2026-10-29 with a one-year
@@ -601,20 +633,44 @@ puts a time on it (22:00) and says in the same breath that the time is creation-
 not a reading. DO NOT QUOTE A TIME. Inventing precision a source does not have is exactly the
 failure C-65 punishes, and this correction must not repeat it while fixing it.
 
-STILL UNPROVEN: `files.write` and `documents.write` on the successor. Proving them needs a real
-write to the production store, so the proof waits for a producer run. The retained predecessor is
-what would cover a missing write scope, and it dies 2026-11-17 — after which the remedy is a
-console scope edit, not a revert. Source and the "convenience with a deadline, not a dependency"
-framing: views-postprocessing/tests/test_credential_expiry.py:40-79.
+WRITE SCOPES: ANSWERED 2026-11-17, and they were there the whole time. This block said they
+were unproven and that proving them needed a real write to the production store, so the proof
+waited for a producer run while the fallback expired. A CONSOLE READ answered it instead, on the
+day the fallback died: `documents.write`, `rows.write` and `files.write` are all ticked (see
+`scopes_successor`). Nothing had to be written to production and nothing had to be risked.
 
-SCOPE COUNT UNRECONCILED: this file read 20 scopes on the predecessor (2026-08-05); the same repo
-calls the retired pair "36-scope keys" in October. Both may be right — Appwrite has split the
-vocabulary into further generations since — but nobody has reconciled them, and a count without a
-date is worth nothing. One console sitting closes it."""
+The lesson is not about this key. For three weeks the platform held a question it believed could
+only be settled by a production write, and the cheaper instrument — reading the key's own scope
+list — was never used, because the record described the scopes as a thing nobody had enumerated
+rather than as a thing nobody had LOOKED at. A credential question that can be answered by a
+console read should never be queued behind a production action. Related: C-85.
+
+A console read is still not a live request. §8's rule is unchanged — a scope set is PROVEN by a
+request, never by inspection — so the remaining exposure is that the ticked names might not be
+the names the deployed SDK's endpoints demand, which is exactly the trap §8 exists for. The live
+read-only confirmation is views-pipeline-core's, before their TablesDB merge.
+
+Earlier framing ("a convenience with a deadline, not a dependency"):
+views-postprocessing/tests/test_credential_expiry.py:40-79.
+
+SCOPE COUNT, PARTLY RECONCILED 2026-11-17. The successor was recorded as "six" and reads NINE.
+The six are exactly one database vocabulary plus storage (collections.read, documents.read,
+documents.write, buckets.read, files.read, files.write); the three not recorded are the
+TablesDB-era twins (tables.read, rows.read, rows.write) that the console ticked alongside them.
+So the "six" was a correct count of ONE GENERATION and an undercount of the KEY. That is a
+hypothesis that fits the numbers exactly, not a proven cause — but it is the same shape as
+`crafd-caller-read`'s 6 -> 14 correction, and it predicts that every scope count taken at
+rotation time is low. UNRECONCILED STILL: this file read 20 scopes on the predecessor
+(2026-08-05) while views-postprocessing calls the retired pair "36-scope keys" in October, and
+`crafd-caller-read`'s fourteen have never been enumerated."""
 scopes_enumerated = """⚠ THIS BLOCK DESCRIBES THE RETIRED PREDECESSOR, not the key this slot now
 holds. Kept because the equality it establishes is still the basis of `scopes_finding`, and
 because what was true is the part that matters (§10: supersession, never erasure). The
 successor's six scopes have not been enumerated here from a console read.
+
+SUCCESSOR ENUMERATED 2026-11-17 — see `scopes_successor`. The sentence above said the
+successor's six "have not been enumerated here from a console read"; they now have, and there
+are nine of them.
 
 2026-08-05, read from the operator console at last — the þing-02 A3(i) gate,
 open since 2026-07-31. Twenty scopes:
@@ -644,6 +700,32 @@ TWO CAVEATS ON THIS RECORD, both deliberate:
     block belongs on a different slot.
   - EXPIRY read 2026-08-05, one day later: EXACT EXPIRY 2026-11-17 12:35. See `expiry`
     below. A3(i) is now closed for this key on both counts."""
+scopes_successor = """NINE, read from the operator console 2026-11-17 by the operator and
+relayed through views-crafdapi and views-pipeline-core (views-pipeline-core#598). Console list
+only — NOT a live call, so by §8 these are the names the console shows, not yet names proven to
+authorise a request.
+
+  DATABASES, old vocabulary:   collections.read   documents.read   documents.write
+  DATABASES, TablesDB-era:     tables.read        rows.read        rows.write
+  STORAGE:                     buckets.read       files.read       files.write
+
+TWO THINGS THIS SETTLES.
+
+  1. The write scopes exist. `documents.write`, `rows.write` and `files.write` are all ticked,
+     so the question this slot carried as UNPROVEN since 2026-10-29 is answered, and it was
+     answerable by a console read on any of those days.
+
+  2. A TablesDB migration needs NO new scopes for the producer. The key already carries both
+     vocabularies, so views-pipeline-core can move its 31 Databases API call sites to TablesDB
+     without the operator touching this key. That is a property of THIS key, not of the
+     platform: a key created in the console AFTER Appwrite 1.8 is offered only the new
+     vocabulary and cannot call the old endpoints at all (views-crafdapi, 2026-11-13).
+
+WHAT IT DOES NOT SETTLE: that the old endpoints will keep working. They are the DEPRECATED half
+of a renamed API being called by a pinned SDK (`appwrite==19.2.0`, below the `list_documents`
+removal — contract §8). Nothing here is load-bearing against Appwrite retiring them; the
+migration is the answer to that, not this key's generosity."""
+
 expiry = """2027-10-29 (date declared from a one-year term, time not read — see `rotation_2026_10`).
 
 ⚠ EVERYTHING BELOW THIS LINE IS SUPERSEDED. It describes the RETIRED predecessor and it was
