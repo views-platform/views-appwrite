@@ -92,6 +92,20 @@ repo's own recorded position (Decision Log #11: do not design an abstraction fro
 not observed), and the CRAF'd delivery is waiting on it. Phase 1 then extracts code that is already
 correct, instead of extracting a bug and distributing it. Nobody waits for views-appwrite.
 
+> **Step 0 is filed, 2026-11-18:** views-pipeline-core epic
+> [views-pipeline-core#599](https://github.com/views-platform/views-pipeline-core/issues/599),
+> stories #600–#609, checklist #610. Its first story (#600) is a **live read-only check** —
+> does TablesDB accept `pipeline-core-writer`, and do rows written through the old API appear
+> through the new one with the same ids and count — and it is **waiting on the operator**, because
+> pipeline-core's sessions neither hold nor run the production key. Nothing downstream of it starts
+> until it has an answer, here included.
+>
+> Three facts from that epic are inputs to Step 1 and are recorded on #188: the reply envelope to
+> callers **stays** `{"documents": …, "total": …}` (so the rename does not reach consumers); the
+> 401/404/empty-result split is their story #603; and views-models reaches into
+> `provisioner.databases` directly, their story #607 — a consumer touching a producer's internals,
+> which is one of the seams Phase 1 is meant to remove.
+
 **Step 1 — observe the surface before designing it.** The inventory already exists and was built by
 the repos that own the calls: views-pipeline-core counted 31 Databases API calls across
 `modules/appwrite/file.py` (11, the delivery path), `provisioning.py` (17), the audit package (2)
