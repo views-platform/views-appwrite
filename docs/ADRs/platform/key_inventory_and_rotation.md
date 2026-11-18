@@ -277,7 +277,7 @@ predate the rename and carry both vocabularies — `pipeline-core-writer`'s nine
 
 | Item | Owner | By when | Tracked |
 |---|---|---|---|
-| **The faoapi box's env file.** þing-04 G2-1 closed every part of the key question but one: *"whether the FAO server box's env file holds one [of the retired keys]. The operator has a read-only check."* Blast radius is the smoke and warm-up path, not serving — views-faoapi is a pure proxy and its `_REQUIRED_APPWRITE_ENV_VARS` (`managers/api.py:146-155`) holds no key at all | operator | **no deadline — the earlier "before 2026-11-17 16:10" was wrong**, see below | [views-faoapi#568](https://github.com/views-platform/views-faoapi/issues/568) — carries the mtime screen and the value-free fingerprint comparison |
+| ~~**The faoapi box's env file.**~~ **SCREENED CLEAN 2026-11-18** — the mtime is `2026-10-29 23:04:41 +0000`, so the file was rewritten by `bootstrap.sh` part 2 on the evening of the platform rotation, nine days after the retired key was renamed out of use. Part 2 cannot run at all without the operator supplying the secret in the environment (`bootstrap.sh:74`), so the value written that evening is the one the operator was rotating to: `faoapi-server`. See the note below for what an mtime cannot settle | — | **closed, with a free backstop** | [views-faoapi#568](https://github.com/views-platform/views-faoapi/issues/568) — answered there; can be closed in that repo |
 | ~~**`pipeline-core-writer`'s `files.write` and `documents.write` are unproven.**~~ **ANSWERED 2026-11-17 by a console read** — all three write scopes are present (§2). No production write was needed, and none was ever needed; see the note below | — | **closed** | [views-postprocessing#332](https://github.com/views-platform/views-postprocessing/issues/332) — to close there |
 | **`crafd-caller-read` has no expiry**, so nothing will ever force it to be reviewed (**C-66**). Both an expiry-with-renewal and a deliberate no-expiry are defensible; *only the absence of a decision is not*. Decide before `PRODUCTIONAPI_API_KEY` is issued, or the default propagates to a third external party by inheritance | operator | before the next external key | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12), **C-66** |
 | **Scope counts and `faoapi-caller-fao`'s actual three scopes** — §2's caveats. One console sitting closes all of it | operator | opportunistic | [views-appwrite#12](https://github.com/views-platform/views-appwrite/issues/12); `faoapi-caller-fao`'s three at [views-faoapi#543](https://github.com/views-platform/views-faoapi/issues/543) |
@@ -289,6 +289,18 @@ predate the rename and carry both vocabularies — `pipeline-core-writer`'s nine
 > and will work next month. Nothing was lost by not acting before 16:10, and the row keeps its owner
 > and loses its deadline. Recorded rather than quietly edited, because a manufactured deadline is the
 > same defect as a missed one in the opposite direction.
+>
+> **The screen ran 2026-11-18 and came back clean.** `stat -c '%y'` on
+> `/home/views-faoapi-deploy/.env.faoapi` reads **`2026-10-29 23:04:41 +0000`** — operator screen
+> share, read in this session. `bootstrap.sh:89` is the file's only writer and `bootstrap.sh:74`
+> refuses to proceed unless the operator supplies the secret in the process environment, so the
+> timestamp dates the write to the rotation itself rather than to any earlier deploy. **What an
+> mtime cannot settle** is which string went in; it dates the write, not the value. That residual is
+> removed at zero cost by a check the box already runs: the release runbook's post-deploy smoke line
+> (`views-faoapi/deployment/RELEASE_RUNBOOK.md:119`) sources this very file and makes a live Appwrite
+> call, and since the retired key expired at 16:10 on 2026-11-17 that call now **discriminates** —
+> before expiry both keys authenticated and a passing smoke proved nothing. No separate action is
+> owed: the next deploy answers it, and answers it loudly if the answer is bad.
 >
 > **The second row closed in the cheapest possible way, nineteen days late.** It was carried as
 > *unproven* on the stated grounds that only a write to the production store could settle it — so a
