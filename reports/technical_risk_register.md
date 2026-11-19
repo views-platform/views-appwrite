@@ -3083,7 +3083,7 @@ soft facts hardening), cluster **I**, þing-04 `aðgát §1`, `baton.md:116`.
 | Tier | **3** |
 | Source | this repository, 2026-11-19 — found when views-pipeline-core checked the claim against the actual package and it was false |
 | Trigger | **The next time this repository is about to tell another repository that its dependency version blocks something** — import the symbol against the pinned version, or against the wheel, before saying so; if that is not possible, label the claim Read and name the file the claim came from. **Also fires** when a docstring, comment or test narrative is the only source for a fact about the outside world: it dates from when it was written, and nothing re-checks it. |
-| Location | the correction on [views-pipeline-core#600](https://github.com/views-platform/views-pipeline-core/issues/600); `views-crafdapi/tests/test_sdk_compat.py:235` (the stale docstring, another repo's to fix — filed as views-crafdapi#212); `docs/ADRs/platform/appwrite_seam_contract.md` §8 (the correction) |
+| Location | the correction on [views-pipeline-core#600](https://github.com/views-platform/views-pipeline-core/issues/600); `views-crafdapi/tests/test_sdk_compat.py:235` (the stale docstring, another repo's to fix — filed as views-crafdapi#219); `docs/ADRs/platform/appwrite_seam_contract.md` §8 (the correction) |
 
 **What happened.** On 2026-11-19 this repository relayed four findings from a live Appwrite read to
 views-pipeline-core. One of them said their pin of `appwrite>=13.4.1,<14.0.0` could not reach the
@@ -3114,7 +3114,7 @@ cluster **I**.
 
 **What was done about it.** Contract **§8** records the correction beside the measurement it came
 packaged with, because the two travelled together and anyone reading one should see the other.
-views-crafdapi#212 asks that repository to fix the docstring, since a stale narrative in a test is
+views-crafdapi#219 asks that repository to fix the docstring, since a stale narrative in a test is
 load-bearing for every session that reads it. The peer's correction was accepted without argument
 and the issue comment carries it.
 
