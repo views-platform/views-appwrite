@@ -56,7 +56,7 @@ views-faoapi, views-crafdapi, views-postprocessing and views-datafactory (counte
 > **Are you still conformant? Compare against the floor, not the newest tag.**
 >
 > The registry carries `[meta] obliges_consumers_since`. Most editions ask nothing of you — of the
-> **sixteen** published so far, **three oblige a consumer and thirteen do not** (counted from the
+> **seventeen** published so far, **three oblige a consumer and fourteen do not** (counted from the
 > registry's `[edition.*]` table, 2026-11-17; this page said *"eleven… three and eight"* while five
 > more shipped, which is **C-76** again on the same page that names it). So:
 >
