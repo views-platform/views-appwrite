@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.8.2"                          # Versions in lockstep with the contract (§10);
+version = "1.8.3"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -27,7 +27,21 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-11-17"                     # Newest first.
+amended = "2026-11-19"                     # Newest first.
+                                           #
+                                           # v1.8.3 (2026-11-19): THE NEW VOCABULARY IS PROVEN BY A REQUEST, AND
+                                           #   THE TWO APIs ADDRESS THE SAME ROWS. `tablesDB.list_rows` and
+                                           #   `databases.list_documents` were both called with
+                                           #   `pipeline-core-writer` against `file_metadata/unfao` (total 443) and
+                                           #   `file_metadata/production_forecasts` (total 1232): both answered,
+                                           #   both totals agree, both first `$id`s are identical. First request on
+                                           #   this platform to use the TablesDB vocabulary. Also records three
+                                           #   mechanical facts a migration must handle (reply key `rows`, `total`
+                                           #   int on the wire but float through the SDK model, and columns that the
+                                           #   SDK model hides behind `.data`), and corrects a claim this repo made
+                                           #   to views-pipeline-core from a stale docstring rather than a check.
+                                           #   OBSERVATION-DRIVEN: no clause, no name and no coordinate changes;
+                                           #   obliges_consumers_since stays 1.5.2.
                                            #
                                            # v1.8.2 (2026-11-17): APPWRITE 1.8 RENAMED THE DATABASES API TO
                                            #   TablesDB, AND A KEY MADE AFTER THAT RENAME CANNOT CALL THE OLD
@@ -179,6 +193,23 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.8.3"]
+obliges_consumers = false
+summary = """The TablesDB vocabulary is PROVEN BY A REQUEST, and the two APIs address the same
+rows. With `pipeline-core-writer` (issued 2026-10-29, before the rename), `tablesDB.list_rows` and
+`databases.list_documents` were both called against `file_metadata/unfao` and
+`file_metadata/production_forecasts` on 2026-11-19: both answered, totals agree (443 and 1232),
+and the first `$id` is identical through either surface. That closes the half of §8's rule that
+was unmeasured — an OLD key can call the NEW surface — and it is the first request on this platform
+to use the new vocabulary at all. `tables.read` answered too (`list_columns`: 16 columns on
+`unfao`, 13 on `production_forecasts`).
+
+Three mechanical facts came with it, all in §8: the reply's list key is `rows`, not `documents`,
+and reading the old key off a row reply returns None rather than raising; `total` is an int on the
+wire but a float through the SDK's model; and the SDK's row model keeps the user columns behind
+`.data`, so the obvious dict conversion returns the seven system fields and silently drops every
+column. Observation only."""
 
 [edition."1.8.2"]
 obliges_consumers = false
@@ -667,6 +698,12 @@ scopes_enumerated = """⚠ THIS BLOCK DESCRIBES THE RETIRED PREDECESSOR, not the
 holds. Kept because the equality it establishes is still the basis of `scopes_finding`, and
 because what was true is the part that matters (§10: supersession, never erasure). The
 successor's six scopes have not been enumerated here from a console read.
+
+PROVEN BY A REQUEST 2026-11-19. `rows.read` and `tables.read` were exercised with this key
+against both metadata tables and answered; the deprecated `documents.read` surface answered the
+same request with the same totals and the same first `$id`. So for THIS key (issued before the
+rename) both vocabularies work and address the same rows. The write scopes remain console-read
+only: nothing has written through `rows.write`. See contract §8, v1.8.3.
 
 SUCCESSOR ENUMERATED 2026-11-17 — see `scopes_successor`. The sentence above said the
 successor's six "have not been enumerated here from a console read"; they now have, and there
