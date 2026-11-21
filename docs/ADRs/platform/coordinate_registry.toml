@@ -1169,7 +1169,20 @@ read and no bucket file read. Fill the scopes when those gates clear, not now.""
 class = "secret"
 status = "PLANNED 2026-11-21 (v1.9.0) — operator creates it in the console at deployment. NOT YET CREATED."
 console_key_name = "crafdapi-server"
-carrier = "a file of its own on the views-crafdapi server, separate from the other APPWRITE_* settings"
+carrier = """/home/views-crafdapi-deploy/.env.crafdapi-server-key, mode 0600 — a systemd
+EnvironmentFile of its own, listed second and apart from .env.crafdapi, and written by
+`bash bootstrap.sh serverkey`. Nygard, Release It! §12.2: a configured credential is kept
+separate from other configuration.
+
+Its EnvironmentFile line carries a leading `-`, so the unit starts when the file is absent.
+VERIFIED 2026-11-22 that this is deliberate and fails loudly rather than quietly: the service
+then loads nothing, every route answers 503 until the first successful load, and the loader
+logs why. `bootstrap.sh:123` refuses to write the file at all unless the operator supplies the
+key in the environment.
+
+LOCATIONS READ AT views-crafdapi `9cb6bc0` (branch `code/load-at-start`, PR views-crafdapi#229),
+which is NOT YET MERGED to that repository's development or main. The commit id is given because
+it cannot change; the branch can."""
 consumer = "views-crafdapi"
 issued_by = "operator"
 identity = "the views-crafdapi serving process — an instance of the read tier (D4), one per reading identity x environment"
@@ -1183,7 +1196,18 @@ validates anyone. Least privilege (Nygard, Release It! §12.1).
 UNPROVEN AT THE TIME OF WRITING, AND THAT IS THE POINT. §8's rule is that a scope set is proven
 by a request and never by a console read or a call-site trace. views-crafdapi has undertaken to
 exercise both scopes with the issued key before the service goes live. Until that happens this
-row records an intention, not a capability, and a reader must not treat it as established."""
+row records an intention, not a capability, and a reader must not treat it as established.
+
+HOW IT WILL BE PROVEN, AND WHY THE FIRST PROPOSAL WAS NOT ENOUGH. The original check was a slice
+route answering 200 after install. That is a service check, not a scope proof: a 200 can be
+served from a fallback, and on this platform a `200` with an empty result was indistinguishable
+from a refused request until views-models measured it (C-114, cited at §8). views-crafdapi
+changed it. The loader now logs the two requests distinctly —
+`loader: store listing: newest forecast manifest <id|NONE>, newest history file <id|NONE>`,
+with an empty listing logged at ERROR naming `rows.read`, and `downloaded <file_id>: <N> bytes`
+per download — and ADR-044 §1 with RELEASE_RUNBOOK.md §5 make reading those two lines once on
+the box, with the issued key, the proof. The evidence is then the requests, not a consequence
+of them."""
 expiry = """ONE YEAR from issuance. Proposed 2027-05-21, and the date is chosen to be WRONG on
 purpose: it is roughly five months away from `faoapi-server` and `pipeline-core-writer`, which
 both fall due 2027-10-29.

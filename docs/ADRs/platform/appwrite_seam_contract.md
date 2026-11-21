@@ -539,9 +539,19 @@ burden is on the consumer: it must cite the document that says every caller rece
 thing. If that ever stops being true, the mode reverts and the partitions come back. A consumer
 that cannot cite such a document runs partitioned.
 
-**First and so far only user: views-crafdapi**, whose `docs/SERVICE_SPECIFICATION.md` states that
-one forecast is served, the same for every partner, and that keys exist so a partner can be
-revoked. views-faoapi is partitioned and nothing here changes that.
+**First and so far only user: views-crafdapi.** Its declaration is
+`docs/ADRs/active/044_the_service_loads_the_forecast_itself.md` §4, citing
+`docs/SERVICE_SPECIFICATION.md:16` — *"Same data for everyone, always. Separate keys exist only so
+that one partner can be switched off."* The declaration carries the revert condition, and
+`tests/test_uniform_entitlement.py` is its observer: the test fails if that sentence changes, and
+its message names ADR-044 and this contract. **A revert condition with no observer is a sentence,
+not a guard**, and that test is what makes this mode safe to grant.
+
+views-faoapi is partitioned and nothing here changes that.
+
+*Those locations were read at views-crafdapi `9cb6bc0`, on branch `code/load-at-start`
+(PR views-crafdapi#229), which is not yet merged there. The commit id is given because it cannot
+change; the branch can.*
 
 This amendment is **permissive and obliges nobody.** A consumer that does nothing keeps the
 behaviour and the test it has today. It is
