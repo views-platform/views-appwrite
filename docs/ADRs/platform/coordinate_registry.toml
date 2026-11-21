@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.8.3"                          # Versions in lockstep with the contract (§10);
+version = "1.9.0"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -27,7 +27,22 @@ obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AG
                                            # Conformant <=> your_pin >= this. An observation
                                            # bump moves `version` and leaves this still.
 ratified = "2026-07-31"                    # þing-02 ratified v1.3.0; v1.0.0 was þing-01, v1.1.0 never ratified
-amended = "2026-11-19"                     # Newest first.
+amended = "2026-11-21"                     # Newest first.
+                                           #
+                                           # v1.9.0 (2026-11-21): A SERVING API STOPS BORROWING ITS CALLER'S
+                                           #   CREDENTIAL. views-crafdapi is issued its own read key
+                                           #   (`crafdapi-server`), authenticates each partner with that partner's
+                                           #   key, and reads storage under its own. This ANSWERS the confused-deputy
+                                           #   half of contract §9 O2 — for views-crafdapi only; views-faoapi still
+                                           #   borrows and that divergence is recorded, not resolved. Also: the read
+                                           #   tier's scope list is corrected to the post-1.8 vocabulary, and §5.8's
+                                           #   conformance vector gains a per-consumer premise. CLAUSE-CHANGING, not
+                                           #   observation-driven — but OBLIGES NOBODY: no consumer must do anything,
+                                           #   views-crafdapi opts in, so obliges_consumers_since stays at 1.5.2.
+                                           #   NOTE: a DIFFERENT v1.9.0 was drafted and withdrawn at rýni on
+                                           #   2026-11-12 (þingit `9fe463a`) because it would have obliged all six
+                                           #   consumers. That edition was never cut and shares nothing with this one
+                                           #   but the number.
                                            #
                                            # v1.8.3 (2026-11-19): THE NEW VOCABULARY IS PROVEN BY A REQUEST, AND
                                            #   THE TWO APIs ADDRESS THE SAME ROWS. `tablesDB.list_rows` and
@@ -193,6 +208,25 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.9.0"]
+obliges_consumers = false
+summary = """A serving API stops borrowing its caller's credential — for one consumer, by name.
+views-crafdapi is issued `crafdapi-server`, a read-tier key of its own. Each partner is still
+authenticated with that partner's key; the data is then read under the service's key. This is the
+answer to the confused-deputy half of contract §9 **O2**, which has been open since v1.1.0 and
+which the contract itself called "a deferral, not a decision". It is answered HERE FOR
+views-crafdapi ONLY. views-faoapi continues to re-use the caller's key, and §2 now records two
+different answers on one seam rather than pretending to one.
+
+Carried in the same edition because they are the same change: the read tier's scope list is
+corrected from the pre-1.8 vocabulary (`documents.read`, `databases.read`) to what a key created
+today is actually offered; and §5.8's conformance vector gains an explicit premise, because a
+service that loads one copy for all callers cannot satisfy a test written for per-caller copies.
+
+CLAUSE-CHANGING. §5.8 and §9 both move, so this is not observation-driven in §10's sense.
+OBLIGES NOBODY: no consumer is required to do anything, no existing test turns red, and
+views-crafdapi adopts by choice. `obliges_consumers_since` stays at 1.5.2."""
 
 [edition."1.8.3"]
 obliges_consumers = false
@@ -1131,11 +1165,70 @@ scoped key meeting the unfixed delete branch begins deleting valid metadata;
 (2) the scoped-key probe must pass first, with the normative shape — database
 read and no bucket file read. Fill the scopes when those gates clear, not now."""
 
+[secret.APPWRITE_CRAFDAPI_SERVER_API_KEY]
+class = "secret"
+status = "PLANNED 2026-11-21 (v1.9.0) — operator creates it in the console at deployment. NOT YET CREATED."
+console_key_name = "crafdapi-server"
+carrier = "a file of its own on the views-crafdapi server, separate from the other APPWRITE_* settings"
+consumer = "views-crafdapi"
+issued_by = "operator"
+identity = "the views-crafdapi serving process — an instance of the read tier (D4), one per reading identity x environment"
+scopes = """TWO: files.read, rows.read.
+
+Deliberately NOT `buckets.read`. Listing the manifest rows and downloading a file need neither
+a bucket listing nor bucket metadata; the scope was in the first proposal only because the
+service's existing caller-validation lists buckets, and under this design the server key never
+validates anyone. Least privilege (Nygard, Release It! §12.1).
+
+UNPROVEN AT THE TIME OF WRITING, AND THAT IS THE POINT. §8's rule is that a scope set is proven
+by a request and never by a console read or a call-site trace. views-crafdapi has undertaken to
+exercise both scopes with the issued key before the service goes live. Until that happens this
+row records an intention, not a capability, and a reader must not treat it as established."""
+expiry = """ONE YEAR from issuance. Proposed 2027-05-21, and the date is chosen to be WRONG on
+purpose: it is roughly five months away from `faoapi-server` and `pipeline-core-writer`, which
+both fall due 2027-10-29.
+
+Staggering is the whole reason the date is recorded here rather than left to the console. On
+2026-11-12 this registry still said two platform keys expired on the same day with "no stagger
+and no fallback", and a session read it and reported a five-day emergency to the operator, who
+had already handled it. The registry was stale; the hazard it described is not. Keys that all
+come due together turn one missed renewal into a platform outage (C-65).
+
+This is an INTERNAL key and it expires. That is not the same question as C-66, which asks
+whether `crafd-caller-read` — held by an external party and currently never expiring — should
+have an expiry at all. C-66 remains open and is not settled by this slot."""
+answers = """Contract §9 **O2**, the confused-deputy half, FOR views-crafdapi ONLY.
+
+O2 asked whether a serving API should authenticate the caller and then act under its OWN read
+credential, instead of re-using the caller's key to reach storage, and recorded that keeping
+caller-brings-own-key was "a deferral, not a decision". This key is the decision, taken by the
+operator 2026-11-21 for one consumer.
+
+views-faoapi still re-uses the caller's key. §2 records both. The faoapi half of O2 stays open
+and belongs to that repository and the operator; it is NOT closed by this edition."""
+note = """THE VARIABLE NAME IS NEW ON PURPOSE. `APPWRITE_DATASTORE_API_KEY` already carries four
+different key values on four different machines, which `key_inventory_and_rotation.md` §2 records
+as having cost real time twice (C-256). A fifth meaning on a fifth machine would deepen the
+defect. This key gets a name nothing else uses.
+
+The secret VALUE is not recorded here and never will be. The operator holds it."""
+
 [secret.APPWRITE_READ_API_KEY]
 class = "secret"
-status = "planned — operator issues (D4)"
+status = "planned — operator issues (D4). First instance issued as `crafdapi-server`, v1.9.0."
 identity = "one per reading identity x environment (§5.3) — not one shared read key"
-scopes = "files.read, documents.read, databases.read"
+scopes = "files.read, rows.read, tables.read"
+scopes_corrected = """CORRECTED 2026-11-21 (v1.9.0). This read `files.read, documents.read,
+databases.read` — the pre-1.8 vocabulary. Appwrite 1.8 renamed the Databases API to TablesDB,
+and a key created in the console AFTER that rename is offered only `tables.*`/`rows.*`:
+`databases.list_documents` returns 401 while `tablesDB.list_rows` succeeds (measured in the
+crafdapi project 2026-11-13; contract §8). A key issued against the superseded list would
+therefore have been un-issuable as written. The old list is kept here, not deleted, because a
+key issued BEFORE the rename still carries it — `pipeline-core-writer` spans both vocabularies.
+
+`buckets.read` is deliberately absent. It is not needed to list rows or download a file, and
+the first instance of this tier was issued without it (see CRAFDAPI_SERVER_API_KEY). A reader
+that believes it needs `buckets.read` should establish why by a request before asking for it."""
 
 [secret.APPWRITE_WRITE_API_KEY]
 class = "secret"
