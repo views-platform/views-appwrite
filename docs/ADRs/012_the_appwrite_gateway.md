@@ -150,7 +150,7 @@ One more thing, easy to miss and important: **every call to Appwrite is already 
 
 **Which host it starts on.** Proposed: the `views-faoapi` host, as the heaviest reader. Easy to move later.
 
-**What operations it offers.** To be drafted from the existing call sites and checked against two interfaces that already exist in the right shape — `views-postprocessing`'s five-method store port, and `views-pipeline-core`'s `DatastoreModule`, 771 lines and twelve methods, every one of them expressed in terms of forecasts rather than in terms of Appwrite.
+**What operations it offers.** To be drafted from the existing call sites and checked against two interfaces that already exist in the right shape — `views-postprocessing`'s five-method store port, and `views-pipeline-core`'s `DatastoreModule`, 771 lines and twelve methods, every one of them expressed in terms of forecasts rather than in terms of Appwrite. **Amended 2026-11-24:** that sentence was verified and holds for the method *names*, but three of the twelve signatures pass an Appwrite-issued file id across the boundary. Deciding the operations therefore means deciding who issues identifiers, not only what the routes are called. See the challenge entry of the same date.
 
 **How it knows who is calling.** Whether a caller presents its own credential through the gateway, or the gateway holds one on the caller's behalf. This touches the seam contract's identity model and how narrowly a partner's access can be scoped.
 
@@ -335,13 +335,81 @@ session did not verify the issue numbers in GitHub.)
 
 Step 1 is this repository's to perform and has not been done.
 
+### 2026-11-24 — Measured: the abstraction hides the vendor's nouns and hands out the vendor's identifiers
+
+**Raised by:** the same reading session, working through Martin, *Clean Architecture*, ch. 17 — Figure
+17.2, "The boundary line" — against this platform's code on 2026-11-24.
+
+**The first measurement was wrong, and the correction is the finding.** The session counted the word
+"bucket" outside each repository's Appwrite module: 92 lines in views-faoapi, 40 in views-crafdapi,
+32 in views-pipeline-core, and 38 in views-postprocessing, which has no Appwrite module at all — 202
+lines across 24 files in four repositories. On that count
+`views-pipeline-core/views_pipeline_core/modules/datastore/datastore.py` looked like the worst case
+at 26 hits, and the session concluded the abstraction was written in the vendor's language.
+
+Reading the file disproved it. `DatastoreModule` is 771 lines with twelve public methods —
+`upload_predictions`, `upload_data`, `get_predictions_by_metadata`, `download_prediction`,
+`get_latest_file_id`, `download_latest_file`, `get_file_metadata`, `update_prediction_metadata`,
+`delete_prediction`, `list_all_predictions`, `list_all_predictions_unfiltered`, `to_dict`. The verbs
+are forecast nouns. **No public signature takes a bucket**; every bucket reference in the file is a
+docstring, a comment, or `self.__appwrite_file_manager_config.bucket_id`, which is private.
+**This ADR's existing claim under "Still open" — that the twelve methods are expressed in terms of
+forecasts rather than in terms of Appwrite — is correct, and counting words was the wrong
+instrument.** Recorded here because a measurement that nearly produced a false entry in this document
+is worth more than one that merely confirmed something.
+
+**What is true instead is narrower and worse.** Three of the twelve signatures pass a vendor-issued
+identifier across the boundary:
+
+```
+def get_latest_file_id(self, filters) -> Optional[str]
+def get_file_metadata(self, file_id: str) -> OperationResult
+def delete_prediction(self, file_id: str) -> OperationResult
+```
+
+and `views_pipeline_core/modules/appwrite/file.py:308` documents what that string is, in our own
+words: *"fileId: Appwrite storage file ID."* The abstraction hides where the file sits. It does not
+hide the vendor's name for the file. And the identifier does not stay inside the caller — `fileId`
+is a **required** attribute of `FIXED_METADATA_ATTRIBUTES` in
+`views_pipeline_core/modules/appwrite/provisioning.py`, so it is written into the metadata record
+that travels between repositories.
+
+**Why this is load-bearing for this ADR.** The decision above moves the client behind an HTTP
+boundary. That move does nothing about this. A gateway route called `GET /predictions/latest` that
+returns an Appwrite file id has the same defect as a method called `get_latest_file_id` that returns
+one — the day the vendor is replaced, there is nothing for it to return, and every stored, logged or
+recorded identifier is a dead reference. **The duplication this ADR was written to remove is the
+symptom; the identity scheme is the thing that makes the vendor expensive to leave.**
+
+**The literature.** Ousterhout §4.3 names this a **false abstraction** — one that omits a detail the
+caller genuinely needs, so that it "might appear simple, but in reality it isn't." `download_prediction`
+reads as vendor-neutral and is not, because of what the caller must hold to call it. Martin's Figure
+17.2 puts `DatabaseInterface` above the boundary and `Database Access` below it; the arrangement only
+works if what crosses the line is expressed in the business's terms. A vendor-issued identifier
+crossing the line defeats the figure regardless of how the methods are named.
+
+**What would settle it.** Decide who issues the identifier that callers hold. If VIEWS issues it — a
+run name, a level, an outcome, a content hash — then the vendor's id stays inside the adapter and
+replacement is a rewrite of one component. If the vendor issues it, replacement reaches every holder
+of a stored id, and the gateway's value is reduced to removing duplicated lines.
+
+**What this does not settle.** Whether the existing `fileId` values must be migrated, what a
+VIEWS-issued identifier would look like, or whether this changes the seam contract. None of that is
+decided here, and this entry is not a proposal.
+
+**Filed as investigative placeholders on 2026-11-24**, so the question survives this session without
+constraining the design: views-pipeline-core#619 (where the scheme is defined),
+views-faoapi#615, views-crafdapi#261, views-postprocessing#343. All four are explicitly not work
+items and nothing is blocked on them.
+
 ### 2026-11-24 — This review has read ch. 4 only
 
 **Raised by:** the same session, about itself.
 
 The entries above come from chapters 4 and 5 of one book, read on 2026-11-23 and 2026-11-24. The same reading list
 holds Hohpe & Woolf ch. 2 and 10, Newman ch. 1 and 4, Freeman & Pryce ch. 8, and Martin ch. 17, 24,
-27 and 30, none of which has yet been read against this document. Expect further entries, and do not
+27 and 30. **Updated 2026-11-24:** Martin ch. 17 and Hohpe & Woolf ch. 10 have since been read
+against this document and produced the two entries above them; the remainder have not. Expect further entries, and do not
 read the current list as the complete set of objections.
 
 ---
