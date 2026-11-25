@@ -20,6 +20,11 @@ section, and goes there. Some is more general — a criterion, a reframing, a th
 wrong about — and has no obvious home yet. Writing it into an existing ADR would overstate its
 settledness; writing a new ADR would be premature. It goes here instead.
 
+**Where the code checks live.** This document records what the literature says. It does not record
+how to check whether our own code complies — that is `boundary_tests.md`, a catalogue of tests that
+can be run against a repository, with what each one has said so far and what it cannot tell you.
+Added 2026-11-25 after the tests accumulated past the point where they could be remembered.
+
 **An entry graduates** when it becomes a decision, at which point it moves into an ADR and the entry
 here says where it went. An entry can also die, and saying so is useful.
 
@@ -214,6 +219,9 @@ expressed in the application's own terms, tested against the real third-party AP
   the maintainer on 2026-11-23, not yet answered.
 - **The seam contract's silence on the record's shape.** It fixes the coordinates and points at no
   declaration of what sits at them. This repository's to fix.
+- **views-datafactory has not been assessed.** Requested by the maintainer on 2026-11-25. It
+  references Appwrite in several places, so it is in scope and has simply not been looked at. Tracked
+  with a starting point in `boundary_tests.md`.
 - **The prediction store's move off Appwrite to Hetzner.** Out of scope for ADR-012 by its own point
   4, and marked *not decided* on the platform target drawing. Named here so the deferral stays a
   decision rather than becoming a gap.

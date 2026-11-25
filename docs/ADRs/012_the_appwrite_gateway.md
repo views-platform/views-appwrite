@@ -407,7 +407,8 @@ order to use a module, then that information is part of the module's interface."
 cannot be demonstrated by a test, a linter, an import-contract check or a grep. It can be
 demonstrated only by asking, of every identifier that crosses the boundary, who issued it and whether
 anything other than the vendor could have issued it. Any acceptance criterion written for this ADR
-has to be a question put to a reader, not a check run in CI.
+has to be a question put to a reader, not a check run in CI. The question, and the other tests this
+boundary can be put to, are catalogued in `docs/boundary_tests.md`.
 
 **What would settle it.** Decide who issues the identifier that callers hold. If VIEWS issues it — a
 run name, a level, an outcome, a content hash — then the vendor's id stays inside the adapter and
