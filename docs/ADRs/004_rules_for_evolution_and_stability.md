@@ -84,6 +84,72 @@ Those topics are intentionally postponed.
 
 ---
 
+## Challenges and questions
+
+Raised during review and kept here on purpose. **These are not decisions.** They change nothing above
+them. Each entry records when it was raised, what prompted it, and what would settle it.
+
+### 2026-11-25 — A trigger condition fired on 2026-08-02 and this ADR is still Deferred
+
+**Raised by:** a multi-expert review of `views-faoapi` and `views-crafdapi` on 2026-11-25
+(`reports/2026-11-25_faoapi_crafdapi_review.md`), read back against this document.
+
+**The concern.** "Trigger Conditions for Reconsideration" lists *"A second consumer API is cloned from
+`views-faoapi`"*. **Fact, checked 2026-11-25:** `views-crafdapi` was forked from `views-faoapi` on
+2026-08-02. The trigger fired nearly four months ago and this ADR is unchanged.
+
+That is not an argument for ratifying evolution rules today — the Rationale for Deferral still holds,
+since no code exists here. It is an argument that **a deferral with trigger conditions needs something
+that checks them**, or the deferral silently becomes a permanent absence. This ADR was written to
+"prevent ad-hoc or implicit policies from emerging unnoticed", and in the four months since the
+trigger fired, two consumer repositories have evolved independently under no ratified policy at all.
+
+**What would settle it.** Either a mechanism that tests the trigger conditions on a schedule, or an
+honest amendment saying the triggers are advisory and the activation point is publication of `v0.1.0`
+alone.
+
+### 2026-11-25 — The evolution rules being deferred are all rules about adding. The measured need is a rule about removing.
+
+**Raised by:** the same review.
+
+**The concern.** Every item under "Non-Decisions" governs how the package may **grow or change
+compatibly**: versioning schemes, release processes, migration tooling, deprecation mechanics, API
+stability guarantees. Deprecation is the closest thing to removal, and it is about how to retire a
+published promise gracefully.
+
+None of it governs the failure actually observed in the consumers.
+
+**What was measured in the consumers. Fact, checked 2026-11-25.** `views-faoapi` has **122 open
+issues**, of which 50 are labelled `story`, 12 `epic` and 31 `planning`; `views-crafdapi` has 72.
+Reading all 122 titles, **not one proposes removing a capability.** Every issue is a correct response
+to a real finding, and every one adds a guard, a proof, a runbook or a test. Over the same period the
+repository reached 14,855 source lines against 29,171 test lines, of which **1,656 source lines are
+not reachable from the running application at all** — `plotting.py`, `smoke.py`, `client.py`, a
+`wandb` dependency on a serving box, and five smaller modules.
+
+The maintainer's own description of the effect, 2026-11-25: *"every time I do, their code base just
+grows and grows and grows. Nothing ever stops."*
+
+**The structural reading.** A governance system made entirely of additive obligations — ADR-005
+requires tests, ADR-008 requires observability, ADR-010 requires risk-register entries, ADR-006
+requires intent contracts — produces exactly this. Each obligation is individually right. Together
+they mean the cheapest correct response to any finding is to add something, and the most expensive is
+to delete something, because deletion has to argue against every obligation at once. **The governance
+is not failing; it is working, in one direction only.**
+
+**What would settle it.** A rule in whichever ADR eventually supersedes this one that makes removal a
+first-class move. The review's proposal, recorded here as a candidate and not as a decision: *a commit
+that closes an issue must reduce the line count, or state in its message why it cannot.* It is cheap,
+it is checkable, and it does not forbid anything — it only forces the growth to be deliberate.
+
+**What this does not settle.** Whether that rule belongs in this ADR's successor, in ADR-000's rules
+for the ADR process, or in `contributor_protocols/`. Nor whether it should apply to tests, where the
+line count is not the cost that matters. And it is explicitly not a licence to delete: the same review
+found that two of the nine unreachable modules have dozens of references in notebooks and delivered
+documentation, and should be moved rather than removed.
+
+---
+
 ## Consequences
 
 ### Positive

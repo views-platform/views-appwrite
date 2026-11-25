@@ -210,6 +210,38 @@ expressed in the application's own terms, tested against the real third-party AP
 
 ---
 
+## The governance works in one direction only
+
+**Recorded 2026-11-25**, from a multi-expert review of the two partner services
+(`reports/2026-11-25_faoapi_crafdapi_review.md`). This is a lesson about our own documents rather
+than about a book, which is why it sits outside the per-source sections.
+
+**What was measured.** `views-faoapi` has 122 open issues and `views-crafdapi` has 72. Reading all 122
+titles, **not one proposes removing a capability.** Every issue is a correct response to a real
+finding and every one adds something — a guard, a proof, a runbook, a test, an ADR.
+
+**Why that is our doing, not theirs.** Our obligations are all additive. ADR-005 requires tests.
+ADR-006 requires intent contracts. ADR-008 requires explicit failure. ADR-010 requires register
+entries. Each is right on its own. Together they make adding the cheapest correct response to any
+finding and deleting the most expensive, because a deletion has to argue against all of them at once.
+
+**The consequence, in the maintainer's words on 2026-11-25:** *"every time I do, their code base just
+grows and grows and grows. Nothing ever stops."* Four weeks behind schedule, with paying partners
+unserved, on a codebase whose engineering standard is high throughout.
+
+**Where this went.** ADR-004's challenges section, as the second entry of 2026-11-25, since ADR-004 is
+the deferred home for rules about how the system may change. A candidate rule is recorded there and is
+not a decision: *a commit that closes an issue must reduce the line count, or say in its message why it
+cannot.* Also into `views-publicapi/SPECS.md` §11.6, which generalises that spec's own existing rule —
+*"A fifth parameter needs a named person who wants it"* — from one parameter to everything the service
+publishes.
+
+**What it does not settle.** Whether the rule belongs in ADR-000's process rules, in a successor to
+ADR-004, or in `contributor_protocols/`. And whether it should apply to tests at all, where line count
+is not the cost that matters.
+
+---
+
 ## Still open across all of it
 
 - **Library or service.** Unresolved. See §1.
