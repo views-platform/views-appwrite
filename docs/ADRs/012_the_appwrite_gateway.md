@@ -424,14 +424,75 @@ constraining the design: views-pipeline-core#619 (where the scheme is defined),
 views-faoapi#615, views-crafdapi#261, views-postprocessing#343. All four are explicitly not work
 items and nothing is blocked on them.
 
+### 2026-11-25 — Martin ch. 27: a service coupled by its data record may not be architecturally significant at all
+
+**Raised by:** a reading session working through Martin, *Clean Architecture*, ch. 27 ("Services:
+Great and Small") against this document on 2026-11-25. Quotations verified against the chapter
+extract at `~/Desktop/views_blueprints/reading/2_Martin_boundaries_services_database.pdf`.
+
+**What the chapter says.** It opens by challenging the two benefits usually claimed for services.
+On decoupling: *"Yes, services are decoupled at the level of individual variables. However, they can
+still be coupled by shared resources within a processor, or on the network. What's more, they are
+strongly coupled by the data they share."* The example given is this platform's situation almost
+exactly: *"if a new field is added to a data record that is passed between services, then every
+service that operates on the new field must be changed. The services must also strongly agree about
+the interpretation of the data in that field. Thus those services are strongly coupled to the data
+record and, therefore, indirectly coupled to each other."*
+
+And on whether a service is architecture at all: *"Services that simply separate application
+behaviors are little more than expensive function calls, and are not necessarily architecturally
+significant."* His criterion is stated in the same paragraph — architecture is *"defined by boundaries
+that separate high-level policy from low-level detail and follow the Dependency Rule."*
+
+**What this document already says, and should get credit for.** The section "What this costs, and what
+it does not fix" states it plainly: *"Several programs still exchange work through one shared store.
+They remain coupled through its structure, schema changes still reach everyone, and the agreement
+still has to be negotiated and versioned."* On the data-coupling point, ch. 27 is not news to this
+ADR. The honesty was already here.
+
+**What is new is the consequence for what this decision may claim.** Measured against Martin's
+criterion, most of the argument in "Why a service rather than a library" is about *maintenance* rather
+than *architecture*: one deployment instead of three, one copy of the code instead of five, one place
+to apply a fix. Those are real and they are reason enough to do this. They are not the same thing as
+having drawn an architectural boundary, and this document should not be read as claiming both on the
+strength of arguments for one.
+
+**But the chapter also hands this ADR its answer, and it is a good one.** Martin's data-coupling
+argument assumes the record simply passes between services. This decision's premise, stated under
+"Why a service rather than a library", is that it need not: *"A database is built so any authorised
+client can read anything — that is its virtue and it is why it cannot hide anything. A program in
+front of it can refuse."* A gateway is therefore a candidate remedy for the decoupling fallacy rather
+than an instance of it — **but only to the extent that what crosses its routes is expressed in the
+business's terms.** A route that hands back an Appwrite file id reproduces the coupling in a new
+place and adds a network hop for it.
+
+**Which makes the two challenge entries above one question, not two.** The identity-scheme entry of
+2026-11-24 reads, on its own, like a detail about three method signatures. Read with ch. 27 it is the
+load-bearing question: **what crosses the gateway's routes is what decides whether this decision is
+an architectural boundary or an operational convenience.** Both are defensible outcomes. Only one of
+them is what the document currently sounds like it is claiming.
+
+**What would settle it.** The same thing that would settle the entry above — decide what crosses the
+routes, and in whose vocabulary. No further reading is required to make that decision.
+
+**What this entry does not propose.** It proposes no refactor, no change to any of the seven numbered
+points, and no change of scope. The decision may well stand exactly as written; what is in question
+is a claim, not a plan. Recorded because a document that overstates what it achieved is harder to
+correct later than one that understated it — and because the maintainer's instruction on 2026-11-25
+was explicit that this effort is not to turn into a wholesale restructuring on the strength of a
+reading list.
+
+---
+
 ### 2026-11-24 — This review has read ch. 4 only
 
 **Raised by:** the same session, about itself.
 
 The entries above come from chapters 4 and 5 of one book, read on 2026-11-23 and 2026-11-24. The same reading list
 holds Hohpe & Woolf ch. 2 and 10, Newman ch. 1 and 4, Freeman & Pryce ch. 8, and Martin ch. 17, 24,
-27 and 30. **Updated 2026-11-24:** Martin ch. 17 and Hohpe & Woolf ch. 10 have since been read
-against this document and produced the two entries above them; the remainder have not. Expect further entries, and do not
+27 and 30. **Updated 2026-11-25:** Martin ch. 17 and 27 and Hohpe & Woolf ch. 10 have since
+been read against this document and produced the three entries above them; Martin ch. 24 and 30,
+Newman ch. 1 and 4, and Freeman & Pryce ch. 8 have not. Expect further entries, and do not
 read the current list as the complete set of objections.
 
 ---
