@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.9.0"                          # Versions in lockstep with the contract (§10);
+version = "1.9.1"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -208,6 +208,39 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.9.1"]
+obliges_consumers = false
+summary = """The CRAF'd containers in the new project are measured, and they are complete.
+Read-only with `publisher-2026-11`, by the operator, 2026-11-25, in the project named by
+[connection.APPWRITE_CRAFD_PROJECT_ID]: `file_metadata` holds the table `crafd` with ALL THIRTEEN
+declared columns, the indexes `idx_fileId`, `idx_file_hash` and `idx_category_type_name`, and ZERO
+rows; `crafd_bucket` exists. **This is the first column count this file has carried for `crafd`** —
+v1.8.3 recorded 16 on `unfao` and 13 on `production_forecasts` and nothing for this one.
+
+It settles a disagreement between two sessions planning the same migration: one held the crafdapi
+project was empty, the other that the table was provisioned 2026-11-12. The second was right. The
+consequence is operational: **views-pipeline-core's TablesDB release does not need the provisioner
+switch.** No container has to be created, so the provisioner remaining on the Databases API cannot
+block a delivery that a post-1.8 key must make.
+
+Also PROVEN BY REQUEST, which is what §8 asks for and a console listing is not: `publisher-2026-11`
+carries `tables.read`, `rows.read` and `buckets.read`. Its `rows.write`, `files.write` and
+`files.read` are console readings only; the first delivery proves those, not this.
+
+**The keys in that project are not named what this contract predicted.** They are
+`server-2026-11`, `publisher-2026-11`, `partner-views-2026-11`, `partner-ocha-2026-11` and
+`partner-undp-2026-11`. There is no `crafdapi-server` — the name v1.9.0 and the þing record both
+use — and there never was. The console is authoritative for a key's name, and the companion
+inventory keys by console name for exactly this reason (views-crafdapi C-256). Two of the five are
+held by parties this seam has never named: **OCHA and UNDP**, the first external partners after
+CRAF'd and the UN FAO, both created 2026-11-25 and both expiring 2027-11 with no named renewal
+owner — the same shape as C-66, caught earlier this time.
+
+Observation-driven: no clause, no coordinate, no slot name and no class changes, so a consumer that
+ignores this edition behaves exactly as before and obliges_consumers_since stays at 1.5.2.
+**ZERO ROWS is the part to re-read later:** the table is correct and empty, so nothing here says a
+delivery works."""
 
 [edition."1.9.0"]
 obliges_consumers = false
