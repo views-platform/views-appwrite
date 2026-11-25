@@ -228,14 +228,17 @@ Also PROVEN BY REQUEST, which is what §8 asks for and a console listing is not:
 carries `tables.read`, `rows.read` and `buckets.read`. Its `rows.write`, `files.write` and
 `files.read` are console readings only; the first delivery proves those, not this.
 
-**The keys in that project are not named what this contract predicted.** They are
-`server-2026-11`, `publisher-2026-11`, `partner-views-2026-11`, `partner-ocha-2026-11` and
-`partner-undp-2026-11`. There is no `crafdapi-server` — the name v1.9.0 and the þing record both
-use — and there never was. The console is authoritative for a key's name, and the companion
-inventory keys by console name for exactly this reason (views-crafdapi C-256). Two of the five are
-held by parties this seam has never named: **OCHA and UNDP**, the first external partners after
-CRAF'd and the UN FAO, both created 2026-11-25 and both expiring 2027-11 with no named renewal
-owner — the same shape as C-66, caught earlier this time.
+**The keys in that project are not named what this contract predicted.** There are five: the
+server key `server-2026-11`, the publisher key `publisher-2026-11`, and three partner-tier reader
+keys. There is no `crafdapi-server` — the name v1.9.0 and the þing record both use — and there
+never was. The console is authoritative for a key's name, and the companion inventory keys by
+console name for exactly this reason (views-crafdapi C-256). Of the three partner-tier keys one is
+our own and **two are held by external partners this seam has not previously carried**, both
+created 2026-11-25 and both expiring 2027-11 with no named renewal owner — the same shape as C-66,
+caught earlier this time. **This file does not record which organisation holds a key, and a
+partner-tier key's name is not reproduced here where the name would identify the holder.** That is
+a standing rule for this repository, which is public; the operator's own partner-key records are
+where holders are tracked.
 
 Observation-driven: no clause, no coordinate, no slot name and no class changes, so a consumer that
 ignores this edition behaves exactly as before and obliges_consumers_since stays at 1.5.2.
