@@ -388,6 +388,27 @@ reads as vendor-neutral and is not, because of what the caller must hold to call
 works if what crosses the line is expressed in the business's terms. A vendor-issued identifier
 crossing the line defeats the figure regardless of how the methods are named.
 
+**Amended 2026-11-25 — the leak cannot be found by any structural check.** The line `file_id: str`
+names no vendor. Nothing imports Appwrite in order to read it, a search of the four repositories for
+the vendor's name does not return it, and a type checker accepts any string that is handed to it. The
+dependency is nevertheless real: only Appwrite can produce a value that call will accept. It travels
+as a primitive type, so it is invisible to the import graph, to a text search, and to the type system
+alike. The knowledge that makes it a dependency lives in a parameter name and in one docstring,
+`views_pipeline_core/modules/appwrite/file.py:308`, in a different repository from most of its
+callers.
+
+Ousterhout §4.2 describes exactly this, and the sentence that matters is the one about enforcement:
+the informal parts of an interface *"are not specified in a way that can be understood or enforced by
+the programming language"*, and *"if a developer needs to know a particular piece of information in
+order to use a module, then that information is part of the module's interface."* Read together with
+§4.3, a vendor identifier passed as `str` is a false abstraction whose falseness no tool can report.
+
+**The practical consequence for this ADR.** Whether the gateway has actually moved this dependency
+cannot be demonstrated by a test, a linter, an import-contract check or a grep. It can be
+demonstrated only by asking, of every identifier that crosses the boundary, who issued it and whether
+anything other than the vendor could have issued it. Any acceptance criterion written for this ADR
+has to be a question put to a reader, not a check run in CI.
+
 **What would settle it.** Decide who issues the identifier that callers hold. If VIEWS issues it — a
 run name, a level, an outcome, a content hash — then the vendor's id stays inside the adapter and
 replacement is a rewrite of one component. If the vendor issues it, replacement reaches every holder
