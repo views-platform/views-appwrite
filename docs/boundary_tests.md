@@ -257,10 +257,57 @@ component. Tabulate consumer against method.
 
 **Cost.** An hour or two. Mostly mechanical.
 
-**What it has said so far.** **Not run.** Two partial interfaces are known to exist in the platform —
-views-postprocessing's five-method store port and views-pipeline-core's twelve-method
-`DatastoreModule` — and the fact that one consumer already gets by with five of them is the reason
-this test is worth running before the gateway's routes are chosen.
+**What it said, 2026-11-25. Fact, checked that day across fifteen repositories in
+`views_platform`.** Searched every `.py` file for a call to each of `DatastoreModule`'s public
+methods, with docstrings and comments stripped, vendored virtualenvs under `views-models/envs/`
+excluded, and `to_dict` dropped from the analysis because the name also belongs to pandas, torch and
+xarray and cannot be attributed. That leaves eleven store operations.
+
+**Five of the eleven are called from production source. Six are not.**
+
+| operation | called from production source by |
+|---|---|
+| `upload_data` | views-pipeline-core (3 files), views-postprocessing (2) |
+| `get_predictions_by_metadata` | views-faoapi, views-crafdapi, views-postprocessing (2) |
+| `download_prediction` | views-faoapi (2), views-crafdapi (2), views-postprocessing (2) |
+| `get_latest_file_id` | views-faoapi (2), views-crafdapi (3), views-postprocessing (2) |
+| `get_file_metadata` | views-postprocessing (2) only |
+| `upload_predictions` | **nothing — 9 test files only** |
+| `download_latest_file` | **nothing — 2 test files only** |
+| `update_prediction_metadata` | **nothing — 2 test files only** |
+| `delete_prediction` | **nothing — 4 test files only** |
+| `list_all_predictions` | **nothing — 2 test files only** |
+| `list_all_predictions_unfiltered` | one audit tool, `views-models/tools/audit/verify_shelf_copy.py` |
+
+**Three findings, in order of how much they decide.**
+
+*The five-method store port is not a subset. It is the union.* The live set is exactly
+`upload_data`, `get_predictions_by_metadata`, `download_prediction`, `get_latest_file_id`,
+`get_file_metadata` — which is precisely what
+`views-postprocessing/views_postprocessing/{unfao,crafd}/store_port.py` already declares. ADR-012's
+"Still open — what operations it offers" names that port as one of two candidate shapes. It is not a
+candidate; it is the measured answer. **The gateway needs five operations.**
+
+*The reading side needs three.* views-faoapi's own source calls `get_predictions_by_metadata`,
+`download_prediction` and `get_latest_file_id`, and nothing else. views-crafdapi calls the same
+three. `get_file_metadata` is used only by views-postprocessing, and `upload_data` only on the
+writing side. So the two repositories where the duplication actually lives need three operations
+between them.
+
+*Every one of the eleven is implemented three times.*
+`views-faoapi/src/views_faoapi/managers/prediction/manager.py` and
+`views-crafdapi/src/views_crafdapi/managers/prediction/manager.py` each define all eleven, as does
+`DatastoreModule`. So each API maintains an eleven-operation store client in order to call three of
+them, and six operations that no production code path anywhere calls are maintained in triplicate.
+
+**What this test cannot tell you — and these caveats matter more than usual here.** *Test-only is not
+the same as unnecessary.* A test exists because somebody intended the behaviour, and the intention
+may be real even where the call site is not. The finding is that no production path reaches it, not
+that it should be deleted. *The search was Python only.* Notebooks, shell scripts, anything deployed
+outside `views_platform`, and any partner-side code were not searched. *The two APIs call their own
+implementations, not pipeline-core's.* The table counts operations performed against the store,
+which is the right unit for designing routes, but it is not an import graph. *`to_dict` is excluded*
+and is a value-object method rather than a store operation in any case.
 
 **What this test cannot tell you.** Whether a method nobody calls today is one somebody needs
 tomorrow. It measures present use, which is evidence, not a mandate.
@@ -319,7 +366,7 @@ inferred from a sibling.
 | 5. Substitution | — | — | — | — | n/a, no code | — |
 | 6. Shared literals | run | run | partial | run | n/a, no code | — |
 | 7. Change coupling | — | run | inconclusive | — | n/a, no code | — |
-| 8. Interface width | — | — | — | — | n/a, no code | — |
+| 8. Interface width | run | run | run | run | n/a, no code | run, no calls |
 | 9. Instrument coverage | run, platform-wide | | | | | |
 | 10. Dead defaults | — | run | run | — | n/a, no code | — |
 
@@ -336,6 +383,9 @@ where that matters most.
   two consumer guides, its risk register and an investigation report, so it is in scope for this
   effort and has simply not been looked at. Tests 3 and 4 are the cheapest place to start. Nothing is
   blocked on it.
+- **What to do about six operations that only tests call.** Test 8 found them; it cannot say whether
+  they were speculative or are simply between uses. Deciding needs the person who wrote them, or a
+  decision that the gateway offers five routes and the rest are reconsidered if someone asks for one.
 - **Which of tests 2 through 5 to run first.** Test 4 is the cheapest with a decisive answer. Test 2
   is the one tied to the finding ADR-012 calls load-bearing. Not decided.
 - **Whether any of these should become a standing check** rather than a thing someone remembers to
