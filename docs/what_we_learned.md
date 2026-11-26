@@ -178,16 +178,108 @@ Chapters 17 (Boundaries: Drawing Lines), 24 (Partial Boundaries), 27 (Services: 
 
 ---
 
-## 3. Hohpe & Woolf, *Enterprise Integration Patterns* — not yet read in full
+## 3. Hohpe & Woolf, *Enterprise Integration Patterns* — read 2026-11-25 and 2026-11-26
 
-Chapters 2 (Integration Styles), 10 (Messaging Endpoints).
+Chapters 2 (Integration Styles) and 10 (Messaging Endpoints), from the extracts at
+`~/Desktop/views_blueprints/reading/`. Every quotation below was taken from those files during the
+reading, not from memory.
 
-*Not yet written.* Preliminary note from the extracted claims, to be checked against the chapters:
-their **Messaging Gateway** is a thin layer inside each application, not a separate process, and its
-two stated benefits — testable with a stub, vendor replaceable without touching application code —
-are the two reasons this effort exists. Their four integration styles place this platform's delivery
-path closer to *file transfer* than to *shared database*, which matters because file transfer is the
-most decoupled of the four and its named cost is staleness, not coupling.
+### What the source says
+
+**Ch. 2 names four integration styles** — File Transfer, Shared Database, Remote Procedure
+Invocation, Messaging — ordered by increasing sophistication, *"each pattern builds on the last,
+looking for a more sophisticated approach to address the shortcomings of its predecessors."* The
+governing advice is per-integration, not per-platform: *"The trick is not to choose the one style to
+use always, but to choose the best style for a particular integration opportunity."*
+
+File Transfer's benefit is stated as total decoupling — *"integrators need no knowledge of the
+internals of an application... The files effectively become the interface of each application"* — and
+its costs are itemised as work you must do yourself: *"The applications must agree on file naming
+conventions and the directories they appear in. The writer of a file must implement a strategy to keep
+the filenames unique. The applications must agree on which one will delete old files... The
+applications will need to implement a locking mechanism or follow a timing convention to ensure that
+one application is not trying to read the file while another is still writing it."* Its named failure
+is staleness: *"updates tend to occur infrequently, as a result systems can get out of
+synchronization."*
+
+**Ch. 10's Messaging Gateway** is *"a class that wraps messaging-specific method calls and exposes
+domain-specific methods to the application"*, the worked contrast being a method called
+`GetCreditScore` rather than one that makes the caller set `Message.MessageReadPropertyFilter.AppSpecific`.
+Four of its clauses are operative for us and are quoted in full in the findings below: the
+domain-vocabulary rule, the exception-translation rule, the interface/implementation split for
+testing, and **Chaining Gateways** — a low layer that abstracts the vendor's syntax, wrapped by a
+high layer that offers a narrow domain API.
+
+### What it changes for us
+
+**First, a correction to the preliminary note this section replaces.** That note said the four styles
+place our delivery path *"closer to file transfer than to shared database."* **That is wrong, and the
+error is the finding.** The path is **both, simultaneously, for one integration**: the Parquet file in
+the bucket is File Transfer, the metadata table that indexes it is Shared Database. The vendor's file
+identifier is the **join between the two styles** — it exists only because both are running. The
+identity-scheme problem recorded in ADR-012 is therefore structural rather than accidental.
+
+Worse, we pay File Transfer's whole invoice and receive none of its benefit. The four self-imposed
+costs map one-to-one onto our code: unique names (outsourced to Appwrite, which is `fileId`, which is
+why the vendor is expensive to leave), who deletes old files (`remove_other_deliveries`), the
+write/read interlock (the manifest-last commit marker), and format agreement (the 13 metadata
+fields). But the files are **not** the interface — the SDK is, at roughly 2,400 lines per consumer
+repository — so consumers need deep knowledge of a vendor, which is the one thing the style exists to
+prevent.
+
+**Four places ch. 10 says plainly what we did, and what the alternative is.** These are the most
+actionable sentences either chapter contains.
+
+1. **Domain vocabulary, not vendor identifiers.** `get_file_metadata(file_id)` and
+   `get_latest_file_id()` are the `MessageReadPropertyFilter` case, not the `GetCreditScore` case.
+   Right: `latest_forecast(run, level, outcome)`, with no vendor handle crossing in either direction.
+2. **Translate the vendor's exceptions at the boundary.** *"the Messaging Gateway has to catch any
+   messaging specific exception and throw an application-specific (or a generic) exception instead.
+   This code can get a little tedious, but it is very helpful if we ever have to switch the underlying
+   implementations."* We hard-code `storage_file_not_found`, `storage_bucket_not_found` and
+   `collection_not_found` in three repositories. The book both prescribes the fix and predicts why it
+   gets skipped.
+3. **Separate interface from implementation so a stub exists.** *"one 'real' implementation that
+   accesses the messaging infrastructure and a 'fake' implementation for testing purposes... allows us
+   to test the application without any dependency on messaging."* We have no such split, so 2,046
+   lines of views-faoapi tests mock the vendor SDK instead — and did not catch views-faoapi#660.
+4. **Two thin layers, not one thick class.** Chaining Gateways describes a syntax layer wrapped by a
+   domain layer. `AppWriteFileManager` is 1,273 lines being both at once, plus provisioning. This is
+   the same object Ousterhout §9.4 calls a special-general mixture, named independently by two books.
+
+**It also supplies the acceptance test, which is the part worth keeping.** The chapter claims exactly
+two payoffs for a gateway — a stub to test against, and a replaceable implementation. So "have we
+built one?" has two pass/fail answers, and they are already written up as tests 4 and 5 in
+`boundary_tests.md`: install a consumer with the SDK absent and import it; put a fake store in the
+real one's place and run the suite. **Neither has been run.** Until one of them has, every claim in
+this section is an argument rather than a measurement.
+
+**What we already do correctly**, recorded so the section is not only an indictment:
+`views-postprocessing/views_postprocessing/{unfao,crafd}/store_port.py` is a five-method port in
+forecast terms, and the 2026-11-25 count found those five are the complete set anything calls.
+`contract/store_metadata.py` says in its own docstring *"This is the only place that knows that
+shape."* Both predate anyone here reading the book.
+
+### What it does not settle
+
+- **Whether to keep two integration styles or collapse to one.** Ch. 2 sanctions mixing — per
+  opportunity. It does not say whether this opportunity justifies it. Collapsing to File Transfer
+  alone requires VIEWS to issue its own names, which is ADR-012's open question and is not decided.
+- **Whether a gateway should be a library or a service.** Ch. 10's Messaging Gateway is *a class
+  inside the application*. ADR-012 proposes a separate process. The chapter is simply not evidence
+  either way, and reading it as support for ADR-012's shape would be a misuse of it.
+- **Whether the metadata table is needed at all** once a filename carries identity. Nobody has
+  checked what the two partner APIs read from it beyond "which file is newest".
+- **Anything about Messaging**, the fourth style. Monthly batch with three consumers does not need
+  it. Worth recording as a decision rather than an omission.
+
+### Where parts of this went
+
+The identity-scheme consequence is ADR-012's challenge entry of 2026-11-24. The lapsed-premise
+finding about `views-pipeline-core` ADR-046 is that repository's issue #627, cross-referenced from
+ADR-012 and from `views-publicapi/SPECS.md` §10 item 9. The two acceptance tests are tests 4 and 5 of
+`boundary_tests.md`. **Nothing from this section has graduated into a decision**, and the four
+numbered findings above are the ones that should, when the gateway's shape is settled.
 
 ---
 
