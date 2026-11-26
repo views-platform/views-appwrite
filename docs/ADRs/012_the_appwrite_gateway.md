@@ -164,7 +164,7 @@ six repositories on 2026-11-26. The scope grew and there was never a second deci
 
 This matters to this ADR in a specific way: **ADR-012 proposes to improve a boundary whose reason for
 existing is no longer recorded anywhere.** That does not make the gateway wrong, and nothing here is
-blocked on it. But whatever this ADR settles should be checked against ADR-046 before it is accepted,
+blocked on it. But whatever this ADR settles should be checked against views-pipeline-core's ADR-046 (that repo) before it is accepted,
 because if the premise underneath has lapsed, a decision built on it inherits the gap. Filed as
 **views-pipeline-core#627**, which asks for a challenge entry there rather than a rewrite. Revisit
 both when the open questions above have answers.

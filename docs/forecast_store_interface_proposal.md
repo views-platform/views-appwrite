@@ -210,7 +210,7 @@ authentication anywhere.** A caller is someone whose store credential works.
 **Job 4 — the revocation mechanism, also missed.** views-faoapi#588 keeps that probe deliberately
 and states why: *"If the service reads under its own credential and never re-checks the caller's
 key, a revoked key keeps being served indefinitely. The caller key must still be probed."*
-crafdapi's ADR-044 §2 is quoted there as the pattern: *"keys only decide who gets in: checked with
+views-crafdapi's ADR-044 §2 (that repo) is quoted there as the pattern: *"keys only decide who gets in: checked with
 the store and remembered for one minute, so a deleted key stops working within a minute."*
 
 **What this does to the proposal.** "Make it unnecessary" addressed the data path and silently
