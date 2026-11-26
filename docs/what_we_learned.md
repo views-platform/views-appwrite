@@ -302,6 +302,71 @@ expressed in the application's own terms, tested against the real third-party AP
 
 ---
 
+## What four books did to the question — the synthesis, and why it was late
+
+**Written 2026-11-27**, after the maintainer pointed out that four books had been read and no
+hypothesis had become more likely than any other. He was right, and the fault was in the method
+rather than in the sources: each section above was written as a book was finished, and **nothing ever
+asked what all of them say together.** Reading without a synthesis step produces criteria, and
+criteria can only ever tell you that what you have is wanting. This section is the step that was
+missing.
+
+### The question
+
+What should `views-appwrite` be? ADR-012 answers: a published package, installed on exactly one
+machine, run there as a service, reached by everyone else over HTTP, imported by nobody. Status
+Proposed.
+
+### What the reading did to each candidate
+
+| Candidate | Before | After | What moved it |
+|---|---|---|---|
+| **Remove the vendor entirely** | plausible | **ruled out** | It is the only partner authentication and the only revocation mechanism. Checked 2026-11-26. |
+| **Leave it as it is** | plausible | **ruled out** | Five copies of the client; 2,046 test lines mocking a pinned SDK; one upstream rename that became a platform incident. |
+| **Contracts only, no shared code** | plausible | **unlikely** | The seam contract exists and the two APIs drifted anyway. Agreement without shared code has already been tried here. |
+| **A service** | the proposal | **downgraded** | Martin ch. 27; Newman ch. 4 on payload size and on interfaces that cannot change atomically. |
+| **A library** | barely considered | **the leader** | Hohpe & Woolf's gateway is *a class*; Freeman & Pryce's adapter is a layer inside the application; Newman's two objections do not apply to it. |
+
+**Three of the four sources point at a library. The ADR of record proposes a service.** That is the
+plainest result of the whole exercise and it took four days to state.
+
+### The bigger reduction: the question was malformed
+
+Ranking the candidates matters less than this. **The vendor is doing four jobs, and "what replaces
+it" has a different answer for each.**
+
+| Job | Where the evidence points |
+|---|---|
+| File storage | out of the consumers entirely — the strongest conclusion available |
+| The index of which file is newest | collapses into storage; a file-based index with an atomic commit marker already exists in the run manifest, and the database is a second index doing the same work |
+| Partner identity | stays, for now. Nobody has proposed a replacement and this is the genuine lock-in |
+| Revocation | rides on identity |
+
+So the converged position, stated as a position and not a decision: **a small library on the write
+side where the SDK is genuinely needed; readers obtaining files and importing nothing; the APIs
+continuing to use the vendor to check who is calling.** Narrower than ADR-012's points 1 to 3, and
+arrived at from the reading rather than from preference.
+
+### What remains open, and it is two things rather than six
+
+1. Whether the write-side library is worth building at all, against leaving the producer's code where
+   it sits.
+2. What eventually replaces the vendor as the partner identity provider. This is the real cost of
+   leaving and **it is priced in no document on this platform**, ADR-012 included: external
+   organisations hold the vendor's own credentials, so leaving is a re-credentialing of outside
+   parties on their timetable, not a data migration.
+
+### The methodological lesson, which is the part worth keeping
+
+**Reading serially and reporting serially is not reading.** Four sources were summarised one at a
+time, each producing a list of ways the current system falls short, and the distribution over answers
+never moved because nobody computed it. The synthesis is cheap — it is the table above — and it
+should be written after the second source, not the fourth. Recorded here because this document's
+whole purpose is to turn reading into something usable, and for four days it was turning reading into
+more reading.
+
+---
+
 ## The governance works in one direction only
 
 **Recorded 2026-11-25**, from a multi-expert review of the two partner services

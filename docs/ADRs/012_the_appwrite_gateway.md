@@ -499,6 +499,71 @@ reading list.
 
 ---
 
+### 2026-11-27 — Synthesised: three of the four sources point at a library, and this ADR decides a service
+
+**Raised by:** the reading sessions of 2026-11-23 to 2026-11-27, taken together rather than one book
+at a time. The entries above were written serially as each source was read, and no entry asked what
+all of them say about this ADR's central choice. **This one does, and it is the first entry that
+challenges the decision itself rather than its wording.** Every quotation is from the chapter
+extracts on disk.
+
+**What the sources say about library versus service.**
+
+- **Hohpe & Woolf, ch. 10** prescribe *"a Messaging Gateway, a class than wraps messaging-specific
+  method calls and exposes domain-specific methods to the application."* **A class.** Their gateway
+  lives inside the calling application. ADR-012's "Why a service rather than a library" cites
+  Hohpe & Woolf's gateway as its model; the pattern as written is a library.
+- **Freeman & Pryce, ch. 8** prescribe an adapter layer in the application's own terms, *"as thin as
+  possible"*, tested with a fake. Also a library.
+- **Newman, ch. 4** supplies two arguments against the service shape that appear nowhere in this
+  document. *Payload:* across a network *"the data actually has to be serialized... we may need to be
+  more mindful about the size of payloads"*, and his suggested remedy is the opposite of a download
+  route — *"offload data to a filesystem and pass around a reference to that file location instead."*
+  A forecast is hundreds of megabytes. *Changeability:* *"when making a backward-incompatible change
+  to a microservice interface, we either need to do a lockstep deployment with consumers... or else
+  find some way to phase the rollout."* In a library the interface changes atomically.
+- **Martin, ch. 27** is the entry of 2026-11-25 above: a service that merely separates behaviour is
+  *"little more than expensive function calls."*
+
+**What still argues for the service, stated fairly, because this ADR made the argument and the
+reading has not answered it.** Point 2 of the decision and the section "Why a service rather than a
+library" rest on three claims the books do not touch: that *"a database is built so any authorised
+client can read anything... A program in front of it can refuse"*; that a library means *"a release
+and three separate deployments, with the copies disagreeing in the meantime"* while a service means
+one; and Newman's own page 42, quoted in this ADR, that code which must update for all users at once
+belongs in a service. **The first of those is the strongest argument in the document and nothing read
+since has weakened it.**
+
+**The larger finding, which reframes the question rather than answering it.** Checked 2026-11-26:
+Appwrite is performing **four** jobs, not one. File storage; the index of which file is newest;
+**the identity provider for partners** — `views-faoapi/src/views_faoapi/managers/api.py:408` and
+`views-crafdapi/src/views_crafdapi/managers/api.py:486` both decide whether a caller is allowed by
+making a live call to the store with that caller's own credential, and there is no other list of
+callers anywhere; and **the revocation mechanism**, which views-faoapi#588 keeps deliberately so that
+a withdrawn credential stops working within a minute.
+
+This ADR's scope — point 4, "the Appwrite delivery boundary" — reads as though the boundary is one
+thing. It is at least two: a data path and an identity path, with different answers. A gateway that
+moves the data path and leaves the identity path is a coherent and probably correct thing to build;
+this document does not currently distinguish them, so it cannot say which it is proposing.
+
+**Where the weight now sits, stated as a position and not as a decision.** A small library on the
+**write** side, where the vendor's SDK is genuinely needed; readers obtaining files and importing
+nothing; the partner-facing APIs continuing to use the vendor to check who is calling, which nobody
+has yet designed a replacement for. That is a narrower thing than points 1 to 3 describe.
+
+**What would settle it.** The two tests in `docs/boundary_tests.md` that have never been run — install
+a consumer with the SDK absent and import it; put a fake store behind the five operations and run the
+existing suite. Plus one decision this ADR could take today: **state whether its boundary is the data
+path, the identity path, or both.** That costs nothing and the rest of the question narrows sharply
+once it is answered.
+
+**What this entry does not settle.** Whether the write-side library is worth building at all against
+leaving the producer's code where it is. What replaces the vendor as identity provider, which is the
+real lock-in and is priced in no document, this one included.
+
+---
+
 ### 2026-11-24 — This review has read ch. 4 only
 
 **Raised by:** the same session, about itself.
