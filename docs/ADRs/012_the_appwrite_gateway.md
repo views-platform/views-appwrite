@@ -154,6 +154,21 @@ One more thing, easy to miss and important: **every call to Appwrite is already 
 
 **How it knows who is calling.** Whether a caller presents its own credential through the gateway, or the gateway holds one on the caller's behalf. This touches the seam contract's identity model and how narrowly a partner's access can be scoped.
 
+**Check back on the decision this one is built on top of.** **Added 2026-11-26.** The ADR that
+introduced Appwrite to this platform is `views-pipeline-core/documentation/ADRs/046_appwrite_storage_integration.md`,
+*"Appwrite as Secondary Cloud Storage for views-faoapi"*, 2026-04-08. It decided a **convenience
+target for a single downstream consumer** that **can tolerate stale data** and whose failure **must
+not compromise pipeline execution**. None of those three clauses describes the platform today, and
+**no ADR in any repository decides that Appwrite is how VIEWS delivers to partners** — checked across
+six repositories on 2026-11-26. The scope grew and there was never a second decision.
+
+This matters to this ADR in a specific way: **ADR-012 proposes to improve a boundary whose reason for
+existing is no longer recorded anywhere.** That does not make the gateway wrong, and nothing here is
+blocked on it. But whatever this ADR settles should be checked against ADR-046 before it is accepted,
+because if the premise underneath has lapsed, a decision built on it inherits the gap. Filed as
+**views-pipeline-core#627**, which asks for a challenge entry there rather than a rewrite. Revisit
+both when the open questions above have answers.
+
 ---
 
 ## Challenges and questions
