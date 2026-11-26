@@ -194,6 +194,50 @@ document from argument into measurement.
 
 ---
 
+## The half-day check, run 2026-11-26 — and it found a flaw in this proposal
+
+**The proposal above analysed the store as two things. It is being used as four.** All four facts
+below were checked in the code on 2026-11-26.
+
+**Job 1 — file storage.** Analysed. **Job 2 — the index.** Analysed.
+
+**Job 3 — the identity provider, which this proposal missed.** `views-faoapi/src/views_faoapi/managers/api.py:408`
+`_validate_api_key` answers *"is this caller allowed?"* by making a live call to the store with the
+caller's own credential: `manager.list_files(bucket_id, limit=1)`. `views-crafdapi` does the same at
+`managers/api.py:486` with `list_buckets(limit=1)`. **There is no local list of callers and no other
+authentication anywhere.** A caller is someone whose store credential works.
+
+**Job 4 — the revocation mechanism, also missed.** views-faoapi#588 keeps that probe deliberately
+and states why: *"If the service reads under its own credential and never re-checks the caller's
+key, a revoked key keeps being served indefinitely. The caller key must still be probed."*
+crafdapi's ADR-044 §2 is quoted there as the pattern: *"keys only decide who gets in: checked with
+the store and remembered for one minute, so a deleted key stops working within a minute."*
+
+**What this does to the proposal.** "Make it unnecessary" addressed the data path and silently
+assumed the rest. Removing the store from the read path would leave the platform with no way to
+authenticate a caller and no way to cut one off. That is two capabilities that would have to be
+built from nothing. **The recommendation to collapse to File Transfer is not supportable as stated,
+and the five operations above do not cover authentication at all.**
+
+**What survives.** Taking the vendor out of the *data* path is still worth doing and still removes
+most of the code. It is a narrower claim than "make it unnecessary": the vendor would be retained as
+the identity provider while ceasing to be the delivery mechanism.
+
+**The cost nobody has written down.** External callers hold **the vendor's own** credentials, issued
+from its console. So leaving the vendor is not a migration of data — it is a re-credentialing of
+outside organisations, on their clock, coordinated. That is the most expensive form of lock-in this
+platform has, and it appears in no cost list, including ADR-012's.
+
+**One finding that cuts the other way.** `views-faoapi/docs/ADRs/active/027_authentication_and_per_key_isolation.md:138-141`
+carries a correction dated 2026-11-11 to two sentences that *"were false when written and stayed
+false for 138 days"*: **"Appwrite API-key scopes are granted per resource type and are project-wide;
+a key carrying `files.read` reads *every bucket in the project*, and keys bypass per-bucket
+permissions entirely. There is no such thing as a single-bucket key."** So a caller credential
+authenticates and does not isolate. þing-04 D1 answers this by making the *project* the unit of
+isolation, which is why the second partner was given one of its own.
+
+---
+
 ## What would make this proposal wrong
 
 Recorded now, so it can be checked rather than defended.
