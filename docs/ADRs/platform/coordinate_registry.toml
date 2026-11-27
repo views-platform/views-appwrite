@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.9.1"                          # Versions in lockstep with the contract (§10);
+version = "1.9.2"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -208,6 +208,37 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 [edition."1.5.2"]
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
+
+[edition."1.9.2"]
+obliges_consumers = false
+summary = """The console key names are not the names this contract predicted, and §2 stops
+naming who holds a key.
+
+THE NAMES. The keys in the CRAF'd audience project are `server-2026-11`, `publisher-2026-11` and
+three partner-tier reader keys. **There is no `crafdapi-server`** — the name v1.9.0 and the þing
+record both use — and there never was. The console is authoritative for a key's name, and the
+companion inventory keys by console name for exactly this reason (views-crafdapi C-256). Scope for
+scope the server key matches what v1.9.0 specified, including the deliberate absence of
+`buckets.read`; only the name differs.
+
+§2 STOPS NAMING HOLDERS. This repository is public. A public repository does not record which
+organisation holds a credential to a VIEWS service: that is a disclosure about a third party who has
+not agreed to it, and it cannot be withdrawn once pushed. §2's observed-state table now reads
+Partner A and Partner B, the same lettering the companion key inventory uses, where a letter means
+the same holder throughout both documents. Every operational fact is kept — which key, how many
+scopes, when it expires, who established it and when. Only the organisation is gone.
+
+What this does NOT fix, stated so it is not mistaken for closed: two console key names still contain
+a holder's name, and no document edit changes that — the console is authoritative and renaming a
+live key is a coordinated act with an external party. Filed as views-crafdapi#276.
+
+Of the three partner-tier keys one is this platform's own and two are held by external partners this
+seam has not previously carried, created 2026-11-25, expiring 2027-11 with no named renewal owner —
+the same shape as C-66, caught earlier this time.
+
+CLAUSE-TOUCHING but OBLIGES NOBODY: §2's table changes wording and no name, value, coordinate or
+class changes, so a consumer that ignores this edition behaves exactly as before and
+obliges_consumers_since stays at 1.5.2."""
 
 [edition."1.9.1"]
 obliges_consumers = false
