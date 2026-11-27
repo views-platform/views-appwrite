@@ -137,12 +137,43 @@ been inverted there, whatever the structure diagram says.
 
 **Cost.** One command plus reading a dozen files. Under an hour.
 
-**What it has said so far.** **Not run.** The nearest thing is test 0, which measured a word rather
-than an import and does not substitute.
+**Use this grep, not the one above.** **Corrected 2026-11-27.** The pattern as first written
+over-reports badly, because it matches any import whose module path merely contains the vendor's
+name. Three repositories here have first-party modules called `appwrite_env`, `appwrite_api` and
+`appwrite_manager`, and the loose pattern counts those as vendor coupling. Anchor it instead:
+
+```bash
+grep -rln "^\s*from appwrite[. ]\|^\s*import appwrite$\|^\s*import appwrite\." \
+  --include=*.py . | grep -v "/envs/\|site-packages"
+```
+
+**What it said, 2026-11-27. Fact, checked that day across seven repositories.**
+
+| repository | files importing the SDK |
+|---|---|
+| views-pipeline-core | **17** |
+| views-faoapi | **11** |
+| views-crafdapi | **6** |
+| views-postprocessing | **0** |
+| views-models | **0** |
+| views-datafactory | **0** |
+| views-appwrite | 0 (ships no code) |
+
+**Three repositories, 34 files. Not six repositories, and not five.** views-postprocessing,
+views-models and views-datafactory name Appwrite in comments, documentation and *their own module
+names*, and import the SDK nowhere. They already reach the store through views-pipeline-core.
+
+**This corrects the plan of record.** `docs/roadmap_shared_client.md`, under "Phase 1 as activated",
+states *"five repositories import the `appwrite` SDK directly — 21 files: views-crafdapi 5,
+views-faoapi 5, views-pipeline-core 7, views-postprocessing 2, views-models 2"*, checked
+2026-11-17. Two of those five import only first-party modules whose names begin `appwrite_`. The
+true scope is **smaller in repositories and larger in files** than the roadmap assumes, and two
+repositories it schedules for migration need none.
 
 **What this test cannot tell you.** Anything about identifiers carried as primitives — a file with no
 vendor import can still be handing out vendor handles. Tests 2 and 3 are complementary and neither
-replaces the other.
+replaces the other. It also says nothing about *how much* of the vendor each file uses, which is
+test 11.
 
 ---
 
@@ -352,6 +383,99 @@ searched repositories may rely on it.
 
 ---
 
+## 11. Count the vendor's actual surface
+
+**What it asks.** How many distinct things from the vendor's library does the platform use? Not how
+many lines wrap them — how many names you would have to re-implement or re-point if the vendor
+changed.
+
+**Why it is worth its own test.** Everything else here measures *our* code. This measures the
+*vendor's* footprint, and it is the number that sizes a migration. A 5,000-line wrapper around 18
+names is an 18-name problem with 5,000 lines of our own opinion attached; the two are moved by
+different work.
+
+**How to run it.**
+
+```bash
+grep -rh "from appwrite[a-z._]* import" --include=*.py <repos> | grep -v "/envs/" \
+  | sed 's/.*import //' | tr ',' '\n' | sed 's/\s//g' | sort -u
+```
+
+Read the output by hand afterwards: comment lines, `# noqa` suffixes and docstring text come through
+and must be discarded, which is judgment, not scripting.
+
+**What it said, 2026-11-27. Fact, checked that day.** **Eighteen distinct names, platform-wide:**
+
+| kind | names |
+|---|---|
+| services (the things that act) | `Client`, `Storage`, `Databases`, `TablesDB`, `Users` |
+| helpers | `Query`, `ID`, `InputFile`, `Permission`, `Role` |
+| errors | `AppwriteException` |
+| return types | `File`, `FileList`, `Document`, `DocumentList`, `RowList`, `Bucket`, `Preferences` |
+
+**Five service classes do all the work.** Seven of the eighteen are types the SDK hands back rather
+than anything we call.
+
+**And the client is constructed in exactly three places** — `views-faoapi/.../appwrite/manager.py:97`,
+`views-crafdapi/.../appwrite/manager.py:41`, and
+`views-pipeline-core/.../modules/appwrite/file.py:1475`. Every credential and coordinate the platform
+holds passes through one of those three lines. **That is the narrowest definition of the seam this
+platform has.**
+
+**What this test cannot tell you.** Whether those names are used well. Five service classes could be
+called correctly from one place or badly from forty — test 3 counts the files, this counts the
+surface, and the pair is more informative than either.
+
+---
+
+## 12. Diff the copies before merging them
+
+**What it asks.** Of several look-alike implementations, which differences are style and which are
+decisions? Run this **before** any consolidation, because the answer decides whether consolidation
+is cheap, expensive, or harmful.
+
+**Why it exists.** This repository's own design preferences adopt Sandi Metz's rule — *duplication
+is far cheaper than the wrong abstraction* — and state that *similar shape is not evidence*. This
+test is how you tell shape from substance instead of assuming.
+
+**How to run it.** For each corresponding file pair, `diff` them twice: once raw, and once with each
+repository's own name normalised away. The gap between the two counts separates naming from
+behaviour. Then read every surviving hunk and classify it: style, added capability, or **two
+answers to the same question**.
+
+**What it said, 2026-11-27, for views-faoapi against views-crafdapi. Fact, checked that day.**
+
+| | files | verdict |
+|---|---|---|
+| identical, or identical once the repo name is normalised | 3 | `constants.py`, `sdk_compat.py`, `provisioning.py` |
+| trivially different — typing style, import order, one added field | 4 | `auth.py`, `__init__.py`, `config.py`, `results.py` |
+| **substantially diverged, in both directions** | 3 | `manager.py`, `file_cache.py`, `metadata.py` |
+
+The three diverged files are **2,145 of views-faoapi's 2,421 lines and 2,042 of views-crafdapi's
+2,320**, and **neither repository is a superset of the other.**
+
+**The three divergences that are decisions, not drift:**
+
+- **`download_file` holds opposed resolutions of one incident class.** views-crafdapi hard-fails when
+  the downloaded byte count does not match the recorded size. views-faoapi deliberately skips that
+  check for SDK-auto-deserialised JSON, after a production incident on 2026-08-24 where re-serialised
+  manifests (26,544 → 22,676 bytes) were wrongly rejected as truncated. **Picking either breaks the
+  other.**
+- **Replace-on-upload.** views-faoapi stages then swaps and closed a data-loss window (C-182);
+  views-crafdapi still deletes the old file first.
+- **The timeout patch.** views-faoapi's is lock-guarded and installed once per process (#616);
+  views-crafdapi's documents in its own comment that it is not thread-safe.
+
+**The conclusion this test produced, which is the point of running it:** these are not three copies
+of one thing. They are three answers to three incidents, two of which only one repository has
+suffered. **About 250 lines are genuinely shared and the rest is not duplication at all.**
+
+**What this test cannot tell you.** Which answer is right. It tells you a choice exists and that
+somebody must read the incident behind it. For `download_file` that is a correctness decision and
+not a matter of taste.
+
+---
+
 ## Coverage so far
 
 A test is "run" only where it was actually executed against that repository, not where a result was
@@ -361,7 +485,7 @@ inferred from a sibling.
 |---|---|---|---|---|---|---|
 | 1. Public signatures | read | — | — | partial | n/a, no code | — |
 | 2. Identifier census | — | — | — | — | — | — |
-| 3. Import direction | — | — | — | — | n/a, no code | — |
+| 3. Import direction | **run** | **run** | **run** | **run, zero** | n/a, no code | **run, zero** |
 | 4. Deployability | — | — | — | — | n/a, no code | — |
 | 5. Substitution | — | — | — | — | n/a, no code | — |
 | 6. Shared literals | run | run | partial | run | n/a, no code | — |
@@ -370,18 +494,29 @@ inferred from a sibling.
 | 9. Instrument coverage | run, platform-wide | | | | | |
 | 10. Dead defaults | — | run | run | — | n/a, no code | — |
 
-**Note on views-crafdapi.** It is a deliberate copy of views-faoapi, kept so that the two can be
-watched drifting apart. A result from one is not evidence about the other, and test 7 is the test
-where that matters most.
+| 11. Vendor surface | **run, platform-wide — 18 names, 3 client constructions** | | | | | |
+| 12. Diff the copies | n/a | **run** | **run** | — | n/a, no code | — |
+
+**Note on views-crafdapi.** It was a deliberate copy of views-faoapi, kept so the two could be
+watched drifting apart. **Test 12 is that experiment reporting its result, 2026-11-27: they have
+drifted, in both directions, and three files now hold opposed answers to the same incidents.** A
+result from one was never evidence about the other; it is now demonstrably not.
 
 ---
 
 ## Still open
 
+- **Four tests have still never been run, and two of them are the decisive ones.** Test 2 (the
+  identifier census), test 4 (deployability — install a consumer with the SDK absent and import it),
+  test 5 (substitution — put a fake store behind the operations and run the suite). Tests 4 and 5 are
+  together about a day and they are what Hohpe & Woolf claim a gateway is *for*. Until one of them
+  has run, every architectural claim in this repository's documents is an argument rather than a
+  measurement.
 - **views-datafactory has not been assessed at all.** Requested by the maintainer on 2026-11-25. It
   references Appwrite in `src/datafactory_http/retry.py`, `docs/ADRs/026_credential_management.md`,
   two consumer guides, its risk register and an investigation report, so it is in scope for this
-  effort and has simply not been looked at. Tests 3 and 4 are the cheapest place to start. Nothing is
+  effort and has simply not been looked at. Test 3 has since been run against it: **zero SDK imports**, so it is further out of scope than
+  assumed. Test 4 remains the cheapest place to start. Nothing is
   blocked on it.
 - **What to do about six operations that only tests call.** Test 8 found them; it cannot say whether
   they were speculative or are simply between uses. Deciding needs the person who wrote them, or a

@@ -283,22 +283,116 @@ numbered findings above are the ones that should, when the gateway's shape is se
 
 ---
 
-## 4. Newman, *Building Microservices* — not yet read in full
+## 4. Newman, *Building Microservices*, 2nd ed. — ch. 4 read 2026-11-26; ch. 1 and ch. 3 not read
 
-Chapters 1 (What Are Microservices?), 4 (Communication Styles), 12 (Resiliency).
+Read: **ch. 4, "Microservice Communication Styles"**, from the extract at
+`~/Desktop/views_blueprints/reading/7_Newman_Ch04_communication_styles.pdf`. **Not read:** ch. 1
+(the extract exists on disk and has not been opened) and ch. 3 (incremental migration, the strangler
+fig), which a peer session has since named as the method for retiring the platform in pieces. ADR-012
+separately cites Newman p. 42 from an earlier session; that page is not in these extracts and the
+quotation there is inherited, not re-verified.
 
-*Not yet written.* ADR-012 already cites chapters 4, 5 and 12 and quotes p. 42 in support of a
-service. That quotation should be read in context before the ADR is advanced.
+### What the source says
+
+Ch. 4 is about what changes when a call stops being in-process. Two passages bear directly on
+ADR-012 and neither appears in it.
+
+**Payload.** *"When making calls between microservices over a network... the data actually has to be
+serialized into some form that can be transmitted over a network. The data then needs to be sent and
+deserialized at the other end. We therefore may need to be more mindful about the size of payloads
+being sent between processes."* His own suggested remedy is the opposite of a download route:
+*"offload data to a filesystem and pass around a reference to that file location instead."*
+
+**Changeability.** *"With communication between microservices... the microservice exposing an
+interface and the consuming microservices using that interface are separately deployable
+microservices. When making a backward-incompatible change to a microservice interface, we either
+need to do a lockstep deployment with consumers, making sure they are updated to use the new
+interface, or else find some way to phase the rollout."* In a library the same change is atomic.
+
+He also notes that an API which makes sense in-process may not survive the move: *"I can make one
+thousand calls across an API boundary in-process without concern. Do I want to make one thousand
+network calls between two microservices? Perhaps not."*
+
+### What it changes for us
+
+**It supplies the two arguments against ADR-012's service shape that nobody had written down.** A
+forecast file is hundreds of megabytes; as a library a fetch is free, as a service it is the whole
+payload crossing the network. And a service interface cannot be changed atomically — which is the
+wrong property to buy while nobody is yet confident the operations are the right ones.
+
+Together with Martin ch. 27 (§2) and the two gateway sources (§3, §5), this is what produced the
+synthesis below: **three of four sources point at a library and the ADR of record proposes a
+service.**
+
+### What it does not settle
+
+Whether ADR-012's own counter-argument survives. The ADR's strongest sentence — a program in front
+of a store can refuse what the store cannot — is about a capability, not about deployment, and ch. 4
+does not touch it. Nor does ch. 4 say a service is wrong; it says what a service costs.
 
 ---
 
-## 5. Freeman & Pryce, *Growing Object-Oriented Software* — not yet read
+## 5. Freeman & Pryce, *Growing Object-Oriented Software* — ch. 8 read 2026-11-26
 
-Chapter 8 (Building on Third-Party Code), four pages.
+Read: **ch. 8, "Building on Third-Party Code"**, from the extract on disk and confirmed against the
+full book at `~/dev/library/incoming/FreemanPryce2010_GOOS.pdf`, p. 70.
 
-*Not yet written.* Expected to bear directly on the vendor-vocabulary cluster: a thin adapter layer
-expressed in the application's own terms, tested against the real third-party API, with the rule
-*do not mock types you cannot change*.
+### What the source says
+
+The chapter has a rule with a title — **"Only Mock Types That You Own"**, subtitled **"Don't Mock
+Types You Can't Change"** — and a prescription.
+
+*The diagnosis, which is the part that makes it an instrument rather than an opinion:* **"tests that
+mock external libraries often need to be complex to get the code into the right state for the
+functionality we need to exercise. The mess in such tests is telling us that the design isn't right
+but, instead of fixing the problem by improving the code, we have to carry the extra complexity in
+both code and test."** Separately on correctness: *"we have to be sure that the behavior we stub or
+mock matches what the external library will actually do"*, and that the tests must *"remain valid
+when we upgrade the libraries"*.
+
+*The prescription, with its size constraint:* **"We write a layer of adapter objects... We keep this
+layer as thin as possible, to minimize the amount of potentially brittle and hard-to-test code. We
+test these adapters with focused integration tests to confirm our understanding of how the
+third-party API works. There will be relatively few integration tests compared to the number of unit
+tests."** The stated consequence: *"a set of interfaces that define the relationship between our
+application and the rest of the world in our application's terms and discourages low-level technical
+concepts from leaking into the application domain model."*
+
+*And the paragraph that is specifically about our problem*, on third-party **value** types rather
+than services: *"This pattern does not apply to value types because, of course, we don't need to
+mock them. We still, however, have to make design decisions about how much to use third-party value
+types in our code. They might be so fundamental that we just use them directly. Often, however, we
+want to follow the same principles of isolation as for third-party services, and translate between
+value types appropriate to the application domain and to the external domain."*
+
+### What it changes for us
+
+**It converts the test suite from a cost into evidence.** `views-faoapi` carries 29,171 test lines
+against 14,855 source lines, 261 `patch`/`Mock` call sites, and 2,046 lines whose subject is a
+vendor SDK pinned at an exact version — and none of it caught `views-faoapi#660`, the defect where a
+partner could be served the previous month's forecast. Under this chapter that suite is not
+thoroughness; it is the symptom the chapter names.
+
+**It independently corroborates §3's finding.** Hohpe & Woolf arrive at an adapter layer from
+integration patterns; Freeman & Pryce arrive at the same thing from testing practice. Two routes,
+same destination, which is worth more than either alone.
+
+**And it is the fourth independent source to point at `fileId`.** An Appwrite file id is a
+third-party *value* type that this platform adopted without deciding to. Ousterhout named the
+informal interface a type cannot carry; Martin named what may cross a boundary; Hohpe & Woolf named
+it the join between two integration styles; Freeman & Pryce name the decision nobody made.
+
+**It also indicts a plan of record.** `ADRs/005_testing_as_mandatory_critical_infrastructure.md`
+specifies five unit test files with the SDK mocked and names two of views-faoapi's vendor-mocking
+suites as drop-in replacement verifiers. That is challenged in ADR-005's own challenges section,
+2026-11-25, with this chapter as the evidence.
+
+### What it does not settle
+
+How thin is thin. `views-faoapi/src/views_faoapi/managers/appwrite/` is 2,421 lines for an adapter
+over three store operations, which is plainly not thin — but the chapter gives a direction, not a
+number. And it says nothing about whether the adapter is shared across repositories or written once
+per repository, which is the actual open question here.
 
 ---
 
@@ -367,6 +461,130 @@ more reading.
 
 ---
 
+## What this repository is, in a name the literature supports
+
+**Written 2026-11-27**, because the maintainer asked a question nobody had answered: *"when people
+ask what this repository is, I want to be able to say it is an X."* Every citation below was checked
+against the files on disk; where a source is **not** on disk that is said plainly, because the point
+of the exercise is to stop inventing names that sound like terms of art.
+
+### The short answer
+
+> **It is a Gateway — specifically a vendor gateway for one storage product — in the sense Fowler
+> gives the term, the same family as Hohpe & Woolf's *Messaging Gateway* and Martin's *Database
+> Gateway*.**
+>
+> Today it is not that yet. Today it is the platform's contracts home, and the gateway is an
+> activated but unwritten plan.
+
+**ADR-012 is already titled "The Appwrite Gateway".** The name was chosen before any of this reading
+and it turns out to be correct. What the reading adds is the lineage and the right to cite it.
+
+### Why "Gateway", and what can actually be quoted
+
+**Fowler, *Patterns of Enterprise Application Architecture*, p. 466** is the general pattern. **The
+book is not in the library** — checked across the whole filesystem — so its definition must not be
+quoted here. Two independent attestations of the locator exist and may be cited:
+
+- `Martin2017_CleanArch_Ch23`, footnote 2, verbatim: *"Patterns of Enterprise Application
+  Architecture, Martin Fowler, et. al., Addison-Wesley, 2003, p. 466."*
+- EIP's annotated bibliography: *"EAA — Martin Fowler, Patterns of Enterprise Application
+  Architecture, Addison-Wesley, 2003, ISBN: 0321127420"*
+
+**Hohpe & Woolf, EIP ch. 10** is in the library in full, and says the specialisation out loud:
+
+> *"A Messaging Gateway is a messaging-specific version of the more general Gateway pattern [EAA]."*
+
+and states the defining consequence — the one sentence that matches what this repository is for:
+
+> *"only the Messaging Gateway code knows about the messaging system; the rest of the application
+> code does not."*
+
+**Martin, *Clean Architecture* ch. 23** gives the other sibling and is the closest first-party
+restatement available: *"These gateways are polymorphic interfaces that contain methods for every
+create, read, update, or delete operation... Those gateways are implemented by classes in the
+database layer."*
+
+So the family has at least two named members already — *Messaging* Gateway for middleware,
+*Database* Gateway for persistence. A **vendor gateway** for one storage product is the same move,
+and naming it after Appwrite is consistent with how the family names its members.
+
+### What it is NOT, and why — because these were the candidates
+
+| Candidate | In the library? | Why it does not fit |
+|---|---|---|
+| **Anticorruption Layer** (Evans, DDD ch. 14) | yes, full book | Evans is explicit that it is *"a means of linking two BOUNDED CONTEXTS"* and *"**not** a mechanism for sending messages to another system"*. Its trigger is a foreign **domain model**, not a foreign API. Appwrite has no conflicting model of forecasts; it has files and rows. |
+| **Adapter** (GoF, p. 139) | yes, full book | *"Convert the interface of a class into another interface clients expect."* One object, wrong shape, and the target interface already exists. Too small a unit — it is a component of the thing, not the thing. |
+| **Facade** (GoF, p. 185) | yes, full book | Simplifies without re-expressing. Evans: *"The FACADE does not change the model of the underlying system. It should be written strictly in accordance with the other system's model."* The whole point here is to change the vocabulary. |
+| **Repository** (Evans, DDD ch. 6) | yes, full book | Scoped to persistence of aggregate roots — *"the illusion of an in-memory collection"*. Narrower than a vendor whose jobs include authentication. |
+| **Ports and Adapters / Hexagonal** (Cockburn) | **no primary source** | A web page, not a book; two sources on disk disagree on its date (2005 vs 2008). It is an architecture-wide stance, not a named module. Cite it only via GOOS ch. 6 p. 48 or Newman ch. 1 fn. 2. |
+| **Separated Interface** (Fowler) | **not present at all** | Zero hits across 1,188 extracted texts and every full book. Do not cite it. |
+
+One passage links three of these, and is worth keeping — **GOOS ch. 6, p. 48**: *"these two forces
+will push the structure of an application towards something like Cockburn's 'ports and adapters'
+architecture... we write interfaces to describe its relationships with the outside world in its
+terminology (Cockburn's ports). Then we write bridges between the application core and each
+technical domain (Cockburn's adapters). **This is related to what Eric Evans calls an
+'anticorruption layer'**."*
+
+### The qualification to say out loud
+
+A gateway in all three sources is **a class inside an application**. ADR-012 proposes a separate
+program reached over HTTP. That is a deployment choice the pattern does not make, and §"What four
+books did to the question" records that three of four sources point the other way. So the honest
+full sentence is:
+
+> *"It is the platform's contracts home. It is also where we have decided to put the Appwrite
+> gateway — a vendor gateway in Fowler's sense — though whether that gateway is a library or a
+> service is not settled, and the reading so far favours a library."*
+
+### What this does not settle
+
+The deployment shape, as above. And whether the gateway covers the **data path**, the **identity
+path**, or both — ADR-012 does not say, and stating it is the cheapest decision available.
+
+---
+
+## The three copies have diverged, and merging them naively would reintroduce a bug
+
+**Measured 2026-11-27.** Recorded here because it changes what "move the Appwrite code into one
+place" means, and because it is the clearest case this platform has produced of the repository's own
+design preference — *duplication is far cheaper than the wrong abstraction* — being right.
+
+**The arithmetic.** Of the ten files in each API repo's Appwrite package: three are byte-identical or
+differ only by the repo's own name; four differ only in typing style, import order, or one added
+field. **The remaining three — `manager.py`, `file_cache.py`, `metadata.py` — are 2,145 of
+views-faoapi's 2,421 lines and 2,042 of views-crafdapi's 2,320, and they carry real behavioural
+divergence in both directions. Neither is a superset of the other.**
+
+**Three divergences that are decisions, not drift:**
+
+- **`download_file` holds opposed resolutions of the same incident.** views-crafdapi hard-fails when
+  the byte count does not match the recorded size. views-faoapi deliberately **skips** that check for
+  SDK-auto-deserialised JSON, after a production incident on 2026-08-24 in which re-serialised
+  manifests (26,544 → 22,676 bytes) were wrongly rejected as truncated. **Picking either breaks the
+  other.**
+- **Replace-on-upload.** views-faoapi stages then swaps — upload the new, delete the old last — which
+  closed a data-loss window (C-182). views-crafdapi still deletes first.
+- **The timeout patch.** views-faoapi's is thread-safe by construction, lock-guarded and installed
+  once per process (#616). views-crafdapi's documents in its own comment that it is *"not
+  thread-safe... acceptable while the API runs single-threaded"*.
+
+**What it means.** These are not three copies of one thing. They are three answers to three
+incidents, two of which only one repository has suffered. Sandi Metz's rule, which this repository's
+design preferences already adopt, is the right instrument: *similar shape is not evidence*. A merge
+that picks a winner per file would import one repository's unlearned lesson into the other.
+
+**What survives consolidation cheaply:** the six identical-or-trivial files — roughly 250 lines of
+config, results, constants, auth, the provisioning gate and the SDK compatibility shim. That is the
+part where every change to one genuinely demands the same change to all.
+
+**What this does not settle.** Whether the diverged behaviours should be reconciled at all, and in
+which direction. Each needs the incident behind it read before anyone chooses, and at least one of
+them (`download_file`) is a correctness decision rather than a style one.
+
+---
+
 ## The governance works in one direction only
 
 **Recorded 2026-11-25**, from a multi-expert review of the two partner services
@@ -401,7 +619,21 @@ is not the cost that matters.
 
 ## Still open across all of it
 
-- **Library or service.** Unresolved. See §1.
+- **Library or service.** Unresolved, but no longer evenly balanced: three of the four sources read
+  point at a library and ADR-012 proposes a service. See the synthesis section above.
+- **Whether ADR-012's boundary is the data path, the identity path, or both.** It does not say.
+  Checked 2026-11-26: the vendor is doing four jobs — file storage, the newest-file index, partner
+  authentication and partner revocation — and the first is the only one ADR-046 ever decided.
+  **Stating which one the gateway covers costs nothing and narrows every question below it.** This is
+  the cheapest open decision on the list.
+- **Three strategies are live and contradict each other, and nothing resolves them.** Consolidate
+  (views-appwrite epic #187, activated by the operator 2026-11-17 when trigger T3 fired); evict
+  Appwrite from the core (views-pipeline-core #339); or freeze this repository to the registry alone
+  (views-appwrite #214, which would park the roadmap that authorises the first). Found 2026-11-27.
+- **The surface is shrinking while this is undecided.** views-crafdapi #311 removes roughly 1,530
+  lines of Appwrite write and provisioning code that no key can reach; views-faoapi #603 and #585
+  rewrite the read and authentication paths. Consolidating now would move code that is being deleted
+  or rewritten.
 - **What operations the component offers.** The load-bearing question. Two candidate answers exist in
   the platform already.
 - **Whether `views-publicapi` is the first consumer of the component or the third clone.** Asked of
@@ -418,7 +650,21 @@ is not the cost that matters.
 ## Sources on disk
 
 - Extracted reading copies, by chapter: `~/Desktop/views_blueprints/reading/`
-- Full books: `~/brain/9_library/full_books/`
-- Per-chapter PDFs and the claim index: `~/brain/9_library/papers/` and
-  `~/brain/9_library/library_system/index.db`
+- **Corrected 2026-11-27: the `~/brain/9_library/` paths below were wrong and the directory does not
+  exist.** The library is at `~/dev/library` — a git repository called *Praxis Library*, flat files
+  as authority with SQLite as a derived index.
+  - Full books: `~/dev/library/full_books/` — 12 PDFs, including GoF *Design Patterns*, Evans
+    *Domain-Driven Design*, Martin *Clean Architecture* and *Clean Code*, Ousterhout, Nygard
+    *Release It!*, Kleppmann *DDIA*.
+  - Papers and chapter splits: `~/dev/library/papers/` — 1,065 PDFs, including the complete
+    *Enterprise Integration Patterns* and per-chapter splits of EIP, Meszaros, Nygard and Beck.
+    Extracted text alongside at `papers/_extracted_text/` (1,188 files).
+  - Staging: `~/dev/library/incoming/` — 228 PDFs, including the full Freeman & Pryce *GOOS* and
+    chapter splits of Fowler's *Refactoring*.
+  - Index: `~/dev/library/library_system/index.db` — 1,187 papers, 5,306 claims. Note `chunks` is
+    empty and `papers_fts` has no `paper_id` column; query it by `rowid`.
+- **Known absent, so do not quote them from memory:** Fowler's *Patterns of Enterprise Application
+  Architecture* (cite p. 466 only via *Clean Architecture* ch. 23 fn. 2), Cockburn on Hexagonal
+  Architecture (a web page; cite via GOOS ch. 6 p. 48), Fowler's *Service Stub* and *Remote Facade*
+  (cross-references inside EIP only), and *Separated Interface* (not present anywhere).
 - Platform drawings, as built and target: `~/Desktop/views_blueprints/`
