@@ -18,7 +18,7 @@
 [meta]
 contract = "The Appwrite Seam Contract"
 former_contract_name = "PLATFORM-001"   # retired 2026-07-31 by ADR-011
-version = "1.9.1"                          # Versions in lockstep with the contract (§10);
+version = "1.9.2"                          # Versions in lockstep with the contract (§10);
                                            # docs/validate_docs.sh checks 7 and 8 enforce it.
 obliges_consumers_since = "1.5.2"          # THE NUMBER A CONSUMER SHOULD PIN AGAINST (§10.1).
                                            # Derived: the newest [edition] row with
@@ -209,41 +209,67 @@ summary = "Removed the retired [unmodelled.session_auth_email_password] entry; c
 obliges_consumers = true
 summary = "NEW [contract.UNCRAFD_CONSUMER_DOCUMENT_NAME]. A contract row names two parties and asks each to bind to it (vpp#238, views-crafdapi#53)."
 
+[edition."1.9.2"]
+obliges_consumers = false
+summary = """The console key names are not the names this contract predicted, and §2 stops
+naming who holds a key.
+
+THE NAMES. The keys in the CRAF'd audience project are `server-2026-11`, `publisher-2026-11` and
+three partner-tier reader keys. **There is no `crafdapi-server`** — the name v1.9.0 and the þing
+record both use — and there never was. The console is authoritative for a key's name, and the
+companion inventory keys by console name for exactly this reason (views-crafdapi C-256). Scope for
+scope the server key matches what v1.9.0 specified, including the deliberate absence of
+`buckets.read`; only the name differs.
+
+§2 STOPS NAMING HOLDERS. This repository is public. A public repository does not record which
+organisation holds a credential to a VIEWS service: that is a disclosure about a third party who has
+not agreed to it, and it cannot be withdrawn once pushed. §2's observed-state table now reads
+Partner A and Partner B, the same lettering the companion key inventory uses, where a letter means
+the same holder throughout both documents. Every operational fact is kept — which key, how many
+scopes, when it expires, who established it and when. Only the organisation is gone.
+
+What this does NOT fix, stated so it is not mistaken for closed: two console key names still contain
+a holder's name, and no document edit changes that — the console is authoritative and renaming a
+live key is a coordinated act with an external party. Filed as views-crafdapi#276.
+
+Of the three partner-tier keys one is this platform's own and two are held by external partners this
+seam has not previously carried, created 2026-11-25, expiring 2027-11 with no named renewal owner —
+the same shape as C-66, caught earlier this time.
+
+CLAUSE-TOUCHING but OBLIGES NOBODY: §2's table changes wording and no name, value, coordinate or
+class changes, so a consumer that ignores this edition behaves exactly as before and
+obliges_consumers_since stays at 1.5.2."""
+
 [edition."1.9.1"]
 obliges_consumers = false
-summary = """The CRAF'd containers in the new project are measured, and they are complete.
-Read-only with `publisher-2026-11`, by the operator, 2026-11-25, in the project named by
-[connection.APPWRITE_CRAFD_PROJECT_ID]: `file_metadata` holds the table `crafd` with ALL THIRTEEN
-declared columns, the indexes `idx_fileId`, `idx_file_hash` and `idx_category_type_name`, and ZERO
-rows; `crafd_bucket` exists. **This is the first column count this file has carried for `crafd`** —
-v1.8.3 recorded 16 on `unfao` and 13 on `production_forecasts` and nothing for this one.
+summary = """A name is minted for the CRAF'd audience project's publisher key, and the CRAF'd
+containers are measured.
 
-It settles a disagreement between two sessions planning the same migration: one held the crafdapi
-project was empty, the other that the table was provisioned 2026-11-12. The second was right. The
-consequence is operational: **views-pipeline-core's TablesDB release does not need the provisioner
-switch.** No container has to be created, so the provisioner remaining on the Databases API cannot
-block a delivery that a post-1.8 key must make.
+NEW SLOT [secret.APPWRITE_CRAFD_PUBLISHER_API_KEY] — the producer's write identity in the CRAF'd
+audience project, console key `publisher-2026-11`, held by views-postprocessing and launched by
+views-models. A second slot is STRUCTURAL, not a preference: an Appwrite key authenticates against
+exactly one project, so the shared-project producer key cannot reach an audience project at all,
+and one env-var name cannot carry two live values in one process. Requested by
+views-postprocessing#327 through views-appwrite#211.
 
-Also PROVEN BY REQUEST, which is what §8 asks for and a console listing is not: `publisher-2026-11`
-carries `tables.read`, `rows.read` and `buckets.read`. Its `rows.write`, `files.write` and
-`files.read` are console readings only; the first delivery proves those, not this.
+ITS SCOPES ARE A CONSOLE READING AND ARE NOT PROVEN. Seven ticked; three answered a real request on
+2026-11-25; the write scopes have not. §8's rule is unchanged and the first delivery is the proof.
+A slot may be minted ahead of that proof — [secret.PRODUCTIONAPI_API_KEY] is the precedent, carrying
+`scopes = "PENDING"` — because a slot mints a NAME, and §8 governs what may be asserted about a
+scope set, not whether a name may exist. Recorded so the next reader does not re-derive it.
 
-**The keys in that project are not named what this contract predicted.** There are five: the
-server key `server-2026-11`, the publisher key `publisher-2026-11`, and three partner-tier reader
-keys. There is no `crafdapi-server` — the name v1.9.0 and the þing record both use — and there
-never was. The console is authoritative for a key's name, and the companion inventory keys by
-console name for exactly this reason (views-crafdapi C-256). Of the three partner-tier keys one is
-our own and **two are held by external partners this seam has not previously carried**, both
-created 2026-11-25 and both expiring 2027-11 with no named renewal owner — the same shape as C-66,
-caught earlier this time. **This file does not record which organisation holds a key, and a
-partner-tier key's name is not reproduced here where the name would identify the holder.** That is
-a standing rule for this repository, which is public; the operator's own partner-key records are
-where holders are tracked.
+ALSO: the CRAF'd containers were measured read-only with that key by the operator on 2026-11-25 —
+`file_metadata` holds the table `crafd` with ALL THIRTEEN declared columns, the indexes `idx_fileId`,
+`idx_file_hash` and `idx_category_type_name`, and ZERO rows; `crafd_bucket` exists. This is the first
+column count this file has carried for `crafd`; v1.8.3 recorded 16 on `unfao` and 13 on
+`production_forecasts` and nothing for this one. It settles a disagreement between two sessions
+planning the same migration — one held the project empty, the other that the table was provisioned
+2026-11-12 — in favour of the second, and the consequence is operational: views-pipeline-core's
+TablesDB release does NOT need the provisioner switch, because no container has to be created.
 
-Observation-driven: no clause, no coordinate, no slot name and no class changes, so a consumer that
-ignores this edition behaves exactly as before and obliges_consumers_since stays at 1.5.2.
-**ZERO ROWS is the part to re-read later:** the table is correct and empty, so nothing here says a
-delivery works."""
+ADDITIVE AND OBLIGES NOBODY: no existing name, value or class changes, so a consumer that ignores
+this edition behaves exactly as before and obliges_consumers_since stays at 1.5.2. ZERO ROWS is the
+part to re-read later: the table is correct and empty, so nothing here says a delivery works."""
 
 [edition."1.9.0"]
 obliges_consumers = false
@@ -1188,6 +1214,44 @@ UN FAO key is the worked example of what sharing costs (it serves FAO and this
 platform's dev/ops at once and cannot be revoked for one without the other).
 Inherits O2's open confused-deputy question (§9) — this slot records the key,
 not a decision that re-using a caller's credential for storage is correct."""
+
+[secret.APPWRITE_CRAFD_PUBLISHER_API_KEY]
+class = "secret"
+status = "key issued 2026-11-25; this slot mints its env-var name 2026-11-27"
+console_key_name = "publisher-2026-11"
+carrier = "env var"
+consumer = "views-postprocessing — the CRAF'd delivery, launched by views-models"
+issued_by = "operator"
+identity = """The producer's WRITE identity **in the CRAF'd audience project**. This is not the
+same credential as the shared-project producer key and cannot be: an Appwrite API key
+authenticates against exactly one project, so a key belonging to the shared project cannot
+authenticate against an audience project at all. That is a property of the vendor, not a scope
+choice, which is why a second slot is structural rather than a preference."""
+scopes = """CONSOLE READING ONLY — NOT PROVEN BY REQUEST. Seven ticked on creation: rows.read,
+rows.write, tables.read, tables.write, files.read, files.write, buckets.read. Three of the seven —
+tables.read, rows.read, buckets.read — were proven by request on 2026-11-25 (edition 1.9.1). The
+write scopes and files.read were not, and §8's rule stands: a scope set is proven by a request,
+never by a console listing. **The first CRAF'd delivery is that proof.** tables.write was ticked
+only so a missing column could be added without a second console visit; the 2026-11-25 check found
+all thirteen columns present, so nothing is expected to need it."""
+expiry = "2027-11 — arithmetic from a 2026-11-25 creation on a 12-month term, not a console reading of a date. Do not quote a time."
+note = """WHY THE NAME IS SCOPED BY AUDIENCE AND NOT BY CONSUMER. This file already distinguishes
+the two: `APPWRITE_CRAFD_*` names an audience's coordinates, `APPWRITE_CRAFDAPI_*` names the
+serving repository's own. A publisher key belongs to an audience's project, and views-postprocessing
+will hold more than one of them in one process — the shared shelf's key and this one — so the thing
+that must distinguish the names is the project, not the repository. The pattern generalises: a
+second audience that gains its own project gains `APPWRITE_<AUDIENCE>_PUBLISHER_API_KEY`.
+
+WHY A SEPARATE NAME AND NOT A REUSED ONE. See the warning on
+[secret.APPWRITE_DATASTORE_API_KEY]: that one env-var name already carries four different console
+keys across four surfaces, and views-crafdapi's C-256 records the cross-wiring costing real time
+twice. Reusing it here would be worse than those four, because both values would be live **in the
+same process at the same time** — one name cannot carry two values, and the failure would be a
+delivery writing to the wrong project rather than a rotation touching the wrong host.
+
+REQUESTED BY views-postprocessing#327 via views-appwrite#211, which is the one item of #327 that
+could not be decided in that repository. The spelling was proposed there and is adopted unchanged.
+Same shape as the request in #208 for the faoapi server key, which is still open."""
 
 [secret.PRODUCTIONAPI_API_KEY]
 class = "secret"
