@@ -623,7 +623,8 @@ is not the cost that matters.
   point at a library and ADR-012 proposes a service. See the synthesis section above.
 - **Whether ADR-012's boundary is the data path, the identity path, or both.** It does not say.
   Checked 2026-11-26: the vendor is doing four jobs — file storage, the newest-file index, partner
-  authentication and partner revocation — and the first is the only one ADR-046 ever decided.
+  authentication and partner revocation — and only the first was ever decided, by
+  `views-pipeline-core` ADR-046 in that repository.
   **Stating which one the gateway covers costs nothing and narrows every question below it.** This is
   the cheapest open decision on the list.
 - **Three strategies are live and contradict each other, and nothing resolves them.** Consolidate
