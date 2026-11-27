@@ -128,7 +128,15 @@ rule — *similar shape is not evidence*. About **250 lines** are genuinely shar
   Log **#12** in `roadmap_shared_client.md`. Trigger **T3** fired — a bug needing the same fix in
   every copy — when Appwrite 1.8's TablesDB rename landed. Epic **views-appwrite#187**, stories
   **#188** (define the surface from observed call sites) and **#189** (scaffold and encode the
-  substrate facts). **Nothing has started.** Step 0 is delegated to `views-pipeline-core#599`.
+  substrate facts). **Neither story has started.**
+  **But #187 is labelled `out-of-date` and `needs-decision` as of 2026-11-27, on operator
+  instruction.** Four of its premises have moved; the reasons are in a comment on the issue. Do not
+  start #188 or #189 from the epic as written.
+  **Step 0 is NOT waiting on the operator and is half done. Checked 2026-11-27.** It is delegated to
+  `views-pipeline-core#599`, whose story #600 — the live read-only check the roadmap records as
+  waiting on the operator — **closed 2026-11-19**. Stories #600 through #604 are closed, including
+  the delivery-path switch; #605 through #609 are open. The roadmap's text on this point is stale and
+  reading it will cost you a day of waiting for nothing.
 - **ADR-012, "The Appwrite Gateway" — status Proposed.** Decides a service on a Hetzner host that
   nobody installs, reached over HTTP. It has five challenge entries and the latest says three of the
   four sources read point at a *library* instead.
@@ -142,20 +150,34 @@ rule — *similar shape is not evidence*. About **250 lines** are genuinely shar
 
 ## 6. What is open, in the order I would take it
 
-**1. State whether ADR-012's boundary is the data path, the identity path, or both.** It does not
+**1. Rule between #187 and #214. This is the only item that unblocks work in this repository, and
+until it is ruled nobody should start building here.** The two are open and they contradict each
+other outright:
+- **#187 — build the shared client here.** Operator decision, activated 2026-11-17.
+- **#214 — this repository ships nothing but the coordinate registry; freeze the rest.** Filed
+  2026-11-27.
+
+One says write code here, the other says never write code here. **Neither issue mentioned the other
+until 2026-11-27**, when both were labelled `out-of-date` and `needs-decision` on operator
+instruction, each carrying a comment saying what moved. **That omission is why this handover was
+misleading when first written**: it listed the contradiction as one open item among five instead of
+as the thing everything else waits on. A plan that contradicts another open plan is not a plan.
+
+A third strategy is often named with these two and should not be: **`views-pipeline-core#339`, evict
+Appwrite from the platform core** — shrink the store operations from 26 to about 8 and make the SDK
+optional, citing views-models' 681-line client written with nothing but the standard library.
+**Checked 2026-11-27: it has not been touched since 2026-08-01.** Treat it as dormant, not live.
+Note though that the *technique* it proposes has since been implemented in that repository anyway —
+`views_pipeline_core/modules/appwrite/__init__.py` makes the SDK an optional extra behind
+`try/except ImportError`, its #345, register C-253.
+
+**2. State whether ADR-012's boundary is the data path, the identity path, or both.** It does not
 say. This costs nothing, needs no measurement, and narrows everything under it. **Cheapest open
-decision on the platform.**
+decision on the platform**, and it is the one to make first if #187 wins.
 
-**2. Choose between three live strategies that contradict each other.** Nothing anywhere resolves
-them:
-- **Consolidate** — epic #187, activated.
-- **Evict Appwrite from the core** — `views-pipeline-core#339`, which proposes shrinking the store
-  operations from 26 to about 8 and making the SDK optional, citing views-models' 681-line client
-  written with nothing but the standard library.
-- **Freeze this repository to the registry alone** — `views-appwrite#214`, which would park the
-  roadmap that authorises the first.
-
-**3. Run test 5 from `boundary_tests.md`.** Put a fake store behind the operations and run the
+**3. Run test 5 from `boundary_tests.md`.** *(Worth running whichever way item 1 is ruled: if #214
+wins, it is the last measurement this repository buys; if #187 wins, it is the premise Phase 1 rests
+on.)* Put a fake store behind the operations and run the
 suite. **About a day, and the stub is reusable.** It is what Hohpe & Woolf claim a gateway is *for*,
 and it has never been run. **Test 4 has now been run — 2026-11-27, both partner APIs, both fail.**
 Neither can be imported with the SDK absent; the FastAPI application in `managers/api.py` is one of
