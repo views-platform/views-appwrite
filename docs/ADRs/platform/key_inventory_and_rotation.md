@@ -35,20 +35,31 @@ date and a reader is a soft fact, and this platform plans against those.**
 
 ## 2. What exists today
 
+> **Why the holders are lettered rather than named.** This repository is public. A public repository
+> does not record which organisation holds a credential to a VIEWS service — that is a disclosure
+> about a third party, who has not agreed to it, and it cannot be withdrawn once pushed. Partner A
+> and Partner B are stable labels: the same letter means the same holder everywhere in this file.
+> **Who they are is tracked in the operator's own partner-key records, not here.**
+>
+> Note what this does *not* fix: two of the console key names above still contain a holder's name,
+> because the console is authoritative for a key's name and renaming a live key is a coordinated act
+> with an external party. That is filed as views-crafdapi#276 and is not decided here.
+
+
 **Five keys are in use.** Two more exist and are retired.
 
 | Console key | Who holds it | Scopes | Expires | Last established |
 |---|---|---|---|---|
 | `pipeline-core-writer` | the producer: `views-models`, `views-pipeline-core`, `views-postprocessing` | **9**, both vocabularies — enumerated below | **2027-10-29** | console, **2026-11-17** (scopes); 2026-11-11 (expiry) |
 | `faoapi-server` | the `views-faoapi` box **and** its daily monitor | 4, all reads | **2027-10-29** | console, 2026-11-11 (þing-04 G2-1) |
-| `faoapi-caller-fao` | **UN FAO** — they present it as `X-API-Key` | 3 | **2027-10-20** | console, 2026-11-12 — *in use* |
+| `faoapi-caller-fao` | **Partner A** — they present it as `X-API-Key` | 3 | **2027-10-20** | console, 2026-11-12 — *in use* |
 | `crafdapi-probe` | `views-crafdapi` smoke, notebooks, integration tests, daily monitor | per views-crafdapi ADR-038 | **never** | console, 2026-10-20 |
-| `crafd-caller-read` | **CRAF'd** — external partner | **14**, all `.read` | **never** | console, 2026-11-11 (þing-04 G2) |
+| `crafd-caller-read` | **Partner B** — external partner | **14**, all `.read` | **never** | console, 2026-11-11 (þing-04 G2) |
 
 | Retired key | Was | Scopes | Dies | State |
 |---|---|---|---|---|
 | `VIEWS Pipeline Core` | the producer key | 20 as read 2026-08-05 | **EXPIRED 2026-11-17 12:35** | gone. Kept as a fallback for write scopes that turned out to be present all along |
-| `faoapi-legacy-shared-RETIRING` | the `UN FAO` key — FAO *and* server *and* dev/ops at once | 20 as read 2026-08-02 | **EXPIRED 2026-11-17 16:10** | gone. Renamed 2026-10-20; nothing authenticated with it |
+| `faoapi-legacy-shared-RETIRING` | Partner A's key — the partner *and* server *and* dev/ops at once | 20 as read 2026-08-02 | **EXPIRED 2026-11-17 16:10** | gone. Renamed 2026-10-20; nothing authenticated with it |
 
 **Sources, so the next reader can re-verify rather than re-trust:**
 
@@ -57,11 +68,11 @@ date and a reader is a soft fact, and this platform plans against those.**
   2026-11-11.
 - Successor dates and roles — `views-postprocessing/tests/test_credential_expiry.py:40-79`, which is
   also the platform's only executing expiry tripwire.
-- FAO confirmed on their own key — `views-faoapi/reports/technical_risk_register.md:4156-4169`,
-  **C-259 resolved 2026-11-12**: *"FAO are on `faoapi-caller-fao` and the console shows it in use."*
+- Partner A confirmed on their own key — `views-faoapi/reports/technical_risk_register.md:4156-4169`,
+  **C-259 resolved 2026-11-12**: the partner is on their own key and the console shows it in use.
 - `crafdapi-probe` / `crafd-caller-read` never expire —
   `views-crafdapi/deployment/RELEASE_RUNBOOK.md:367-369`, console read 2026-10-20.
-- The split that produced the FAO pair — `views-faoapi/deployment/KEY_SPLIT_AND_ROTATION_RUNBOOK.md`
+- The split that produced that pair — `views-faoapi/deployment/KEY_SPLIT_AND_ROTATION_RUNBOOK.md`
   and `views-faoapi/reports/post_mortems/2026-10-20_the_night_the_key_was_proven.md`.
 
 ### `pipeline-core-writer`'s nine scopes, read 2026-11-17
@@ -122,7 +133,7 @@ APPWRITE_DATASTORE_API_KEY
 
 That one name carries **`pipeline-core-writer`** in `views-models/.env`, **`faoapi-server`** on the
 faoapi box and in views-faoapi's Actions secrets, **`crafdapi-probe`** in views-crafdapi's, and
-FAO's own **`faoapi-caller-fao`** in the `.env` they create from our delivery bundle.
+Partner A's own **`faoapi-caller-fao`** in the `.env` they create from our delivery bundle.
 
 **A rotation that updates "everywhere `APPWRITE_DATASTORE_API_KEY` appears" with one new value
 cross-wires three identities.** views-crafdapi's register **C-256** records this having cost real
@@ -162,14 +173,14 @@ inherit the process environment. That is by design, and it means they need no ro
 | views-crafdapi **Actions secret** | `.github/workflows/data-freshness.yml:86,101,256` — opens an issue when its key is rejected (#173) |
 | `views-crafdapi/.env` | line 7, local dev |
 
-### `faoapi-caller-fao` — FAO's own
+### `faoapi-caller-fao` — Partner A's own
 
-Held by FAO, on their machines. **Nothing in this platform installs it.** The only artefact here is
+Held by Partner A, on their machines. **Nothing in this platform installs it.** The only artefact here is
 the placeholder in the delivery bundle (`fao_delivery_*/.env.example`), with instructions at
-`views-faoapi/notebooks/README.md:116,131`. Changing it means a message to FAO and their clock, not
+`views-faoapi/notebooks/README.md:116,131`. Changing it means a message to the partner and their clock, not
 ours.
 
-### `crafd-caller-read` — CRAF'd's own
+### `crafd-caller-read` — Partner B's own
 
 Same shape: held by the partner. It appears in **no code anywhere in the workspace** — only in the
 registry and the þing record.
@@ -221,7 +232,7 @@ The old and new keys coexist through the middle steps, which is what makes stopp
 point before the last one. **The delete is immediate and is the only irreversible step.**
 
 **This is not a procedure invented for this document.** It is what was executed on 2026-10-20 (the
-FAO split) and 2026-10-29 (the producer and server keys), across the surfaces in §4, successfully.
+partner-key split) and 2026-10-29 (the producer and server keys), across the surfaces in §4, successfully.
 That is the strongest evidence this platform has about rotation, and it is why the step-by-step
 detail is **not** restated here:
 
@@ -339,7 +350,7 @@ feel busy."* A second one here would be exactly that.
 relocate `create_*` → narrow scopes is ratified and unchanged; none of it has happened, and
 `APPWRITE_READ_API_KEY` / `APPWRITE_WRITE_API_KEY` / `APPWRITE_PROVISION_API_KEY` are still
 `status = "planned"` in the registry. What happened in October is permitted by þing-02 **E5** —
-*"FAO's key is reissued **like-for-like** (scopes unchanged); any dev/ops key produced by the split
+*"Partner A's key is reissued **like-for-like** (scopes unchanged); any dev/ops key produced by the split
 is a scoped key and falls under D9's gate"* — and a like-for-like reissue is not a scoped key. The
 split bought **revocability**, not least privilege. Narrowing is still owed, and
 views-pipeline-core#489 records that it never happened.
