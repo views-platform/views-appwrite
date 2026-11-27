@@ -59,6 +59,7 @@ These are *candidates* surfaced from the roadmap and risk register, not yet writ
 - **ADR-013 (candidate):** Metadata is opaque `Dict[str, Any]` — no enforced schema (roadmap D-3; the formal statement behind ADR-001 Category 8).
 - **ADR-014 (candidate):** Exception taxonomy for `DatastoreManager` so consumers can catch specific types instead of bare `Exception` (risk C-06; ADR-008).
 - **ADR-015 (candidate):** Versioning & release policy / semver for consumers — likely supersedes the deferred ADR-004 (risk register R4/C-05).
+- **ADR-016:** Appwrite is the delivery door, not the prediction store — proposes that the forecasts move to a VIEWS-owned store on Hetzner and Appwrite keeps the delivery buckets. Status Proposed, 2026-11-27.
 
 ---
 

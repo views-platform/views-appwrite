@@ -1,0 +1,758 @@
+<title>Appwrite Boundary Blueprints</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a single reading column of drawings, each figure full-bleed within it,
+     captions set narrower than the figures so the eye returns to the same left edge. */
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --fg: #1b1c20;
+    --muted: #5e6168;
+    --rule: #d3d1cb;
+    --scope: #2f4858;      /* VIEWS elements */
+    --vendor: #8a5a2b;     /* Appwrite, the outside product */
+    --build: #0f7a6c;      /* what gets built in this repo */
+    --broken: #a5342c;     /* will not load without the SDK */
+    --planned: #7a7f87;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a; --surface: #1c1f25; --fg: #eceae5; --muted: #a2a7b0;
+      --rule: #343941; --scope: #9fc3d6; --vendor: #d6a775; --build: #4ecbb8;
+      --broken: #e8897f; --planned: #8d939c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a; --surface: #1c1f25; --fg: #eceae5; --muted: #a2a7b0;
+    --rule: #343941; --scope: #9fc3d6; --vendor: #d6a775; --build: #4ecbb8;
+    --broken: #e8897f; --planned: #8d939c; color-scheme: dark;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 2.5rem 4rem;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    line-height: 1.15;
+    margin: 0 0 .4rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .standfirst { max-width: 62ch; color: var(--muted); margin: 0 0 2rem; }
+  h2 {
+    font-size: 1.05rem; font-weight: 600; margin: 0 0 .5rem;
+    letter-spacing: .02em; text-transform: none;
+  }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 .25rem;
+  }
+  p { max-width: 68ch; }
+  .note { max-width: 68ch; color: var(--muted); font-size: .9rem; }
+  code, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .86em; }
+  section { margin-block: 3rem 0; }
+  .rule { border: 0; border-top: 1px solid var(--rule); margin: 2.5rem 0 0; }
+
+  figure { margin: 1.25rem 0 0; }
+  .canvas {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow-x: auto;
+    padding: 10px;
+  }
+  .canvas svg { display: block; max-width: 100%; height: auto; min-width: 440px; }
+  figcaption { max-width: 68ch; font-size: .9rem; color: var(--muted); margin-top: .6rem; }
+  figcaption b { color: var(--fg); font-weight: 500; }
+
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 1.5rem; }
+  .pair > figure { margin-top: 0; min-width: 0; }
+
+  .key { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem 1.75rem; margin-top: 1rem; }
+  .key h3 { font-size: .8rem; margin: 0 0 .5rem; font-weight: 600; letter-spacing: .04em; }
+  .key ul { list-style: none; margin: 0; padding: 0; font-size: .86rem; }
+  .key li { display: flex; align-items: center; gap: .55rem; padding: .18rem 0; color: var(--muted); }
+  .swatch { width: 26px; height: 14px; border-radius: 2px; flex: 0 0 auto; border: 1.5px solid; }
+  .lab {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .7rem;
+    border: 1px solid var(--rule); border-radius: 2px; padding: .05rem .3rem; color: var(--muted);
+  }
+  table { border-collapse: collapse; font-size: .88rem; margin-top: 1rem; width: 100%; }
+  th, td { text-align: left; padding: .4rem .7rem .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; font-size: .78rem; letter-spacing: .04em; color: var(--muted); }
+  td.mono { white-space: nowrap; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">C4 model · Simon Brown 2022</p>
+  <h1>Appwrite Boundary Blueprints</h1>
+  <p class="standfirst">
+    Four drawings of the Appwrite boundary in the VIEWS platform, in Brown's vocabulary:
+    system context, containers, and one container's components as built today beside the same
+    container once the gateway exists. Facts in the drawings were checked in the code on
+    2026‑11‑27; anything taken from a document rather than the code is marked.
+  </p>
+
+  <p>
+    One rule from the book decides how the gateway is drawn. Brown, §4.2:
+    <em>“a container refers to an execution context… libraries or modules should not be considered
+    as containers unless they are runnable on their own.”</em>
+    So the form of the gateway changes what kind of box it gets. As an installable package it is a
+    <strong>component</strong> — “a grouping of related functionality encapsulated behind a
+    well-defined interface” — repeated inside three containers. As a program on Hetzner, called over
+    HTTP, it is a <strong>container</strong> of its own, and it appears once.
+    <strong>The operator decided the program form on 2026‑11‑21</strong>, so diagram 5 is the target
+    and diagram 4 is the other form, drawn for comparison rather than as a proposal.
+  </p>
+  <p>
+    The second thing the target changes is bigger than the gateway. <strong>The forecasts leave
+    Appwrite.</strong> A prediction store on Hetzner replaces both <code>views-forecasts</code> and the
+    <code>production_forecasts</code> bucket; Appwrite keeps only the per-audience delivery buckets —
+    the credentialed door partners pull from. Diagrams 1 to 4 are therefore drawings of
+    <em>today</em>, kept because the migration has to start from them.
+  </p>
+  <p class="note">
+    §4.7 settles the second question: a vendor SDK is “really just a technology choice that
+    components make use of… implementation detail rather than a component in its own right.”
+    So the Appwrite SDK is drawn as a technology label on the component that uses it, never as a
+    box of its own.
+  </p>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Diagram 1</p>
+    <h2>[System Context] VIEWS forecast delivery</h2>
+    <figure>
+      <div class="canvas">
+        <svg viewBox="0 0 1000 640" role="img"
+             aria-label="System context: two partner analysts call the VIEWS platform with an Appwrite API key; VIEWS both publishes forecast files to Appwrite and validates each caller's key against it.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif" color="currentColor">
+
+            <!-- partner A -->
+            <g>
+              <rect x="40" y="24" width="270" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.6"/>
+              <text x="56" y="50" font-size="14" font-weight="600" fill="var(--fg)">Partner A analyst</text>
+              <text x="56" y="68" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Person — outside VIEWS]</text>
+              <text x="56" y="88" font-size="11.5" fill="var(--muted)">Pulls the latest forecast. Holds an</text>
+              <text x="56" y="104" font-size="11.5" fill="var(--muted)">Appwrite API key issued by the operator.</text>
+            </g>
+
+            <!-- partner B -->
+            <g>
+              <rect x="350" y="24" width="270" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.6"/>
+              <text x="366" y="50" font-size="14" font-weight="600" fill="var(--fg)">Partner B analyst</text>
+              <text x="366" y="68" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Person — outside VIEWS]</text>
+              <text x="366" y="88" font-size="11.5" fill="var(--muted)">Same, through a second service and a</text>
+              <text x="366" y="104" font-size="11.5" fill="var(--muted)">second Appwrite project.</text>
+            </g>
+
+            <!-- arrows down to VIEWS -->
+            <g color="var(--scope)">
+              <line x1="175" y1="120" x2="175" y2="222" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+              <text x="186" y="152" font-size="10.5" fill="var(--muted)">Requests forecasts, sending its own</text>
+              <text x="186" y="167" font-size="10.5" fill="var(--muted)">Appwrite key in the <tspan font-family="IBM Plex Mono, monospace">x-api-key</tspan> header</text>
+              <text x="186" y="182" font-size="10.5" fill="var(--muted)">[HTTPS / JSON]</text>
+              <line x1="485" y1="120" x2="485" y2="222" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+            </g>
+
+            <!-- VIEWS -->
+            <g>
+              <rect x="40" y="224" width="580" height="150" rx="4" fill="var(--scope)" stroke="var(--scope)" stroke-width="1.6" opacity="0.14"/>
+              <rect x="40" y="224" width="580" height="150" rx="4" fill="none" stroke="var(--scope)" stroke-width="2"/>
+              <text x="60" y="254" font-size="15" font-weight="600" fill="var(--fg)">VIEWS forecasting platform</text>
+              <text x="60" y="273" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Software system — the system in scope]</text>
+              <text x="60" y="297" font-size="12" fill="var(--fg)">Produces conflict forecasts, publishes each run as files plus one metadata</text>
+              <text x="60" y="314" font-size="12" fill="var(--fg)">row, and serves them to partners over HTTP.</text>
+              <text x="60" y="340" font-size="11.5" fill="var(--muted)">Holds no list of callers. A caller is anyone whose Appwrite key works.</text>
+              <text x="60" y="357" font-size="11.5" fill="var(--muted)">Three of its repositories import the vendor SDK; 35 files in all.</text>
+            </g>
+
+            <!-- arrows down to Appwrite -->
+            <g color="var(--vendor)">
+              <line x1="175" y1="374" x2="175" y2="468" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+              <text x="186" y="400" font-size="10.5" fill="var(--muted)">Uploads the forecast files and writes</text>
+              <text x="186" y="415" font-size="10.5" fill="var(--muted)">one metadata row per run</text>
+              <text x="186" y="430" font-size="10.5" fill="var(--muted)">[Appwrite Python SDK / HTTPS]</text>
+
+              <line x1="485" y1="374" x2="485" y2="468" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+              <text x="496" y="400" font-size="10.5" fill="var(--muted)">Validates the caller by listing one file</text>
+              <text x="496" y="415" font-size="10.5" fill="var(--muted)">in the delivery bucket with the caller's</text>
+              <text x="496" y="430" font-size="10.5" fill="var(--muted)">own key — needs <tspan font-family="IBM Plex Mono, monospace">files.read</tspan></text>
+            </g>
+
+            <!-- Appwrite -->
+            <g>
+              <rect x="40" y="470" width="580" height="146" rx="4" fill="var(--vendor)" stroke="var(--vendor)" stroke-width="1.6" opacity="0.12"/>
+              <rect x="40" y="470" width="580" height="146" rx="4" fill="none" stroke="var(--vendor)" stroke-width="2"/>
+              <text x="60" y="500" font-size="15" font-weight="600" fill="var(--fg)">Appwrite</text>
+              <text x="60" y="519" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Software system — hosted product, Frankfurt, outside VIEWS]</text>
+              <text x="60" y="543" font-size="12" fill="var(--fg)">File buckets, metadata tables, and the API keys partners authenticate with.</text>
+              <text x="60" y="568" font-size="11.5" fill="var(--muted)">A key's scopes are project-wide: a key with <tspan font-family="IBM Plex Mono, monospace">files.read</tspan> reads every bucket</text>
+              <text x="60" y="585" font-size="11.5" fill="var(--muted)">in the project. There is no single-bucket key, so isolation is the project.</text>
+              <text x="60" y="605" font-size="11.5" fill="var(--muted)">Revoking a partner means deleting that key in the vendor's console.</text>
+            </g>
+
+            <!-- the point -->
+            <g color="var(--build)">
+              <line x1="640" y1="300" x2="640" y2="540" stroke="var(--build)" stroke-width="2"/>
+              <text x="656" y="330" font-size="11.5" font-weight="600" fill="var(--fg)">This is the reason Appwrite is</text>
+              <text x="656" y="347" font-size="11.5" font-weight="600" fill="var(--fg)">in the stack:</text>
+              <text x="656" y="370" font-size="11" fill="var(--muted)">it is the credentialed front door</text>
+              <text x="656" y="386" font-size="11" fill="var(--muted)">partners pull from. The files could</text>
+              <text x="656" y="402" font-size="11" fill="var(--muted)">live anywhere; the door could not.</text>
+              <text x="656" y="432" font-size="11" fill="var(--muted)">So the identity path stays with</text>
+              <text x="656" y="448" font-size="11" fill="var(--muted)">the vendor by design. The boundary</text>
+              <text x="656" y="464" font-size="11" fill="var(--muted)">being built covers the data path</text>
+              <text x="656" y="480" font-size="11" fill="var(--muted)">and the vocabulary — not the door.</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        <b>What the picture shows:</b> every arrow into Appwrite is one VIEWS repository talking to the
+        vendor, and one of those arrows is authentication, not storage. The caller's credential
+        <em>is</em> an Appwrite key — checked in
+        <span class="mono">views-faoapi/src/views_faoapi/managers/api.py:408</span>, where
+        <span class="mono">_validate_api_key</span> builds an Appwrite config from the request header and
+        calls <span class="mono">list_files(bucket_id, limit=1)</span>.
+      </figcaption>
+    </figure>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Diagram 2</p>
+    <h2>[Container] Inside the VIEWS forecasting platform</h2>
+    <figure>
+      <div class="canvas">
+        <svg viewBox="0 0 1000 830" role="img"
+             aria-label="Container diagram: four Python containers plus a coordinate registry inside the VIEWS boundary, three of them talking directly to Appwrite on the right.">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif">
+
+            <!-- persons -->
+            <g>
+              <rect x="40" y="20" width="180" height="84" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.6"/>
+              <text x="54" y="46" font-size="12.5" font-weight="600" fill="var(--fg)">Partner A analyst</text>
+              <text x="54" y="63" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Person]</text>
+              <text x="54" y="84" font-size="10.5" fill="var(--muted)">Holds an Appwrite</text>
+              <text x="54" y="97" font-size="10.5" fill="var(--muted)">key for project 1</text>
+
+              <rect x="240" y="20" width="180" height="84" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.6"/>
+              <text x="254" y="46" font-size="12.5" font-weight="600" fill="var(--fg)">Partner B analyst</text>
+              <text x="254" y="63" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Person]</text>
+              <text x="254" y="84" font-size="10.5" fill="var(--muted)">Holds a key for</text>
+              <text x="254" y="97" font-size="10.5" fill="var(--muted)">a second project</text>
+            </g>
+
+            <!-- VIEWS boundary -->
+            <rect x="20" y="146" width="440" height="656" rx="5" fill="none" stroke="var(--scope)" stroke-width="1.4" stroke-dasharray="7 5" opacity="0.85"/>
+            <text x="32" y="166" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">VIEWS forecasting platform [system boundary]</text>
+
+            <!-- partner A -> API A -->
+            <g color="var(--scope)">
+              <line x1="130" y1="104" x2="130" y2="174" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+              <text x="140" y="126" font-size="10" fill="var(--muted)">HTTPS/JSON</text>
+              <text x="140" y="140" font-size="10" fill="var(--muted)">+ <tspan font-family="IBM Plex Mono, monospace">x-api-key</tspan></text>
+            </g>
+            <!-- partner B -> API B, routed right of the boundary -->
+            <g color="var(--scope)">
+              <polyline points="420,62 490,62 490,330 426,330" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="none" marker-end="url(#a2)"/>
+              <text x="498" y="140" font-size="10" fill="var(--muted)">HTTPS/JSON</text>
+              <text x="498" y="154" font-size="10" fill="var(--muted)">+ <tspan font-family="IBM Plex Mono, monospace">x-api-key</tspan></text>
+            </g>
+
+            <!-- API A -->
+            <g>
+              <rect x="40" y="176" width="380" height="96" rx="4" fill="var(--scope)" opacity="0.1"/>
+              <rect x="40" y="176" width="380" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="56" y="201" font-size="13" font-weight="600" fill="var(--fg)">Partner API A</text>
+              <text x="56" y="218" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: Python, FastAPI — views-faoapi]</text>
+              <text x="56" y="239" font-size="11" fill="var(--muted)">15 HTTP routes. 68 modules, 11 files import the SDK.</text>
+              <text x="56" y="256" font-size="11" fill="var(--broken)">17 modules will not load if the SDK is absent.</text>
+            </g>
+
+            <!-- API B -->
+            <g>
+              <rect x="40" y="296" width="380" height="96" rx="4" fill="var(--scope)" opacity="0.1"/>
+              <rect x="40" y="296" width="380" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="56" y="321" font-size="13" font-weight="600" fill="var(--fg)">Partner API B</text>
+              <text x="56" y="338" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: Python, FastAPI — views-crafdapi]</text>
+              <text x="56" y="359" font-size="11" fill="var(--muted)">5 HTTP routes. 67 modules, 6 files import the SDK.</text>
+              <text x="56" y="376" font-size="11" fill="var(--broken)">17 modules will not load if the SDK is absent.</text>
+            </g>
+
+            <!-- pipeline -->
+            <g>
+              <rect x="40" y="416" width="380" height="96" rx="4" fill="var(--scope)" opacity="0.1"/>
+              <rect x="40" y="416" width="380" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="56" y="441" font-size="13" font-weight="600" fill="var(--fg)">Forecasting pipeline</text>
+              <text x="56" y="458" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: Python batch — views-pipeline-core]</text>
+              <text x="56" y="479" font-size="11" fill="var(--muted)">Writes every file and every metadata row. 18 files</text>
+              <text x="56" y="496" font-size="11" fill="var(--muted)">import the SDK; already makes it an optional extra.</text>
+            </g>
+
+            <!-- postprocessing -->
+            <g>
+              <rect x="40" y="536" width="380" height="96" rx="4" fill="var(--scope)" opacity="0.1"/>
+              <rect x="40" y="536" width="380" height="96" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="56" y="561" font-size="13" font-weight="600" fill="var(--fg)">Delivery post-processing</text>
+              <text x="56" y="578" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: Python batch — views-postprocessing]</text>
+              <text x="56" y="599" font-size="11" fill="var(--muted)">Builds the per-partner delivery. Imports the SDK in</text>
+              <text x="56" y="616" font-size="11" fill="var(--muted)">zero files — it already calls a port of five operations.</text>
+            </g>
+
+            <!-- registry -->
+            <g>
+              <rect x="40" y="656" width="380" height="92" rx="4" fill="none" stroke="var(--build)" stroke-width="1.8"/>
+              <text x="56" y="681" font-size="13" font-weight="600" fill="var(--fg)">Coordinate registry</text>
+              <text x="56" y="698" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: TOML file at a pinned git tag — views-appwrite]</text>
+              <text x="56" y="719" font-size="11" fill="var(--muted)">Every bucket, database and table id. Read at boot or in CI</text>
+              <text x="56" y="736" font-size="11" fill="var(--muted)">by all four containers above. The only thing this repo ships.</text>
+            </g>
+            <g color="var(--build)">
+              <polyline points="30,700 30,224 36,224" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#a2)"/>
+            </g>
+
+            <!-- planned sixth -->
+            <g>
+              <rect x="40" y="768" width="380" height="22" rx="3" fill="none" stroke="var(--planned)" stroke-width="1.4" stroke-dasharray="5 4"/>
+              <text x="56" y="784" font-size="10.5" fill="var(--planned)">Partner API C — views-publicapi — specified, not built. The sixth copy.</text>
+            </g>
+
+            <!-- Appwrite -->
+            <g>
+              <rect x="600" y="176" width="380" height="456" rx="4" fill="var(--vendor)" opacity="0.1"/>
+              <rect x="600" y="176" width="380" height="456" rx="4" fill="none" stroke="var(--vendor)" stroke-width="2"/>
+              <text x="618" y="206" font-size="14" font-weight="600" fill="var(--fg)">Appwrite</text>
+              <text x="618" y="224" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Software system — hosted, outside VIEWS]</text>
+              <text x="618" y="252" font-size="11.5" fill="var(--fg)">Delivery buckets · metadata tables · partner API keys</text>
+              <text x="618" y="276" font-size="11" fill="var(--muted)">Five of its eleven store operations are live:</text>
+              <text x="618" y="294" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">upload_data · get_predictions_by_metadata</text>
+              <text x="618" y="310" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">download_prediction · get_latest_file_id</text>
+              <text x="618" y="326" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">get_file_metadata</text>
+              <text x="618" y="354" font-size="11" fill="var(--muted)">Each partner API uses three of the five.</text>
+              <text x="618" y="382" font-size="11.5" font-weight="600" fill="var(--fg)">What each arrow carries today</text>
+              <text x="618" y="402" font-size="11" fill="var(--muted)">— the vendor's own classes (Client, Storage,</text>
+              <text x="618" y="418" font-size="11" fill="var(--muted)">Databases, Users, TablesDB)</text>
+              <text x="618" y="438" font-size="11" fill="var(--muted)">— its error strings, re-encoded by hand in</text>
+              <text x="618" y="454" font-size="11" fill="var(--muted)">three repositories</text>
+              <text x="618" y="474" font-size="11" fill="var(--muted)">— the metadata row's 13 field names</text>
+              <text x="618" y="502" font-size="11.5" font-weight="600" fill="var(--broken)">That is why one vendor rename cost five</text>
+              <text x="618" y="519" font-size="11.5" font-weight="600" fill="var(--broken)">repositories two weeks.</text>
+              <text x="618" y="546" font-size="11" fill="var(--muted)">Hohpe &amp; Woolf call the fix a Canonical Data</text>
+              <text x="618" y="562" font-size="11" fill="var(--muted)">Model: N translators instead of N × (N−1).</text>
+              <text x="618" y="590" font-size="11" fill="var(--muted)">Integration style here, in their terms:</text>
+              <text x="618" y="606" font-size="11" fill="var(--muted)">File Transfer plus Shared Database — the two</text>
+              <text x="618" y="622" font-size="11" fill="var(--muted)">most tightly coupled of their four.</text>
+            </g>
+
+            <!-- arrows to Appwrite -->
+            <g color="var(--vendor)">
+              <line x1="420" y1="212" x2="594" y2="212" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+              <text x="432" y="200" font-size="10" fill="var(--muted)">3 operations + the key probe</text>
+
+              <line x1="420" y1="332" x2="594" y2="332" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+              <text x="432" y="320" font-size="10" fill="var(--muted)">3 operations + the key probe</text>
+
+              <line x1="420" y1="452" x2="594" y2="452" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+              <text x="432" y="440" font-size="10" fill="var(--muted)">uploads files, writes rows</text>
+            </g>
+            <g color="var(--scope)">
+              <line x1="230" y1="536" x2="230" y2="518" stroke="currentColor" stroke-width="1.6" marker-end="url(#a2)"/>
+              <text x="242" y="531" font-size="10" fill="var(--muted)">calls the five-operation port — no SDK</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        <b>What the picture shows:</b> four deployable things, three of which hold the vendor themselves,
+        and one — post-processing — which already does it the way the target does, through a port of five
+        operations. The package being built appears nowhere on this diagram, because Brown's §4.2 says a
+        library is not a container. The sixth copy is the dashed strip at the bottom: it has a
+        specification and no code, so nothing has been paid for it yet.
+      </figcaption>
+    </figure>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Diagrams 3 and 4</p>
+    <h2>[Component] One partner API today, and the same API if the gateway were a package</h2>
+    <p class="note">
+      Brown's level 3 zooms into a single container. Both drawings are the same container,
+      <span class="mono">views-faoapi</span>; <span class="mono">views-crafdapi</span> differs in
+      line count and in three incident decisions, not in shape. Diagram 4 is the
+      <em>package</em> form of the gateway — not the target, which is diagram 5. It is here because
+      the choice between a package and a program is still open in ADR‑012, and this is what the
+      package form would look like inside one API.
+    </p>
+
+    <div class="pair">
+      <figure>
+        <div class="canvas">
+          <svg viewBox="0 0 520 600" role="img"
+               aria-label="Component diagram as built: the FastAPI routes depend on the Appwrite adapter package, whose package root re-exports four vendor classes, so seventeen modules cannot load without the SDK.">
+            <defs>
+              <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <g font-family="IBM Plex Sans, sans-serif">
+              <rect x="12" y="34" width="496" height="552" rx="5" fill="none" stroke="var(--scope)" stroke-width="1.4" stroke-dasharray="7 5"/>
+              <text x="12" y="24" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">Partner API A [container] — as built, 9e1d63a</text>
+
+              <!-- routes -->
+              <rect x="36" y="56" width="448" height="74" rx="4" fill="none" stroke="var(--broken)" stroke-width="1.8"/>
+              <text x="50" y="79" font-size="12.5" font-weight="600" fill="var(--fg)">HTTP routes and app object</text>
+              <text x="50" y="96" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Component: FastAPI — managers/api.py]</text>
+              <text x="50" y="117" font-size="10.5" fill="var(--muted)">Builds the app; validates the caller's key itself.</text>
+
+              <line x1="260" y1="130" x2="260" y2="162" stroke="var(--broken)" stroke-width="1.6" color="var(--broken)" marker-end="url(#a3)"/>
+              <text x="270" y="150" font-size="10" fill="var(--muted)">imports at module load</text>
+
+              <!-- prediction -->
+              <rect x="36" y="164" width="448" height="70" rx="4" fill="none" stroke="var(--broken)" stroke-width="1.8"/>
+              <text x="50" y="187" font-size="12.5" font-weight="600" fill="var(--fg)">Prediction store and dataset service</text>
+              <text x="50" y="204" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Component — managers/prediction/, dataset_service.py]</text>
+              <text x="50" y="223" font-size="10.5" fill="var(--muted)">6 modules. Chooses and caches the newest run.</text>
+
+              <line x1="260" y1="234" x2="260" y2="266" stroke="var(--broken)" stroke-width="1.6" color="var(--broken)" marker-end="url(#a3)"/>
+
+              <!-- adapter -->
+              <rect x="36" y="268" width="448" height="108" rx="4" fill="var(--broken)" opacity="0.08"/>
+              <rect x="36" y="268" width="448" height="108" rx="4" fill="none" stroke="var(--broken)" stroke-width="2"/>
+              <text x="50" y="291" font-size="12.5" font-weight="600" fill="var(--fg)">Appwrite adapter package</text>
+              <text x="50" y="308" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Component — managers/appwrite/, 10 modules]</text>
+              <text x="50" y="329" font-size="10.5" fill="var(--muted)">Its <tspan font-family="IBM Plex Mono, monospace">__init__.py:15-18</tspan> re-exports the vendor's</text>
+              <text x="50" y="345" font-size="10.5" fill="var(--muted)">own classes at the package root, so the test mocks</text>
+              <text x="50" y="361" font-size="10.5" fill="var(--muted)">can reach them in one place.</text>
+
+              <line x1="260" y1="376" x2="260" y2="410" stroke="var(--vendor)" stroke-width="1.6" color="var(--vendor)" marker-end="url(#a3)"/>
+
+              <!-- SDK -->
+              <rect x="120" y="412" width="280" height="46" rx="4" fill="none" stroke="var(--vendor)" stroke-width="1.8"/>
+              <text x="134" y="432" font-size="11.5" font-weight="600" fill="var(--fg)">appwrite 19.2.0</text>
+              <text x="134" y="449" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[technology — the vendor's SDK]</text>
+
+              <!-- business -->
+              <rect x="36" y="482" width="448" height="76" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="50" y="505" font-size="12.5" font-weight="600" fill="var(--fg)">Forecast and data components</text>
+              <text x="50" y="522" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Components — forecast/, data/, ~44 modules]</text>
+              <text x="50" y="543" font-size="10.5" fill="var(--muted)">Ingestion, aggregation, geography, serialization.</text>
+              <text x="50" y="556" font-size="10.5" fill="var(--build)">Already load with the SDK absent.</text>
+
+              <text x="36" y="578" font-size="10.5" font-weight="600" fill="var(--broken)">Red = cannot load without the vendor installed. 17 of 68 modules.</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>
+          <b>Diagram 3 — as built.</b> The chain is three links long and the app object is at the top of it,
+          so the service cannot even be imported without the vendor. Only four files actually use the
+          SDK; thirteen of the seventeen failures come from the one re-export line.
+          <b>Checked 2026‑11‑27</b> by installing the package in a clean environment, removing the SDK, and
+          importing every module separately.
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="canvas">
+          <svg viewBox="0 0 520 600" role="img"
+               aria-label="Component diagram with the gateway: the routes and business components depend on a five-operation port in VIEWS terms, implemented by a forecast store gateway component shipped from views-appwrite, which is the only code that imports the SDK and can be swapped for a service stub in tests.">
+            <defs>
+              <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+              </marker>
+            </defs>
+            <g font-family="IBM Plex Sans, sans-serif">
+              <rect x="12" y="34" width="496" height="552" rx="5" fill="none" stroke="var(--scope)" stroke-width="1.4" stroke-dasharray="7 5"/>
+              <text x="12" y="24" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">Partner API A [container] — with the gateway</text>
+
+              <rect x="36" y="56" width="448" height="74" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="50" y="79" font-size="12.5" font-weight="600" fill="var(--fg)">HTTP routes and app object</text>
+              <text x="50" y="96" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Component: FastAPI — managers/api.py]</text>
+              <text x="50" y="117" font-size="10.5" fill="var(--muted)">Asks “may this caller read?” and “give me the newest run”.</text>
+
+              <line x1="260" y1="130" x2="260" y2="160" stroke="var(--build)" stroke-width="1.6" color="var(--build)" marker-end="url(#a4)"/>
+
+              <!-- port -->
+              <rect x="36" y="162" width="448" height="86" rx="4" fill="var(--build)" opacity="0.1"/>
+              <rect x="36" y="162" width="448" height="86" rx="4" fill="none" stroke="var(--build)" stroke-width="2"/>
+              <text x="50" y="185" font-size="12.5" font-weight="600" fill="var(--fg)">Forecast store port</text>
+              <text x="50" y="202" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Interface — six operations, in VIEWS' own words]</text>
+              <text x="50" y="222" font-size="10.5" fill="var(--muted)">latest run · list runs · fetch run · run metadata · publish run</text>
+              <text x="50" y="238" font-size="10.5" fill="var(--muted)">· may this caller read?</text>
+
+              <line x1="180" y1="248" x2="180" y2="282" stroke="var(--build)" stroke-width="1.6" color="var(--build)" marker-end="url(#a4)"/>
+              <text x="190" y="270" font-size="10" fill="var(--muted)">implemented by</text>
+
+              <!-- gateway -->
+              <rect x="36" y="284" width="448" height="120" rx="4" fill="var(--build)" opacity="0.16"/>
+              <rect x="36" y="284" width="448" height="120" rx="4" fill="none" stroke="var(--build)" stroke-width="2.4"/>
+              <text x="50" y="307" font-size="12.5" font-weight="600" fill="var(--fg)">Forecast store gateway</text>
+              <text x="50" y="324" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Component: Python package — views-appwrite, uses appwrite 19.2.0]</text>
+              <text x="50" y="345" font-size="10.5" fill="var(--muted)">The only code in the platform that imports the SDK.</text>
+              <text x="50" y="361" font-size="10.5" fill="var(--muted)">Translates the vendor's rows, field names and error</text>
+              <text x="50" y="377" font-size="10.5" fill="var(--muted)">codes into VIEWS' own types. Carries the substrate</text>
+              <text x="50" y="393" font-size="10.5" fill="var(--muted)">facts four incidents paid for.</text>
+
+              <!-- stub -->
+              <g>
+                <rect x="36" y="420" width="214" height="62" rx="4" fill="none" stroke="var(--build)" stroke-width="1.6" stroke-dasharray="6 4"/>
+                <text x="48" y="441" font-size="11" font-weight="600" fill="var(--fg)">Service stub</text>
+                <text x="48" y="457" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[test double — same port]</text>
+                <text x="48" y="473" font-size="10" fill="var(--muted)">No vendor type is mocked.</text>
+                <polyline points="143,420 143,412 100,412 100,250" fill="none" stroke="var(--build)" stroke-width="1.4" stroke-dasharray="4 4" color="var(--build)" marker-end="url(#a4)"/>
+              </g>
+
+              <!-- integration tests -->
+              <rect x="270" y="420" width="214" height="62" rx="4" fill="none" stroke="var(--vendor)" stroke-width="1.6"/>
+              <text x="282" y="441" font-size="11" font-weight="600" fill="var(--fg)">A few live calls</text>
+              <text x="282" y="457" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[integration tests, here only]</text>
+              <text x="282" y="473" font-size="10" fill="var(--muted)">Proves scopes by request.</text>
+
+              <!-- business -->
+              <rect x="36" y="500" width="448" height="62" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+              <text x="50" y="523" font-size="12.5" font-weight="600" fill="var(--fg)">Forecast and data components</text>
+              <text x="50" y="540" font-size="10" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Components — forecast/, data/, ~44 modules]</text>
+              <text x="50" y="556" font-size="10.5" fill="var(--muted)">Unchanged. They never knew the vendor anyway.</text>
+
+              <text x="36" y="580" font-size="10.5" font-weight="600" fill="var(--build)">Green = built or moved into views-appwrite. One component, three containers.</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption>
+          <b>Diagram 4 — with the gateway.</b> Hohpe &amp; Woolf's Messaging Gateway: the vendor's calls behind
+          an interface in your own terms, so the application can be tested against a stub and the vendor can
+          be replaced without touching application code. Freeman &amp; Pryce supply the implementation rule —
+          a thin adapter, tested with focused integration tests against the real API, and no mocking of types
+          you cannot change.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Diagram 5 · the target</p>
+    <h2>[Container] After the prediction store moves to Hetzner</h2>
+    <p class="note">
+      This is sheet 2 of the operator's own drawing of 2026‑11‑21, redrawn in Brown's vocabulary.
+      The forecasts live in a VIEWS prediction store on Hetzner; Appwrite keeps only the curated
+      per-audience buckets. The gateway is a program, so here it is a container and there is one of it.
+    </p>
+    <figure>
+      <div class="canvas">
+        <svg viewBox="0 0 1000 670" role="img"
+             aria-label="Target container diagram: forecasts live in a Hetzner prediction store, the delivery job sends curated files to an Appwrite gateway program which is the only SDK caller, and the partner APIs either read the buckets directly or go through the gateway — the open question.">
+          <defs>
+            <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9 z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <g font-family="IBM Plex Sans, sans-serif">
+
+            <!-- zone: hetzner data platform + delivery -->
+            <rect x="20" y="56" width="560" height="184" rx="5" fill="none" stroke="var(--scope)" stroke-width="1.3" stroke-dasharray="7 5"/>
+            <text x="32" y="74" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">HETZNER · VIEWS DATA PLATFORM + DELIVERY JOB [zone]</text>
+
+            <!-- prediction store -->
+            <rect x="40" y="86" width="220" height="128" rx="4" fill="var(--build)" opacity="0.14"/>
+            <rect x="40" y="86" width="220" height="128" rx="4" fill="none" stroke="var(--build)" stroke-width="2"/>
+            <text x="54" y="110" font-size="12.5" font-weight="600" fill="var(--fg)">Prediction store</text>
+            <text x="54" y="126" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container — new, not built]</text>
+            <text x="54" y="146" font-size="10.5" fill="var(--muted)">Replaces views-forecasts</text>
+            <text x="54" y="161" font-size="10.5" fill="var(--muted)">and production_forecasts.</text>
+            <text x="54" y="182" font-size="10.5" font-weight="600" fill="var(--fg)">Technology and access:</text>
+            <text x="54" y="197" font-size="10.5" font-weight="600" fill="var(--build)">NOT DECIDED</text>
+
+            <!-- delivery job -->
+            <rect x="320" y="86" width="220" height="128" rx="4" fill="var(--scope)" opacity="0.1"/>
+            <rect x="320" y="86" width="220" height="128" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+            <text x="334" y="110" font-size="12.5" font-weight="600" fill="var(--fg)">Delivery job</text>
+            <text x="334" y="126" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container — views-postprocessing]</text>
+            <text x="334" y="146" font-size="10.5" fill="var(--muted)">Adds geography, checks</text>
+            <text x="334" y="161" font-size="10.5" fill="var(--muted)">nothing is missing, cuts</text>
+            <text x="334" y="176" font-size="10.5" fill="var(--muted)">one product per audience.</text>
+            <text x="334" y="197" font-size="10.5" fill="var(--build)">Already SDK-free today.</text>
+
+            <!-- zone: gateway -->
+            <rect x="616" y="56" width="288" height="184" rx="5" fill="none" stroke="var(--build)" stroke-width="1.3" stroke-dasharray="7 5"/>
+            <text x="628" y="74" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">HETZNER · APPWRITE GATEWAY [zone]</text>
+            <rect x="636" y="86" width="248" height="128" rx="4" fill="var(--build)" opacity="0.18"/>
+            <rect x="636" y="86" width="248" height="128" rx="4" fill="none" stroke="var(--build)" stroke-width="2.4"/>
+            <text x="650" y="110" font-size="12.5" font-weight="600" fill="var(--fg)">Appwrite gateway</text>
+            <text x="650" y="126" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: program, called over HTTP]</text>
+            <text x="650" y="146" font-size="10.5" fill="var(--muted)">Operator decision 2026-11-21:</text>
+            <text x="650" y="161" font-size="10.5" fill="var(--muted)">a program, never a package.</text>
+            <text x="650" y="182" font-size="10.5" font-weight="600" fill="var(--fg)">The only code in the platform</text>
+            <text x="650" y="197" font-size="10.5" font-weight="600" fill="var(--fg)">that imports the vendor SDK.</text>
+
+            <!-- zone: appwrite cloud -->
+            <rect x="616" y="292" width="288" height="200" rx="5" fill="none" stroke="var(--vendor)" stroke-width="1.3" stroke-dasharray="7 5"/>
+            <text x="628" y="310" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">APPWRITE CLOUD · DELIVERY BUCKETS [zone]</text>
+            <rect x="636" y="322" width="248" height="150" rx="4" fill="var(--vendor)" opacity="0.12"/>
+            <rect x="636" y="322" width="248" height="150" rx="4" fill="none" stroke="var(--vendor)" stroke-width="2"/>
+            <text x="650" y="346" font-size="12.5" font-weight="600" fill="var(--fg)">One curated bucket per audience</text>
+            <text x="650" y="362" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Container: hosted file store]</text>
+            <text x="650" y="384" font-size="10.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">unfao_bucket · crafd_bucket · public</text>
+            <text x="650" y="408" font-size="10.5" fill="var(--fg)">All that is left of Appwrite:</text>
+            <text x="650" y="424" font-size="10.5" fill="var(--muted)">the credentialed door partners pull</text>
+            <text x="650" y="439" font-size="10.5" fill="var(--muted)">from, and the keys they hold.</text>
+            <text x="650" y="461" font-size="10.5" fill="var(--muted)">No forecasts at rest here any more.</text>
+
+            <!-- API servers -->
+            <rect x="300" y="360" width="240" height="112" rx="4" fill="var(--scope)" opacity="0.1"/>
+            <rect x="300" y="360" width="240" height="112" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.8"/>
+            <text x="314" y="384" font-size="12.5" font-weight="600" fill="var(--fg)">Partner APIs</text>
+            <text x="314" y="400" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[Containers: Python/FastAPI, Hetzner]</text>
+            <text x="314" y="420" font-size="10.5" fill="var(--muted)">views-faoapi · views-crafdapi</text>
+            <text x="314" y="435" font-size="10.5" fill="var(--muted)">public API (replaces the legacy one)</text>
+            <text x="314" y="457" font-size="10.5" fill="var(--muted)">One server per API today.</text>
+
+            <!-- partners -->
+            <rect x="40" y="360" width="200" height="112" rx="4" fill="none" stroke="var(--scope)" stroke-width="1.6"/>
+            <text x="54" y="384" font-size="12.5" font-weight="600" fill="var(--fg)">Partners</text>
+            <text x="54" y="400" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)">[People]</text>
+            <text x="54" y="420" font-size="10.5" fill="var(--muted)">Partner A — one key</text>
+            <text x="54" y="435" font-size="10.5" fill="var(--muted)">Partner B — one key each</text>
+            <text x="54" y="455" font-size="10.5" fill="var(--muted)">Anyone — no key</text>
+
+            <!-- arrows -->
+            <g color="var(--scope)">
+              <line x1="260" y1="150" x2="314" y2="150" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+              <text x="287" y="141" font-size="9.5" text-anchor="middle" fill="var(--muted)">newest run</text>
+
+              <line x1="540" y1="150" x2="630" y2="150" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+              <text x="585" y="141" font-size="9.5" text-anchor="middle" fill="var(--muted)">curated files</text>
+              <text x="585" y="167" font-size="9.5" text-anchor="middle" fill="var(--muted)">[HTTP]</text>
+            </g>
+            <g color="var(--vendor)">
+              <line x1="760" y1="214" x2="760" y2="316" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+              <text x="772" y="248" font-size="9.5" fill="var(--muted)">writes the buckets</text>
+              <text x="772" y="262" font-size="9.5" fill="var(--muted)">[Appwrite SDK — the one</text>
+              <text x="772" y="276" font-size="9.5" fill="var(--muted)">place it is installed]</text>
+
+              <line x1="630" y1="396" x2="546" y2="396" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+              <text x="588" y="382" font-size="9.5" text-anchor="middle" fill="var(--muted)">reads the bucket</text>
+              <text x="588" y="414" font-size="9.5" text-anchor="middle" fill="var(--broken)">keeps 2 SDK copies</text>
+
+              <line x1="300" y1="416" x2="246" y2="416" stroke="var(--scope)" stroke-width="1.6" color="var(--scope)" marker-end="url(#a5)"/>
+              <text x="273" y="404" font-size="9.5" text-anchor="middle" fill="var(--muted)">HTTPS/JSON</text>
+              <text x="273" y="434" font-size="9.5" text-anchor="middle" fill="var(--muted)">+ x-api-key</text>
+            </g>
+
+            <!-- the open question -->
+            <g color="var(--build)">
+              <polyline points="690,214 690,256 420,256 420,354" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#a5)"/>
+              <text x="60" y="290" font-size="11" font-weight="600" fill="var(--build)">OPEN — the operator's own point 10</text>
+              <text x="60" y="307" font-size="10.5" fill="var(--muted)">Do the APIs read through the gateway too? If they do, Appwrite's</text>
+              <text x="60" y="322" font-size="10.5" fill="var(--muted)">vocabulary exists in exactly one program and the five-repo problem</text>
+              <text x="60" y="337" font-size="10.5" fill="var(--muted)">ends. If they read the buckets directly, two copies survive for good.</text>
+            </g>
+
+            <!-- what the move deletes -->
+            <rect x="20" y="508" width="884" height="140" rx="4" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+            <text x="36" y="532" font-size="11.5" font-weight="600" fill="var(--fg)">What moving the store to Hetzner deletes, before a line of gateway is written</text>
+            <text x="36" y="554" font-size="10.5" fill="var(--muted)">— “which file is newest” stops being an Appwrite question, so the 13-field metadata table and its field names leave the vendor with it.</text>
+            <text x="36" y="572" font-size="10.5" fill="var(--muted)">— That removes the SDK's Databases/TablesDB half outright: it was the index, not the delivery. The October rename that cost five repositories</text>
+            <text x="36" y="588" font-size="10.5" fill="var(--muted)">   two weeks was a rename in that half.</text>
+            <text x="36" y="610" font-size="10.5" fill="var(--muted)">— Appwrite's remaining surface is three things: write a curated file, list and read it, and check a caller's key.</text>
+            <text x="36" y="634" font-size="10" font-style="italic" fill="var(--muted)">Inference from the 2026-11-27 measurements, not itself a measurement.</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        <b>What the picture shows:</b> the vendor stops being the prediction store and keeps only the
+        delivery buckets, which is the job it was chosen for. One program writes those buckets.
+        The dashed green line is the decision that is still open — and it is the one that decides
+        whether the duplication problem ends or merely shrinks. <b>Drawn from the operator's sheet 2
+        of 2026‑11‑21</b>, with the container and component labels added.
+      </figcaption>
+    </figure>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <p class="eyebrow">Notation</p>
+    <h2>Key</h2>
+    <div class="key">
+      <div>
+        <h3>Element colour</h3>
+        <ul>
+          <li><span class="swatch" style="border-color:var(--scope); background:color-mix(in srgb, var(--scope) 12%, transparent)"></span> In scope — VIEWS owns it</li>
+          <li><span class="swatch" style="border-color:var(--vendor); background:color-mix(in srgb, var(--vendor) 12%, transparent)"></span> Outside — the vendor's product or SDK</li>
+          <li><span class="swatch" style="border-color:var(--build); background:color-mix(in srgb, var(--build) 16%, transparent)"></span> To be built or moved into this repo</li>
+          <li><span class="swatch" style="border-color:var(--broken); background:color-mix(in srgb, var(--broken) 10%, transparent)"></span> Cannot load without the SDK today</li>
+          <li><span class="swatch" style="border-color:var(--planned); border-style:dashed"></span> Specified, not built</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Lines</h3>
+        <ul>
+          <li><span class="lab">solid</span> Exists today</li>
+          <li><span class="lab">dashed</span> Read at boot, or used only in tests</li>
+          <li>Arrow points from caller to called</li>
+          <li>Every arrow carries its own label</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Element labels</h3>
+        <ul>
+          <li><span class="lab">[Person]</span> name and description</li>
+          <li><span class="lab">[Software system]</span> name and description</li>
+          <li><span class="lab">[Container]</span> name, technology, description</li>
+          <li><span class="lab">[Component]</span> name, technology, description</li>
+        </ul>
+      </div>
+    </div>
+
+    <table>
+      <thead><tr><th>Where each number came from</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>17 of 68 and 17 of 67 modules fail to import without the SDK; 4 files per <span class="mono">src/</span> import it</td><td>Checked 2026‑11‑27 — clean install, SDK removed, each module imported separately</td></tr>
+        <tr><td>35 files across three repositories import the SDK (18 / 11 / 6); zero in the other three</td><td>Checked 2026‑11‑27 — every tracked file parsed with Python's own parser</td></tr>
+        <tr><td>The caller's credential is an Appwrite key, probed with <span class="mono">list_files(bucket, limit=1)</span></td><td>Checked 2026‑11‑27 — <span class="mono">managers/api.py:408</span></td></tr>
+        <tr><td>Five live store operations of eleven; each partner API uses three</td><td>Read — <span class="mono">boundary_tests.md</span> test 8, measured 2026‑11‑25</td></tr>
+        <tr><td>A key with <span class="mono">files.read</span> reads every bucket in the project</td><td>Read — views-faoapi ADR‑027, lines 138‑141</td></tr>
+        <tr><td>Route counts (15 and 5) and module counts</td><td>Checked 2026‑11‑25 and 2026‑11‑27</td></tr>
+      </tbody>
+    </table>
+
+    <p class="note" style="margin-top:1.5rem">
+      Partner organisations are lettered rather than named, because two of these repositories are public
+      and a public repository never records which organisation holds a key.
+    </p>
+  </section>
+
+</div>

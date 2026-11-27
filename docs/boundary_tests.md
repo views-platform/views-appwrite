@@ -24,6 +24,24 @@ One already was, and it is the first entry for that reason.
 reproduced here from `ADRs/012_the_appwrite_gateway.md`. None has been re-run since. Treat a result
 as good until the code moves, then re-run it; the commands are given so that re-running is cheap.
 
+**On the instrument, and read this before trusting any count below. Checked 2026-11-27.** In Claude
+Code's shell, `grep` is not grep: it is a function wrapping `ugrep --ignore-files`, which **skips
+every path a `.gitignore` matches, including tracked files**. A count or a "nothing matches" from it
+can therefore be wrong, and wrong in the direction that looks like good news. The warning came from
+the views-pipeline-core session on 2026-11-27, which had listed five functions as uncalled when
+their caller sat in a tracked folder hidden by a `.gitignore` entry meaning something else. Three
+habits follow:
+
+- **Prefer an instrument that cannot be fooled by a name or a path rule.** For "which files import
+  X", that is Python's own parser over every tracked file, not a text search — a search also cannot
+  tell an import from the same words in a docstring, which is the mistake entry 0 records.
+- **Check what a repository hides before searching it:** `git ls-files -ci --exclude-standard`.
+  views-pipeline-core hides three tracked `.py` files this way; views-faoapi hides only binary test
+  fixtures; views-crafdapi, views-postprocessing, views-models and views-datafactory hide none.
+- **When a text search is the right tool, use the real program and quote the globs:**
+  `command grep -rnE 'pattern' --include='*.py' .` — unquoted `--include=*.py` is expanded by the
+  shell if a `.py` file sits in the current directory, after which it matches that one name only.
+
 ---
 
 ## 0. Count the vendor's nouns in the code — a failed instrument, kept as a warning
@@ -137,12 +155,82 @@ been inverted there, whatever the structure diagram says.
 
 **Cost.** One command plus reading a dozen files. Under an hour.
 
-**What it has said so far.** **Not run.** The nearest thing is test 0, which measured a word rather
-than an import and does not substitute.
+**Use this grep, not the one above.** **Corrected 2026-11-27.** The pattern as first written
+over-reports badly, because it matches any import whose module path merely contains the vendor's
+name. Three repositories here have first-party modules called `appwrite_env`, `appwrite_api` and
+`appwrite_manager`, and the loose pattern counts those as vendor coupling. Anchor it instead:
+
+```bash
+grep -rln "^\s*from appwrite[. ]\|^\s*import appwrite$\|^\s*import appwrite\." \
+  --include=*.py . | grep -v "/envs/\|site-packages"
+```
+
+**That anchored pattern also has a hole, and it cost one file. Corrected 2026-11-27.** It misses an
+aliased plain import — `import appwrite as _appwrite` — because the third alternative requires a dot
+and the second requires the line to end. The file it missed is
+`views_pipeline_core/modules/appwrite/__init__.py:14`, which is why the count below is **18 and not
+the 17 first published**. Rather than patch the pattern a third time, use the instrument that reads
+the code as Python does:
+
+```python
+# every tracked .py in the repo, parsed; prints each file that imports the SDK
+import ast, os
+for dp, _d, fs in os.walk("."):
+    for f in (x for x in fs if x.endswith(".py")):
+        p = os.path.join(dp, f)
+        for n in ast.walk(ast.parse(open(p, encoding="utf-8", errors="replace").read())):
+            mods = ([a.name for a in n.names] if isinstance(n, ast.Import)
+                    else [n.module or ""] if isinstance(n, ast.ImportFrom) else [])
+            if any(m == "appwrite" or m.startswith("appwrite.") for m in mods):
+                print(p, n.lineno); break
+```
+
+Run it against a `git archive <commit> | tar -x` export, not a working tree, and a `.gitignore` can
+hide nothing from it and uncommitted edits cannot flatter it.
+
+**What it said, 2026-11-27. Fact, checked that day across seven repositories.**
+
+| repository | files importing the SDK |
+|---|---|
+| views-pipeline-core | **18** |
+| views-faoapi | **11** |
+| views-crafdapi | **6** |
+| views-postprocessing | **0** |
+| views-models | **0** |
+| views-datafactory | **0** |
+| views-appwrite | 0 (ships no code) |
+
+**Three repositories, 35 files. Not six repositories, and not five.** views-postprocessing,
+views-models and views-datafactory name Appwrite in comments, documentation and *their own module
+names*, and import the SDK nowhere. They already reach the store through views-pipeline-core.
+
+**The three zeros were re-checked with the parser on 2026-11-27 and they hold.** Every tracked `.py`
+file in views-postprocessing (`3466de3`), views-models (`6d4a4b17`) and views-datafactory
+(`723f0ca`) was parsed; none imports the SDK, and none of the three hides a tracked `.py` file
+behind a `.gitignore`. A zero produced by the shell's `grep` would not have been worth anything —
+see the note on the instrument at the top of this document — and these three zeros are the claim the
+whole scope rests on, so they were re-measured with something that cannot be fooled.
+
+**And one thing the re-check found that is worth more than the corrected count.**
+`views_pipeline_core/modules/appwrite/__init__.py` already makes the SDK an **optional extra**: it
+wraps the import in `try/except ImportError` and raises a message naming the extra to install, and
+its docstring says *"The SDK became optional in #345 (register C-253): three repos that never
+mention Appwrite were installing it. Nothing on the delivery path imports this package eagerly."*
+That is the same repair the two partner APIs need — see test 4 — and it exists, in this platform,
+with an issue number. **Whether views-pipeline-core actually passes test 4 has not been measured**;
+the file says the SDK is optional, which is a claim by a docstring, not a result.
+
+**This corrects the plan of record.** `docs/roadmap_shared_client.md`, under "Phase 1 as activated",
+states *"five repositories import the `appwrite` SDK directly — 21 files: views-crafdapi 5,
+views-faoapi 5, views-pipeline-core 7, views-postprocessing 2, views-models 2"*, checked
+2026-11-17. Two of those five import only first-party modules whose names begin `appwrite_`. The
+true scope is **smaller in repositories and larger in files** than the roadmap assumes, and two
+repositories it schedules for migration need none.
 
 **What this test cannot tell you.** Anything about identifiers carried as primitives — a file with no
 vendor import can still be handing out vendor handles. Tests 2 and 3 are complementary and neither
-replaces the other.
+replaces the other. It also says nothing about *how much* of the vendor each file uses, which is
+test 11.
 
 ---
 
@@ -159,12 +247,77 @@ full, and the traceback names the file where it stops being full.
 
 **Cost.** About an hour per repository. Fully mechanical. Cheapest decisive test in this document.
 
-**What it has said so far.** **Not run on any repository.**
+**What it said, 2026-11-27. Run on both partner APIs. Both fail.** Neither repository can be
+imported with the Appwrite SDK absent, and in both the failure is in the same four files.
+
+| repository | commit tested | modules in `src/` | unimportable without the SDK | files importing the SDK |
+|---|---|---|---|---|
+| views-faoapi | `9e1d63a` | 68 | 17 | 4 |
+| views-crafdapi | `ee3d112` | 67 | 17 | 4 |
+
+**Where it stops is the same line in both.** `managers/appwrite/__init__.py:15-18` re-exports the
+vendor's own classes at the package root — `Client`, `Storage`, `Databases`, `Users` — so importing
+*any* module inside the adapter package executes those four imports first. views-faoapi's own
+docstring gives the reason: *"SDK classes re-exported at the package root (callers and test mocks
+reference them here)"*. That single re-export takes thirteen further modules down with it, including
+`managers/api.py` — **the file where the FastAPI application object is constructed. The running
+application cannot be imported without the vendor installed.** The chain is three links in both
+repositories: `managers/api.py` → `managers/appwrite/__init__.py` → `appwrite.client`, and
+`managers/dataset_service.py` → `managers/prediction/manager.py` → the same `__init__`.
+
+**Only four files in each repository's `src/` import the SDK**: the adapter package's
+`__init__.py`, `auth.py`, `metadata.py` and `manager.py`. Thirteen of the seventeen failures are
+collateral from the package `__init__`, not code that uses the vendor.
+
+**Four is the shipped code, not the repository. Corrected 2026-11-27** after an earlier version of
+this entry said "four files per repository at all", which is false. Counted with the parser over
+every tracked file, views-faoapi has **eleven** files importing the SDK and views-crafdapi **six** —
+the same numbers as test 3, which is the check that the two entries agree:
+
+| repository | `src/` | tests | scripts | total |
+|---|---|---|---|---|
+| views-faoapi | 4 | 6 | 1 (`scripts/probe_server_key_scopes.py`) | 11 |
+| views-crafdapi | 4 | 2 | 0 | 6 |
+
+**The test suites matter here, and the cost lands on test 5.** Six test files in views-faoapi and two
+in views-crafdapi import the vendor's own classes directly — `test_sdk_compat.py` alone has eleven
+and eight import statements respectively, because its job is to pin the SDK's response shapes. So a
+substitution test cannot simply put a stub behind the operations: part of each suite is written
+against the vendor's types on purpose. That is a finding about test 5's cost, discovered by test 4.
+
+**What passed, and it is the larger half.** With the SDK absent, in both repositories the top-level
+package imports and so does every business module: the whole `forecast/` tree (ingestion,
+aggregation, geography, serialization, summarization, conformance, contract), `data/`,
+`managers/forecast_loader.py`, `managers/selection.py`, `managers/freshness.py`,
+`managers/serialization.py`, the disk and file caches, `seam_contract.py`, `smoke.py`, `preflight.py`,
+`methodology.py` and `client.py`.
+
+**How to repeat it.** Clone at HEAD into a scratch directory — neither working tree was touched, and
+both had uncommitted edits at the time — then per repository:
+
+```
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python .        # installs the SDK as a declared dependency
+uv pip uninstall --python .venv/bin/python appwrite
+.venv/bin/python -c "import views_crafdapi"       # the headline: this one passes
+```
+
+then import every module under the package, one per subprocess, and read each traceback. A package
+whose `__init__` raises hides its children from `pkgutil.walk_packages`, so the children must be
+named explicitly or the failure count comes out too low.
 
 **What this test cannot tell you.** How bad the failure is. An import error in one adapter module is
 a different situation from an import error in a business module, and the test reports both as
-failure. Read the traceback, do not just read the exit code. It also says nothing about identifiers:
-a repository can pass this test cleanly and still hand out vendor handles.
+failure. Read the traceback, do not just read the exit code — this run is the example: seventeen
+modules fail and only four of them name the vendor. It also says nothing about identifiers: a
+repository can pass this test cleanly and still hand out vendor handles. And **a dev-only dependency
+can fail the probe for reasons that have nothing to do with the vendor**: `plotting.py` failed in
+both repositories on `geopandas`, which is declared in `[dependency-groups]` rather than
+`[project.dependencies]`, so a production install does not have it either. **That is deliberate, not
+an oversight. Corrected 2026-11-27**, after an earlier version of this entry implied the module was
+orphaned: nothing in `src/` imports `plotting`, but `tests/test_plotting.py` and four client-facing
+notebooks in each repository do, which is exactly why the heavy mapping dependency sits in the
+development group. Discount it when reading a test 4 result; do not file it as dead code.
 
 ---
 
@@ -352,6 +505,99 @@ searched repositories may rely on it.
 
 ---
 
+## 11. Count the vendor's actual surface
+
+**What it asks.** How many distinct things from the vendor's library does the platform use? Not how
+many lines wrap them — how many names you would have to re-implement or re-point if the vendor
+changed.
+
+**Why it is worth its own test.** Everything else here measures *our* code. This measures the
+*vendor's* footprint, and it is the number that sizes a migration. A 5,000-line wrapper around 18
+names is an 18-name problem with 5,000 lines of our own opinion attached; the two are moved by
+different work.
+
+**How to run it.**
+
+```bash
+grep -rh "from appwrite[a-z._]* import" --include=*.py <repos> | grep -v "/envs/" \
+  | sed 's/.*import //' | tr ',' '\n' | sed 's/\s//g' | sort -u
+```
+
+Read the output by hand afterwards: comment lines, `# noqa` suffixes and docstring text come through
+and must be discarded, which is judgment, not scripting.
+
+**What it said, 2026-11-27. Fact, checked that day.** **Eighteen distinct names, platform-wide:**
+
+| kind | names |
+|---|---|
+| services (the things that act) | `Client`, `Storage`, `Databases`, `TablesDB`, `Users` |
+| helpers | `Query`, `ID`, `InputFile`, `Permission`, `Role` |
+| errors | `AppwriteException` |
+| return types | `File`, `FileList`, `Document`, `DocumentList`, `RowList`, `Bucket`, `Preferences` |
+
+**Five service classes do all the work.** Seven of the eighteen are types the SDK hands back rather
+than anything we call.
+
+**And the client is constructed in exactly three places** — `views-faoapi/.../appwrite/manager.py:97`,
+`views-crafdapi/.../appwrite/manager.py:41`, and
+`views-pipeline-core/.../modules/appwrite/file.py:1475`. Every credential and coordinate the platform
+holds passes through one of those three lines. **That is the narrowest definition of the seam this
+platform has.**
+
+**What this test cannot tell you.** Whether those names are used well. Five service classes could be
+called correctly from one place or badly from forty — test 3 counts the files, this counts the
+surface, and the pair is more informative than either.
+
+---
+
+## 12. Diff the copies before merging them
+
+**What it asks.** Of several look-alike implementations, which differences are style and which are
+decisions? Run this **before** any consolidation, because the answer decides whether consolidation
+is cheap, expensive, or harmful.
+
+**Why it exists.** This repository's own design preferences adopt Sandi Metz's rule — *duplication
+is far cheaper than the wrong abstraction* — and state that *similar shape is not evidence*. This
+test is how you tell shape from substance instead of assuming.
+
+**How to run it.** For each corresponding file pair, `diff` them twice: once raw, and once with each
+repository's own name normalised away. The gap between the two counts separates naming from
+behaviour. Then read every surviving hunk and classify it: style, added capability, or **two
+answers to the same question**.
+
+**What it said, 2026-11-27, for views-faoapi against views-crafdapi. Fact, checked that day.**
+
+| | files | verdict |
+|---|---|---|
+| identical, or identical once the repo name is normalised | 3 | `constants.py`, `sdk_compat.py`, `provisioning.py` |
+| trivially different — typing style, import order, one added field | 4 | `auth.py`, `__init__.py`, `config.py`, `results.py` |
+| **substantially diverged, in both directions** | 3 | `manager.py`, `file_cache.py`, `metadata.py` |
+
+The three diverged files are **2,145 of views-faoapi's 2,421 lines and 2,042 of views-crafdapi's
+2,320**, and **neither repository is a superset of the other.**
+
+**The three divergences that are decisions, not drift:**
+
+- **`download_file` holds opposed resolutions of one incident class.** views-crafdapi hard-fails when
+  the downloaded byte count does not match the recorded size. views-faoapi deliberately skips that
+  check for SDK-auto-deserialised JSON, after a production incident on 2026-08-24 where re-serialised
+  manifests (26,544 → 22,676 bytes) were wrongly rejected as truncated. **Picking either breaks the
+  other.**
+- **Replace-on-upload.** views-faoapi stages then swaps and closed a data-loss window (C-182);
+  views-crafdapi still deletes the old file first.
+- **The timeout patch.** views-faoapi's is lock-guarded and installed once per process (#616);
+  views-crafdapi's documents in its own comment that it is not thread-safe.
+
+**The conclusion this test produced, which is the point of running it:** these are not three copies
+of one thing. They are three answers to three incidents, two of which only one repository has
+suffered. **About 250 lines are genuinely shared and the rest is not duplication at all.**
+
+**What this test cannot tell you.** Which answer is right. It tells you a choice exists and that
+somebody must read the incident behind it. For `download_file` that is a correctness decision and
+not a matter of taste.
+
+---
+
 ## Coverage so far
 
 A test is "run" only where it was actually executed against that repository, not where a result was
@@ -361,8 +607,8 @@ inferred from a sibling.
 |---|---|---|---|---|---|---|
 | 1. Public signatures | read | — | — | partial | n/a, no code | — |
 | 2. Identifier census | — | — | — | — | — | — |
-| 3. Import direction | — | — | — | — | n/a, no code | — |
-| 4. Deployability | — | — | — | — | n/a, no code | — |
+| 3. Import direction | **run** | **run** | **run** | **run, zero** | n/a, no code | **run, zero** |
+| 4. Deployability | — | **run, fails** | **run, fails** | — | n/a, no code | — |
 | 5. Substitution | — | — | — | — | n/a, no code | — |
 | 6. Shared literals | run | run | partial | run | n/a, no code | — |
 | 7. Change coupling | — | run | inconclusive | — | n/a, no code | — |
@@ -370,24 +616,37 @@ inferred from a sibling.
 | 9. Instrument coverage | run, platform-wide | | | | | |
 | 10. Dead defaults | — | run | run | — | n/a, no code | — |
 
-**Note on views-crafdapi.** It is a deliberate copy of views-faoapi, kept so that the two can be
-watched drifting apart. A result from one is not evidence about the other, and test 7 is the test
-where that matters most.
+| 11. Vendor surface | **run, platform-wide — 18 names, 3 client constructions** | | | | | |
+| 12. Diff the copies | n/a | **run** | **run** | — | n/a, no code | — |
+
+**Note on views-crafdapi.** It was a deliberate copy of views-faoapi, kept so the two could be
+watched drifting apart. **Test 12 is that experiment reporting its result, 2026-11-27: they have
+drifted, in both directions, and three files now hold opposed answers to the same incidents.** A
+result from one was never evidence about the other; it is now demonstrably not.
 
 ---
 
 ## Still open
 
+- **Test 4 has run; test 5 has not, and test 5 is now the decisive one.** Test 4 ran on 2026-11-27
+  against both partner APIs and both failed, which means the first architectural claim in these
+  documents is a measurement rather than an argument: the boundary in those two repositories is not
+  full in Martin's sense, and it misses by four files. **Test 2 (the identifier census) and test 5
+  (substitution — put a fake store behind the operations and run the suite) have still never been
+  run.** Test 5 is what Hohpe & Woolf claim a gateway is *for*, it is about a day, and the stub is
+  reusable afterwards. Test 4 has also not run on views-pipeline-core or views-postprocessing.
 - **views-datafactory has not been assessed at all.** Requested by the maintainer on 2026-11-25. It
   references Appwrite in `src/datafactory_http/retry.py`, `docs/ADRs/026_credential_management.md`,
   two consumer guides, its risk register and an investigation report, so it is in scope for this
-  effort and has simply not been looked at. Tests 3 and 4 are the cheapest place to start. Nothing is
+  effort and has simply not been looked at. Test 3 has since been run against it: **zero SDK imports**, so it is further out of scope than
+  assumed. Test 4 remains the cheapest place to start. Nothing is
   blocked on it.
 - **What to do about six operations that only tests call.** Test 8 found them; it cannot say whether
   they were speculative or are simply between uses. Deciding needs the person who wrote them, or a
   decision that the gateway offers five routes and the rest are reconsidered if someone asks for one.
-- **Which of tests 2 through 5 to run first.** Test 4 is the cheapest with a decisive answer. Test 2
-  is the one tied to the finding ADR-012 calls load-bearing. Not decided.
+- **Which of tests 2 and 5 to run next.** Test 4 is done where it could fail. Test 5 is about a day
+  and tests the premise ADR-012 is built on; test 2 is tied to the finding ADR-012 calls
+  load-bearing. Not decided.
 - **Whether any of these should become a standing check** rather than a thing someone remembers to
   run. Test 3 could be a CI import-contract rule. Tests 2 and 5 cannot be automated, which is itself
   worth recording: the most important property of this boundary is the one no pipeline can guard.
