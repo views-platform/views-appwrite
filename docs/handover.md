@@ -60,7 +60,7 @@ Do not trust these past the next change to the code. Each has its command.
 
 | repository | files importing the SDK |
 |---|---|
-| views-pipeline-core | 17 |
+| views-pipeline-core | 18 |
 | views-faoapi | 11 |
 | views-crafdapi | 6 |
 | views-postprocessing, views-models, views-datafactory | **0 each** |
@@ -68,8 +68,14 @@ Do not trust these past the next change to the code. Each has its command.
 Those last three name Appwrite in comments, docs and *their own module names* (`appwrite_env`,
 `appwrite_api`) and import the vendor nowhere. **The plan of record gets this wrong** —
 `roadmap_shared_client.md` says *"five repositories... 21 files"*, counting first-party modules.
-Re-derive with the anchored grep in `boundary_tests.md` test 3; the loose pattern is what produced
-the wrong count.
+
+**The views-pipeline-core figure was 17 until 2026-11-27 and is now 18.** Re-derive it with the
+parser snippet in `boundary_tests.md` test 3, not with a text search. Two reasons, and both were
+paid for the same day: in Claude Code's shell `grep` is a wrapper that skips every path a
+`.gitignore` matches, including tracked files — views-pipeline-core hides three tracked `.py` files
+that way — and the anchored pattern this repository published misses an aliased plain import, which
+is the one file the count was short. **The three zeros were re-measured with the parser and they
+hold**, which matters because the scope of the whole effort rests on them.
 
 **The vendor's whole footprint is 18 names.** **Checked 2026-11-27.** Five service classes do the
 work — `Client`, `Storage`, `Databases`, `TablesDB`, `Users` — plus five helpers, one exception type
@@ -155,8 +161,11 @@ and it has never been run. **Test 4 has now been run — 2026-11-27, both partne
 Neither can be imported with the SDK absent; the FastAPI application in `managers/api.py` is one of
 the seventeen modules that will not import, and the cause in both repositories is
 `managers/appwrite/__init__.py:15-18` re-exporting the vendor's own classes at the package root.
-Four files per repository import the SDK; the other thirteen failures are collateral from that one
-re-export. Every business module imports clean. Full result in `boundary_tests.md` test 4.
+Four files in each repository's `src/` import the SDK; the other thirteen failures are collateral
+from that one re-export. Every business module imports clean. Counting the whole repository rather
+than the shipped code it is eleven files in views-faoapi and six in views-crafdapi, because both test
+suites import the vendor's classes on purpose — which is a cost that lands on test 5. Full result in
+`boundary_tests.md` test 4.
 
 **4. Decide who issues the identifier that crosses the boundary.** Filed in four repositories as
 placeholders: `views-pipeline-core#619`, `views-faoapi#615`, `views-crafdapi#261`,
@@ -234,6 +243,13 @@ Recorded so it is not repeated. These are process failures, not findings.
 
 ## 10. Working rules that are not written anywhere else
 
+- **In Claude Code's shell, `grep` is not grep, and a zero from it is not a zero.** It is a function
+  wrapping `ugrep --ignore-files`, so it skips every path a `.gitignore` matches, tracked files
+  included. For "which files import X", parse the code with Python's `ast` over a
+  `git archive <commit>` export instead; for a text search, use `command grep` and quote the globs.
+  Check what a repository hides first: `git ls-files -ci --exclude-standard`. The views-pipeline-core
+  session found this on 2026-11-27 after listing five functions as uncalled whose caller sat in a
+  hidden tracked folder.
 - **Every claim is Checked, Read or Estimated, and says which.** "Read" on this platform has been
   wrong often enough that it is treated as unverified. A note said four models were untrained; all
   four were trained.
@@ -280,10 +296,12 @@ drawings, plus seven chapter extracts),
 APIs fail it.** The strictest clause in Martin's description of an architectural boundary is now
 measured rather than argued: `views-faoapi` and `views-crafdapi` cannot be imported with the Appwrite
 SDK absent, seventeen of about sixty-seven modules in each fail, and the application object itself is
-among them. **But the miss is shallow and the same in both**: four files import the vendor, and one
-of those four — the adapter package's `__init__.py` — re-exports `Client`, `Storage`, `Databases` and
-`Users` at the package root, which is what pulls the other thirteen modules down. The business half
-already imports clean.
+among them. **But the miss is shallow and the same in both**: four files in `src/` import the vendor,
+and one of those four — the adapter package's `__init__.py` — re-exports `Client`, `Storage`,
+`Databases` and `Users` at the package root, which is what pulls the other thirteen modules down. The
+business half already imports clean. **And the repair has a precedent in the platform**:
+views-pipeline-core's own `modules/appwrite/__init__.py` already makes the SDK an optional extra
+behind `try/except ImportError`, done in its #345 against register finding C-253.
 
 **So do test 5 next.** Write a stub that satisfies the five live store operations, wire it in, run
 each repository's suite. About a day, the stub is reusable, and all three of its possible outcomes

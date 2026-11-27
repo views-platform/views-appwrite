@@ -24,6 +24,24 @@ One already was, and it is the first entry for that reason.
 reproduced here from `ADRs/012_the_appwrite_gateway.md`. None has been re-run since. Treat a result
 as good until the code moves, then re-run it; the commands are given so that re-running is cheap.
 
+**On the instrument, and read this before trusting any count below. Checked 2026-11-27.** In Claude
+Code's shell, `grep` is not grep: it is a function wrapping `ugrep --ignore-files`, which **skips
+every path a `.gitignore` matches, including tracked files**. A count or a "nothing matches" from it
+can therefore be wrong, and wrong in the direction that looks like good news. The warning came from
+the views-pipeline-core session on 2026-11-27, which had listed five functions as uncalled when
+their caller sat in a tracked folder hidden by a `.gitignore` entry meaning something else. Three
+habits follow:
+
+- **Prefer an instrument that cannot be fooled by a name or a path rule.** For "which files import
+  X", that is Python's own parser over every tracked file, not a text search — a search also cannot
+  tell an import from the same words in a docstring, which is the mistake entry 0 records.
+- **Check what a repository hides before searching it:** `git ls-files -ci --exclude-standard`.
+  views-pipeline-core hides three tracked `.py` files this way; views-faoapi hides only binary test
+  fixtures; views-crafdapi, views-postprocessing, views-models and views-datafactory hide none.
+- **When a text search is the right tool, use the real program and quote the globs:**
+  `command grep -rnE 'pattern' --include='*.py' .` — unquoted `--include=*.py` is expanded by the
+  shell if a `.py` file sits in the current directory, after which it matches that one name only.
+
 ---
 
 ## 0. Count the vendor's nouns in the code — a failed instrument, kept as a warning
@@ -147,11 +165,34 @@ grep -rln "^\s*from appwrite[. ]\|^\s*import appwrite$\|^\s*import appwrite\." \
   --include=*.py . | grep -v "/envs/\|site-packages"
 ```
 
+**That anchored pattern also has a hole, and it cost one file. Corrected 2026-11-27.** It misses an
+aliased plain import — `import appwrite as _appwrite` — because the third alternative requires a dot
+and the second requires the line to end. The file it missed is
+`views_pipeline_core/modules/appwrite/__init__.py:14`, which is why the count below is **18 and not
+the 17 first published**. Rather than patch the pattern a third time, use the instrument that reads
+the code as Python does:
+
+```python
+# every tracked .py in the repo, parsed; prints each file that imports the SDK
+import ast, os
+for dp, _d, fs in os.walk("."):
+    for f in (x for x in fs if x.endswith(".py")):
+        p = os.path.join(dp, f)
+        for n in ast.walk(ast.parse(open(p, encoding="utf-8", errors="replace").read())):
+            mods = ([a.name for a in n.names] if isinstance(n, ast.Import)
+                    else [n.module or ""] if isinstance(n, ast.ImportFrom) else [])
+            if any(m == "appwrite" or m.startswith("appwrite.") for m in mods):
+                print(p, n.lineno); break
+```
+
+Run it against a `git archive <commit> | tar -x` export, not a working tree, and a `.gitignore` can
+hide nothing from it and uncommitted edits cannot flatter it.
+
 **What it said, 2026-11-27. Fact, checked that day across seven repositories.**
 
 | repository | files importing the SDK |
 |---|---|
-| views-pipeline-core | **17** |
+| views-pipeline-core | **18** |
 | views-faoapi | **11** |
 | views-crafdapi | **6** |
 | views-postprocessing | **0** |
@@ -159,9 +200,25 @@ grep -rln "^\s*from appwrite[. ]\|^\s*import appwrite$\|^\s*import appwrite\." \
 | views-datafactory | **0** |
 | views-appwrite | 0 (ships no code) |
 
-**Three repositories, 34 files. Not six repositories, and not five.** views-postprocessing,
+**Three repositories, 35 files. Not six repositories, and not five.** views-postprocessing,
 views-models and views-datafactory name Appwrite in comments, documentation and *their own module
 names*, and import the SDK nowhere. They already reach the store through views-pipeline-core.
+
+**The three zeros were re-checked with the parser on 2026-11-27 and they hold.** Every tracked `.py`
+file in views-postprocessing (`3466de3`), views-models (`6d4a4b17`) and views-datafactory
+(`723f0ca`) was parsed; none imports the SDK, and none of the three hides a tracked `.py` file
+behind a `.gitignore`. A zero produced by the shell's `grep` would not have been worth anything —
+see the note on the instrument at the top of this document — and these three zeros are the claim the
+whole scope rests on, so they were re-measured with something that cannot be fooled.
+
+**And one thing the re-check found that is worth more than the corrected count.**
+`views_pipeline_core/modules/appwrite/__init__.py` already makes the SDK an **optional extra**: it
+wraps the import in `try/except ImportError` and raises a message naming the extra to install, and
+its docstring says *"The SDK became optional in #345 (register C-253): three repos that never
+mention Appwrite were installing it. Nothing on the delivery path imports this package eagerly."*
+That is the same repair the two partner APIs need — see test 4 — and it exists, in this platform,
+with an issue number. **Whether views-pipeline-core actually passes test 4 has not been measured**;
+the file says the SDK is optional, which is a claim by a docstring, not a result.
 
 **This corrects the plan of record.** `docs/roadmap_shared_client.md`, under "Phase 1 as activated",
 states *"five repositories import the `appwrite` SDK directly — 21 files: views-crafdapi 5,
@@ -208,9 +265,25 @@ application cannot be imported without the vendor installed.** The chain is thre
 repositories: `managers/api.py` → `managers/appwrite/__init__.py` → `appwrite.client`, and
 `managers/dataset_service.py` → `managers/prediction/manager.py` → the same `__init__`.
 
-**Only four files per repository import the SDK at all**: the adapter package's `__init__.py`,
-`auth.py`, `metadata.py` and `manager.py`. Thirteen of the seventeen failures are collateral from the
-package `__init__`, not code that uses the vendor.
+**Only four files in each repository's `src/` import the SDK**: the adapter package's
+`__init__.py`, `auth.py`, `metadata.py` and `manager.py`. Thirteen of the seventeen failures are
+collateral from the package `__init__`, not code that uses the vendor.
+
+**Four is the shipped code, not the repository. Corrected 2026-11-27** after an earlier version of
+this entry said "four files per repository at all", which is false. Counted with the parser over
+every tracked file, views-faoapi has **eleven** files importing the SDK and views-crafdapi **six** —
+the same numbers as test 3, which is the check that the two entries agree:
+
+| repository | `src/` | tests | scripts | total |
+|---|---|---|---|---|
+| views-faoapi | 4 | 6 | 1 (`scripts/probe_server_key_scopes.py`) | 11 |
+| views-crafdapi | 4 | 2 | 0 | 6 |
+
+**The test suites matter here, and the cost lands on test 5.** Six test files in views-faoapi and two
+in views-crafdapi import the vendor's own classes directly — `test_sdk_compat.py` alone has eleven
+and eight import statements respectively, because its job is to pin the SDK's response shapes. So a
+substitution test cannot simply put a stub behind the operations: part of each suite is written
+against the vendor's types on purpose. That is a finding about test 5's cost, discovered by test 4.
 
 **What passed, and it is the larger half.** With the SDK absent, in both repositories the top-level
 package imports and so does every business module: the whole `forecast/` tree (ingestion,
@@ -240,8 +313,11 @@ modules fail and only four of them name the vendor. It also says nothing about i
 repository can pass this test cleanly and still hand out vendor handles. And **a dev-only dependency
 can fail the probe for reasons that have nothing to do with the vendor**: `plotting.py` failed in
 both repositories on `geopandas`, which is declared in `[dependency-groups]` rather than
-`[project.dependencies]`, so a production install does not have it. No module in `src/` imports
-`plotting`. That is a separate observation, not a test 4 result.
+`[project.dependencies]`, so a production install does not have it either. **That is deliberate, not
+an oversight. Corrected 2026-11-27**, after an earlier version of this entry implied the module was
+orphaned: nothing in `src/` imports `plotting`, but `tests/test_plotting.py` and four client-facing
+notebooks in each repository do, which is exactly why the heavy mapping dependency sits in the
+development group. Discount it when reading a test 4 result; do not file it as dead code.
 
 ---
 
