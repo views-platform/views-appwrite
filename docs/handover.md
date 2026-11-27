@@ -149,10 +149,14 @@ them:
 - **Freeze this repository to the registry alone** — `views-appwrite#214`, which would park the
   roadmap that authorises the first.
 
-**3. Run tests 4 and 5 from `boundary_tests.md`.** Install a consumer with the SDK absent and import
-it; put a fake store behind the operations and run the suite. **About a day together.** They are
-what Hohpe & Woolf claim a gateway is *for*, neither has ever been run, and until one has, every
-architectural claim in these documents is an argument rather than a measurement.
+**3. Run test 5 from `boundary_tests.md`.** Put a fake store behind the operations and run the
+suite. **About a day, and the stub is reusable.** It is what Hohpe & Woolf claim a gateway is *for*,
+and it has never been run. **Test 4 has now been run — 2026-11-27, both partner APIs, both fail.**
+Neither can be imported with the SDK absent; the FastAPI application in `managers/api.py` is one of
+the seventeen modules that will not import, and the cause in both repositories is
+`managers/appwrite/__init__.py:15-18` re-exporting the vendor's own classes at the package root.
+Four files per repository import the SDK; the other thirteen failures are collateral from that one
+re-export. Every business module imports clean. Full result in `boundary_tests.md` test 4.
 
 **4. Decide who issues the identifier that crosses the boundary.** Filed in four repositories as
 placeholders: `views-pipeline-core#619`, `views-faoapi#615`, `views-crafdapi#261`,
@@ -272,9 +276,19 @@ drawings, plus seven chapter extracts),
 
 ## 12. If you do one thing
 
-**Run test 4.** Install `views-crafdapi` in a clean environment without the Appwrite SDK and import
-it. One hour, fully mechanical, and the answer is yes or no.
+**Test 4 was the previous answer to this question. It has been run — 2026-11-27 — and both partner
+APIs fail it.** The strictest clause in Martin's description of an architectural boundary is now
+measured rather than argued: `views-faoapi` and `views-crafdapi` cannot be imported with the Appwrite
+SDK absent, seventeen of about sixty-seven modules in each fail, and the application object itself is
+among them. **But the miss is shallow and the same in both**: four files import the vendor, and one
+of those four — the adapter package's `__init__.py` — re-exports `Client`, `Storage`, `Databases` and
+`Users` at the package root, which is what pulls the other thirteen modules down. The business half
+already imports clean.
 
-It is the strictest clause in Martin's description of an architectural boundary, it has never been
-run, and it converts the largest claim in these documents from argument into measurement. Everything
-in section 6 gets easier once it has an answer.
+**So do test 5 next.** Write a stub that satisfies the five live store operations, wire it in, run
+each repository's suite. About a day, the stub is reusable, and all three of its possible outcomes
+tell you something — including the most useful one, that the stub cannot be wired in at all.
+
+**And read the result of test 4 before deciding how to spend the extraction effort.** It says the
+boundary is missed by four files and one re-export line, not by the business logic. Any plan that
+assumes the vendor is spread through these repositories is arguing against a measurement.

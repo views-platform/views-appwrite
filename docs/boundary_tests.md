@@ -190,12 +190,58 @@ full, and the traceback names the file where it stops being full.
 
 **Cost.** About an hour per repository. Fully mechanical. Cheapest decisive test in this document.
 
-**What it has said so far.** **Not run on any repository.**
+**What it said, 2026-11-27. Run on both partner APIs. Both fail.** Neither repository can be
+imported with the Appwrite SDK absent, and in both the failure is in the same four files.
+
+| repository | commit tested | modules in `src/` | unimportable without the SDK | files importing the SDK |
+|---|---|---|---|---|
+| views-faoapi | `9e1d63a` | 68 | 17 | 4 |
+| views-crafdapi | `ee3d112` | 67 | 17 | 4 |
+
+**Where it stops is the same line in both.** `managers/appwrite/__init__.py:15-18` re-exports the
+vendor's own classes at the package root — `Client`, `Storage`, `Databases`, `Users` — so importing
+*any* module inside the adapter package executes those four imports first. views-faoapi's own
+docstring gives the reason: *"SDK classes re-exported at the package root (callers and test mocks
+reference them here)"*. That single re-export takes thirteen further modules down with it, including
+`managers/api.py` — **the file where the FastAPI application object is constructed. The running
+application cannot be imported without the vendor installed.** The chain is three links in both
+repositories: `managers/api.py` → `managers/appwrite/__init__.py` → `appwrite.client`, and
+`managers/dataset_service.py` → `managers/prediction/manager.py` → the same `__init__`.
+
+**Only four files per repository import the SDK at all**: the adapter package's `__init__.py`,
+`auth.py`, `metadata.py` and `manager.py`. Thirteen of the seventeen failures are collateral from the
+package `__init__`, not code that uses the vendor.
+
+**What passed, and it is the larger half.** With the SDK absent, in both repositories the top-level
+package imports and so does every business module: the whole `forecast/` tree (ingestion,
+aggregation, geography, serialization, summarization, conformance, contract), `data/`,
+`managers/forecast_loader.py`, `managers/selection.py`, `managers/freshness.py`,
+`managers/serialization.py`, the disk and file caches, `seam_contract.py`, `smoke.py`, `preflight.py`,
+`methodology.py` and `client.py`.
+
+**How to repeat it.** Clone at HEAD into a scratch directory — neither working tree was touched, and
+both had uncommitted edits at the time — then per repository:
+
+```
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python .        # installs the SDK as a declared dependency
+uv pip uninstall --python .venv/bin/python appwrite
+.venv/bin/python -c "import views_crafdapi"       # the headline: this one passes
+```
+
+then import every module under the package, one per subprocess, and read each traceback. A package
+whose `__init__` raises hides its children from `pkgutil.walk_packages`, so the children must be
+named explicitly or the failure count comes out too low.
 
 **What this test cannot tell you.** How bad the failure is. An import error in one adapter module is
 a different situation from an import error in a business module, and the test reports both as
-failure. Read the traceback, do not just read the exit code. It also says nothing about identifiers:
-a repository can pass this test cleanly and still hand out vendor handles.
+failure. Read the traceback, do not just read the exit code — this run is the example: seventeen
+modules fail and only four of them name the vendor. It also says nothing about identifiers: a
+repository can pass this test cleanly and still hand out vendor handles. And **a dev-only dependency
+can fail the probe for reasons that have nothing to do with the vendor**: `plotting.py` failed in
+both repositories on `geopandas`, which is declared in `[dependency-groups]` rather than
+`[project.dependencies]`, so a production install does not have it. No module in `src/` imports
+`plotting`. That is a separate observation, not a test 4 result.
 
 ---
 
@@ -486,7 +532,7 @@ inferred from a sibling.
 | 1. Public signatures | read | — | — | partial | n/a, no code | — |
 | 2. Identifier census | — | — | — | — | — | — |
 | 3. Import direction | **run** | **run** | **run** | **run, zero** | n/a, no code | **run, zero** |
-| 4. Deployability | — | — | — | — | n/a, no code | — |
+| 4. Deployability | — | **run, fails** | **run, fails** | — | n/a, no code | — |
 | 5. Substitution | — | — | — | — | n/a, no code | — |
 | 6. Shared literals | run | run | partial | run | n/a, no code | — |
 | 7. Change coupling | — | run | inconclusive | — | n/a, no code | — |
@@ -506,12 +552,13 @@ result from one was never evidence about the other; it is now demonstrably not.
 
 ## Still open
 
-- **Four tests have still never been run, and two of them are the decisive ones.** Test 2 (the
-  identifier census), test 4 (deployability — install a consumer with the SDK absent and import it),
-  test 5 (substitution — put a fake store behind the operations and run the suite). Tests 4 and 5 are
-  together about a day and they are what Hohpe & Woolf claim a gateway is *for*. Until one of them
-  has run, every architectural claim in this repository's documents is an argument rather than a
-  measurement.
+- **Test 4 has run; test 5 has not, and test 5 is now the decisive one.** Test 4 ran on 2026-11-27
+  against both partner APIs and both failed, which means the first architectural claim in these
+  documents is a measurement rather than an argument: the boundary in those two repositories is not
+  full in Martin's sense, and it misses by four files. **Test 2 (the identifier census) and test 5
+  (substitution — put a fake store behind the operations and run the suite) have still never been
+  run.** Test 5 is what Hohpe & Woolf claim a gateway is *for*, it is about a day, and the stub is
+  reusable afterwards. Test 4 has also not run on views-pipeline-core or views-postprocessing.
 - **views-datafactory has not been assessed at all.** Requested by the maintainer on 2026-11-25. It
   references Appwrite in `src/datafactory_http/retry.py`, `docs/ADRs/026_credential_management.md`,
   two consumer guides, its risk register and an investigation report, so it is in scope for this
@@ -521,8 +568,9 @@ result from one was never evidence about the other; it is now demonstrably not.
 - **What to do about six operations that only tests call.** Test 8 found them; it cannot say whether
   they were speculative or are simply between uses. Deciding needs the person who wrote them, or a
   decision that the gateway offers five routes and the rest are reconsidered if someone asks for one.
-- **Which of tests 2 through 5 to run first.** Test 4 is the cheapest with a decisive answer. Test 2
-  is the one tied to the finding ADR-012 calls load-bearing. Not decided.
+- **Which of tests 2 and 5 to run next.** Test 4 is done where it could fail. Test 5 is about a day
+  and tests the premise ADR-012 is built on; test 2 is tied to the finding ADR-012 calls
+  load-bearing. Not decided.
 - **Whether any of these should become a standing check** rather than a thing someone remembers to
   run. Test 3 could be a CI import-contract rule. Tests 2 and 5 cannot be automated, which is itself
   worth recording: the most important property of this boundary is the one no pipeline can guard.
